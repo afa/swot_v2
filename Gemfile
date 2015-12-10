@@ -1,10 +1,11 @@
-# A sample Gemfile
 source "https://rubygems.org"
-gem 'hiredis'
+# gem 'hiredis'
 gem 'ohm'
+gem 'nio4r'
 gem 'celluloid', require: 'celluloid/current'
 gem 'celluloid-redis'
+gem 'redis'
 gem 'celluloid-io'
-gem 'sinatra'
-gem 'thin'
-gem 'racksh'
+
+gem 'rspec'
+gem 'rspec-celluloid'

@@ -25,55 +25,58 @@ GEM
       redis
     celluloid-supervision (0.20.5)
       timers (>= 4.1.1)
-    daemons (1.2.3)
-    eventmachine (1.0.8)
+    diff-lcs (1.2.5)
     hiredis (0.6.0)
+    hiredis (0.6.0-java)
     hitimes (1.2.3)
+    hitimes (1.2.3-java)
     msgpack (0.5.12)
+    msgpack (0.5.12-java)
     nido (1.0.0)
     nio4r (1.1.1)
+    nio4r (1.1.1-java)
     ohm (2.3.0)
       msgpack (~> 0.5.0)
       nido
       redic (~> 1.5.0)
       stal
-    rack (1.6.4)
-    rack-protection (1.5.3)
-      rack
-    rack-test (0.6.3)
-      rack (>= 1.0)
-    racksh (1.0.0)
-      rack (>= 1.0)
-      rack-test (>= 0.5)
     redic (1.5.0)
       hiredis
     redis (3.2.2)
-    sinatra (1.4.6)
-      rack (~> 1.4)
-      rack-protection (~> 1.4)
-      tilt (>= 1.3, < 3)
+    rspec (3.4.0)
+      rspec-core (~> 3.4.0)
+      rspec-expectations (~> 3.4.0)
+      rspec-mocks (~> 3.4.0)
+    rspec-celluloid (0.0.1)
+      celluloid
+      rspec-core
+    rspec-core (3.4.1)
+      rspec-support (~> 3.4.0)
+    rspec-expectations (3.4.0)
+      diff-lcs (>= 1.2.0, < 2.0)
+      rspec-support (~> 3.4.0)
+    rspec-mocks (3.4.0)
+      diff-lcs (>= 1.2.0, < 2.0)
+      rspec-support (~> 3.4.0)
+    rspec-support (3.4.1)
     stal (0.1.0)
       redic
-    thin (1.6.4)
-      daemons (~> 1.0, >= 1.0.9)
-      eventmachine (~> 1.0, >= 1.0.4)
-      rack (~> 1.0)
-    tilt (2.0.1)
     timers (4.1.1)
       hitimes
 
 PLATFORMS
+  java
   ruby
 
 DEPENDENCIES
   celluloid
   celluloid-io
   celluloid-redis
-  hiredis
+  nio4r
   ohm
-  racksh
-  sinatra
-  thin
+  redis
+  rspec
+  rspec-celluloid
 
 BUNDLED WITH
    1.10.6

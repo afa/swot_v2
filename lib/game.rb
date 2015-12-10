@@ -1,22 +1,29 @@
 # require 'sinatra/base'
-require 'celluloid/redis'
 require 'timers'
 require 'channel_actor'
 class Game
   include Celluloid
-  pubsub = ChannelActor.supervise as: :channel
-  puts 'ok'
-  @redis = ::Redis.new(driver: :celluloid)
-  p @redis
-  @redis.publish('tst', 'tt')
+  # include Celluloid::Redis
+  def initialize
+    @redis = ::Redis.new(driver: :celluloid)
+    @pubsub = ChannelActor.new
+    # @pubsub = ChannelActor.supervise as: :channel
+  end
+
+  def run
+    puts 'ok'
+    @pubsub.async.run
+    @redis.publish('tst', 'tt')
+    sleep 10
+  end
 
   # timers = Timers::Group.new
-  configure do
-    enable :logging 
-  end
-  get '/' do
-    'ok'
-  end
+  # configure do
+  #   enable :logging 
+  # end
+  # get '/' do
+  #   'ok'
+  # end
   # every_five_seconds = timers.every(5) { puts "Another 5 seconds" }
 
   # loop { timers.wait }
