@@ -1,4 +1,5 @@
 # require 'sinatra/base'
+require 'log'
 require 'timers'
 require 'channel_actor'
 class Game
