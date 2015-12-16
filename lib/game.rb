@@ -3,13 +3,15 @@ class Game
   include Celluloid
   # include Celluloid::Redis
   def initialize
+    @uuid = UUID.new.generate
     @redis = ::Redis.new(driver: :celluloid)
-    @pubsub = ChannelActor.new
-    @timers = Timers.new
+    @pubsub = ChannelActor.supervise as: :channel
+    @timers = Timers.supervise :as :timers
     # @pubsub = ChannelActor.supervise as: :channel
   end
 
   def run
+    p @uuid
     puts 'ok'
     @timers.async.run
     @pubsub.async.run

@@ -30,6 +30,8 @@ GEM
     hiredis (0.6.0-java)
     hitimes (1.2.3)
     hitimes (1.2.3-java)
+    macaddr (1.7.1)
+      systemu (~> 2.6.2)
     msgpack (0.5.12)
     msgpack (0.5.12-java)
     nido (1.0.0)
@@ -58,8 +60,11 @@ GEM
     rspec-support (3.4.1)
     stal (0.1.0)
       redic
+    systemu (2.6.5)
     timers (4.1.1)
       hitimes
+    uuid (2.3.8)
+      macaddr (~> 1.0)
 
 PLATFORMS
   java
@@ -73,6 +78,7 @@ DEPENDENCIES
   ohm
   redis
   rspec
+  uuid
 
 BUNDLED WITH
    1.10.6

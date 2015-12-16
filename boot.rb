@@ -6,7 +6,6 @@ $LOAD_PATH.unshift('./models') unless $LOAD_PATH.include?('./models')
 require 'celluloid/redis'
 require 'redis/connection/celluloid'
 require 'center'
-# require 'game'
-Center.new.run
-# Game.new.run
+Center.run
+p 22
 
