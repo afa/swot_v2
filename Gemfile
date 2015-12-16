@@ -8,4 +8,3 @@ gem 'redis'
 gem 'celluloid-io'
 
 gem 'rspec'
-gem 'rspec-celluloid'

@@ -47,9 +47,6 @@ GEM
       rspec-core (~> 3.4.0)
       rspec-expectations (~> 3.4.0)
       rspec-mocks (~> 3.4.0)
-    rspec-celluloid (0.0.1)
-      celluloid
-      rspec-core
     rspec-core (3.4.1)
       rspec-support (~> 3.4.0)
     rspec-expectations (3.4.0)
@@ -76,7 +73,6 @@ DEPENDENCIES
   ohm
   redis
   rspec
-  rspec-celluloid
 
 BUNDLED WITH
    1.10.6
