@@ -1,4 +1,6 @@
+require 'message/base'
 require 'message/create'
+require 'message/stop'
 module Message
   # module As; class B; end; AB = 1; constants(false).each{|s| p const_get(s) if const_get(s).is_a? Class }; end
   def parse str

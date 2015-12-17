@@ -1,19 +1,18 @@
-require "game"
 module Message
-  class Create < Base
+  class Stop
     def self.try_load(hsh)
-      return nil unless hsh[:type] == 'create'
+      return nil unless hsh[:type] == 'stop'
       super
     end
 
     def initialize hash
       super
-      @name = hash[:name] if hash[:name]
     end
 
     def process
       super
-      Game.new
+      Center.async.terminate
     end
+
   end
 end
