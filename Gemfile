@@ -9,3 +9,7 @@ gem 'celluloid-io'
 
 gem 'rspec'
 gem 'uuid'
+
+gem 'multi_json'
+gem 'gson', platform: 'jruby'
+gem 'oj', platform: 'ruby'

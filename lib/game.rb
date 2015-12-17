@@ -1,19 +1,23 @@
 # require 'sinatra/base'
 class Game
   include Celluloid
+  include Celluloid::IO
+  include Celluloid::Internals::Logger
   # include Celluloid::Redis
   def initialize
     @uuid = UUID.new.generate
+    info "#{@uuid} created"
     @redis = ::Redis.new(driver: :celluloid)
     @pubsub = ChannelActor.supervise as: :channel
-    @timers = Timers.supervise :as :timers
+    @timers = Alarms.supervise as: :timers
     # @pubsub = ChannelActor.supervise as: :channel
+    async.run
   end
 
   def run
     p @uuid
     puts 'ok'
-    @timers.async.run
+    # @timers.async.run
     @pubsub.async.run
     @redis.publish('tst', 'tt')
     sleep 10

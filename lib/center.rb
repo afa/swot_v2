@@ -1,7 +1,8 @@
-require 'timers'
+require 'alarms'
 require 'channel_actor'
 require 'control'
 require 'log'
+require 'message'
 class Center < Celluloid::Supervision::Container
   include Celluloid
   include Celluloid::Internals::Logger

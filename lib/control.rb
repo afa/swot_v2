@@ -18,6 +18,13 @@ class Control
     self.control_channel = @redis.subscribe(@channel_name) do |on|
       on.message do |ch, msg|
         info "#{ch.inspect} :: #{msg.inspect}"
+        sel = begin
+                MultiJson.load(msg)
+              rescue Exception => e
+                {error: e.message}
+              end
+        info sel.inspect
+        info ::Message.parse(sel).new(sel).process
       end
       on.subscribe do |ch, subs|
         info "sub #{ch.inspect} -- #{subs.inspect}"
