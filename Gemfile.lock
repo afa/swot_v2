@@ -26,6 +26,7 @@ GEM
     celluloid-supervision (0.20.5)
       timers (>= 4.1.1)
     diff-lcs (1.2.5)
+    gson (0.6.1-java)
     hiredis (0.6.0)
     hiredis (0.6.0-java)
     hitimes (1.2.3)
@@ -34,6 +35,7 @@ GEM
       systemu (~> 2.6.2)
     msgpack (0.5.12)
     msgpack (0.5.12-java)
+    multi_json (1.11.2)
     nido (1.0.0)
     nio4r (1.1.1)
     nio4r (1.1.1-java)
@@ -42,6 +44,7 @@ GEM
       nido
       redic (~> 1.5.0)
       stal
+    oj (2.14.1)
     redic (1.5.0)
       hiredis
     redis (3.2.2)
@@ -74,8 +77,11 @@ DEPENDENCIES
   celluloid
   celluloid-io
   celluloid-redis
+  gson
+  multi_json
   nio4r
   ohm
+  oj
   redis
   rspec
   uuid
