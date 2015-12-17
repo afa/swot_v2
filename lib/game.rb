@@ -3,6 +3,7 @@ class Game
   include Celluloid
   include Celluloid::IO
   include Celluloid::Internals::Logger
+  finalizer :finalizer
   # include Celluloid::Redis
   def initialize
     @uuid = UUID.new.generate
@@ -18,11 +19,14 @@ class Game
     p @uuid
     puts 'ok'
     # @timers.async.run
-    @pubsub.async.run
-    @redis.publish('tst', 'tt')
-    sleep 10
+    # @pubsub.async.run
+    # @redis.publish('tst', 'tt')
   end
 
+  def finalizer
+    Celluloid::Actor[:channel].terminate
+    Celluloid::Actor[:timers].terminate
+  end
   # timers = Timers::Group.new
   # configure do
   #   enable :logging 

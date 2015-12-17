@@ -1,6 +1,7 @@
 class Alarms < Celluloid::Supervision::Container
   include Celluloid
   include Celluloid::IO
+  finalizer :finalizer
   attr_accessor :group
 
   def initialize
@@ -14,5 +15,8 @@ class Alarms < Celluloid::Supervision::Container
 
   def run
     loop{ group.wait }
+  end
+
+  def finalizer
   end
 end
