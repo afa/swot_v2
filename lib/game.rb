@@ -9,8 +9,10 @@ class Game
     @uuid = UUID.new.generate
     info "#{@uuid} created"
     @redis = ::Redis.new(driver: :celluloid)
-    @pubsub = ChannelActor.supervise as: :channel
-    @timers = Alarms.supervise as: :timers
+    @pubsub = Center.current.to_supervise as: :"game_#{@uuid}", type: ChannelActor, args: [{}]
+    @timers = Center.current.to_supervise as: :"timers_#{@uuid}", type: Alarms, args: [{}]
+    # @pubsub = ChannelActor.supervise as: :channel
+    # @timers = Alarms.supervise as: :timers
     # @pubsub = ChannelActor.supervise as: :channel
     async.run
   end
@@ -24,8 +26,9 @@ class Game
   end
 
   def finalizer
-    Celluloid::Actor[:channel].terminate
-    Celluloid::Actor[:timers].terminate
+    @timers.terminate
+    # Celluloid::Actor[:channel].terminate
+    # Celluloid::Actor[:timers].terminate
   end
   # timers = Timers::Group.new
   # configure do

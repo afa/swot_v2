@@ -25,7 +25,8 @@ class Control
               end
         info sel.inspect
         klass = ::Message.parse(sel)
-        info klass.new(sel).process if klass
+        info klass
+        klass.new(sel).process if klass
       end
       on.subscribe do |ch, subs|
         info "sub #{ch.inspect} -- #{subs.inspect}"

@@ -1,5 +1,5 @@
 module Message
-  class Stop
+  class Stop < Base
     def self.try_load(hsh)
       return nil unless hsh[:type] == 'stop'
       super
@@ -11,7 +11,8 @@ module Message
 
     def process
       super
-      Center.async.terminate
+      info 'stopping centre'
+      Center.current.async.stop
     end
 
   end

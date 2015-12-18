@@ -1,7 +1,8 @@
 class ChannelActor
   include Celluloid
+  include Celluloid::IO
   # include Celluloid::Redis
-  def initialize
+  def initialize params = {}
     @redis = ::Redis.new(driver: :celluloid)
   end
 

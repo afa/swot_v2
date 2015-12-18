@@ -1,12 +1,13 @@
 require "game"
 module Message
   class Create < Base
+    include Celluloid::Internals::Logger
     def self.try_load(hsh)
       return nil unless hsh[:type] == 'create'
-      super
+      new(hsh) #.tap{|x| Celluloid::Internals::Logger.info x.inspect }
     end
 
-    def initialize hash
+    def initialize hash = {}
       super
       @name = hash[:name] if hash[:name]
     end
