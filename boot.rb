@@ -8,5 +8,4 @@ require 'redis/connection/celluloid'
 MultiJson.load_options = {symbolize_keys: true}
 require 'center'
 Center.run
-p 22
 

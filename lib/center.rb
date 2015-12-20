@@ -3,6 +3,7 @@ require 'channel_actor'
 require 'control'
 require 'log'
 require 'message'
+require 'players'
 class Center # < Celluloid::Supervision::Container
   include Celluloid
   include Celluloid::Internals::Logger
