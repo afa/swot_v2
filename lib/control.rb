@@ -15,7 +15,7 @@ class Control
   end
 
   def run
-    self.control_channel = @redis.subscribe(@channel_name) do |on|
+    @redis.subscribe(@channel_name) do |on|
       on.message do |ch, msg|
         info "#{ch.inspect} :: #{msg.inspect}"
         sel = begin
@@ -24,12 +24,16 @@ class Control
                 {error: e.message}
               end
         info sel.inspect
-        klass = ::Message.parse(sel)
-        info klass
-        klass.new(sel).process if klass
+        unless sel[:error]
+          klass = ::Message.parse(sel)
+          info klass
+          klass.new(sel).process if klass
+        end
       end
       on.subscribe do |ch, subs|
+        self.control_channel = on
         info "sub #{ch.inspect} -- #{subs.inspect}"
+        info on.inspect
       end
       on.unsubscribe do
         info 'un'
@@ -39,6 +43,7 @@ class Control
   def finalizer
     info "stop control"
     # self.control_channel.publish "done"
-    @redis.unsubscribe '/swot/control'
+    control_channel.unsubscribe
+    info 'unsubscribed'
   end
 end
