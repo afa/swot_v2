@@ -37,7 +37,8 @@ class Game
   end
 
   def finalizer
-    @timers.terminate
+    Center.current.delete(:"timers_#{@uuid}")
+    # @timers.terminate
     # Celluloid::Actor[:channel].terminate
     # Celluloid::Actor[:timers].terminate
   end
