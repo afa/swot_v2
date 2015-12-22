@@ -4,22 +4,33 @@ class Game
   include Celluloid::IO
   include Celluloid::Internals::Logger
   finalizer :finalizer
+
+  attr_accessor :name, :players
   # include Celluloid::Redis
-  def initialize
-    @uuid = UUID.new.generate
-    info "#{@uuid} created"
-    @redis = ::Redis.new(driver: :celluloid)
-    @pubsub = Center.current.to_supervise as: :"game_#{@uuid}", type: ChannelActor, args: [{}]
-    @timers = Center.current.to_supervise as: :"timers_#{@uuid}", type: Alarms, args: [{}]
-    # @pubsub = ChannelActor.supervise as: :channel
-    # @timers = Alarms.supervise as: :timers
-    # @pubsub = ChannelActor.supervise as: :channel
+  def initialize params = {}
+    unless params[:uuid]
+      @uuid = UUID.new.generate
+      info "#{@uuid} created"
+      @redis = ::Redis.new(driver: :celluloid)
+      @pubsub = Center.current.to_supervise as: :"game_#{@uuid}", type: ChannelActor, args: [{uuid: @uuid}]
+      @timers = Center.current.to_supervise as: :"timers_#{@uuid}", type: Alarms, args: [{uuid: @uuid}]
+      self.name = params[:name]
+      self.players = Array.new
+      if params[:players]
+        params[:players].each do |p|
+          player = Player.new(p)
+          Store::Player.create(p.merge(game_uuid: @uuid))
+
+        end
+      end
+    end
     async.run
   end
 
   def run
     p @uuid
     puts 'ok'
+
     # @timers.async.run
     # @pubsub.async.run
     # @redis.publish('tst', 'tt')

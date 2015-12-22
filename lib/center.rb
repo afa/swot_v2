@@ -4,6 +4,7 @@ require 'control'
 require 'log'
 require 'message'
 require 'players'
+require 'store'
 class Center # < Celluloid::Supervision::Container
   include Celluloid
   include Celluloid::Internals::Logger
@@ -39,7 +40,7 @@ class Center # < Celluloid::Supervision::Container
   end
 
   def stop
-    terminate
+    async.terminate
   end
 
 

@@ -40,6 +40,11 @@ class Control
       end
     end
   end
+
+  def stop
+    async.terminate
+  end
+
   def finalizer
     info "stop control"
     # self.control_channel.publish "done"
