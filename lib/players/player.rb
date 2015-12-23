@@ -4,9 +4,10 @@ class Player
 
   finalizer :finalizer
 
-  attr_accessor :name, :email, :channel
+  attr_accessor :name, :email, :channel, :game_uuid, :uuid
 
   def initialize params = {}
+          Store::Player.create(params.merge(game_uuid: @uuid))
   end
 
   def run

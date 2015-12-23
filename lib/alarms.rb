@@ -6,11 +6,14 @@ class Alarms # < Celluloid::Supervision::Container
   attr_accessor :group, :start
 
   def initialize params = {}
+    info 'setup timers'
     self.group = Timers::Group.new
     async.run
+    async.add_one
   end
 
   def add_one
+    p 'add_one'
     group.after(5) { p 'tim' }
   end
 

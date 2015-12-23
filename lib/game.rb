@@ -6,7 +6,6 @@ class Game
   finalizer :finalizer
 
   attr_accessor :name, :players
-  # include Celluloid::Redis
   def initialize params = {}
     unless params[:uuid]
       @uuid = UUID.new.generate
@@ -19,7 +18,6 @@ class Game
       if params[:players]
         params[:players].each do |p|
           player = Player.new(p)
-          Store::Player.create(p.merge(game_uuid: @uuid))
 
         end
       end
@@ -38,6 +36,7 @@ class Game
 
   def finalizer
     Center.current.delete(:"timers_#{@uuid}")
+    Center.current.delete(:"game_#{@uuid}")
     # @timers.terminate
     # Celluloid::Actor[:channel].terminate
     # Celluloid::Actor[:timers].terminate

@@ -13,8 +13,8 @@ module Message
     def process
       super
       info 'stopping centre'
-      info Center.current.inspect
       Center.current.async.stop
+      info 'send stop'
     end
 
   end

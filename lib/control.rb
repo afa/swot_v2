@@ -19,7 +19,7 @@ class Control
       on.message do |ch, msg|
         info "#{ch.inspect} :: #{msg.inspect}"
         sel = begin
-                MultiJson.load(msg)
+                MultiJson.load(msg).merge(incoming_channel: ch)
               rescue Exception => e
                 {error: e.message}
               end
@@ -37,18 +37,17 @@ class Control
       end
       on.unsubscribe do
         info 'un'
+        async.stop
       end
     end
   end
 
   def stop
+    @redis.unsubscribe
     async.terminate
   end
 
   def finalizer
     info "stop control"
-    # self.control_channel.publish "done"
-    control_channel.unsubscribe
-    info 'unsubscribed'
   end
 end

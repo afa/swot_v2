@@ -11,12 +11,8 @@ class Center # < Celluloid::Supervision::Container
   attr_accessor :config
   finalizer :finalizer
 
-  def self.current= obj
-    class_variable_set(:@@current, obj)
-  end
-
   def self.current
-    class_variable_get :@@current
+    Actor[:center]
   end
 
   def initialize params = {}
@@ -24,8 +20,11 @@ class Center # < Celluloid::Supervision::Container
     info 'starting centre'
     build_config
     # async.run
-    self.class.current = self
     info 'start centre'
+  end
+
+  def run
+    # @config.run
   end
 
   def build_config
@@ -39,7 +38,12 @@ class Center # < Celluloid::Supervision::Container
     @config.define hash
   end
 
+  def delete_supervision name
+    @config.delete name
+  end
+
   def stop
+    info 'receive stop'
     async.terminate
   end
 
