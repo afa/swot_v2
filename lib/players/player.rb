@@ -9,17 +9,20 @@ class Player
 
   def initialize params = {}
     if params[:uuid]
+      store = Store::Player.find()
     else
+      @uuid = UUID.new.generate
     info "player #{params.inspect} started"
-    Store::Player.create(params.merge(game_uuid: @uuid))
+    store = Store::Player.create(params.merge(game_uuid: @game_uuid))
     end
+    info store.inspect
   end
 
   def run
   end
 
   def finalizer
-    info 
+    info "stopping pl #{@uuid}"
   end
 
 end
