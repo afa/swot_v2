@@ -1,12 +1,12 @@
 module Message
   class Stop < Base
     include Celluloid::Internals::Logger
-    def self.try_load(hsh)
+    def self.try_load(ch, hsh)
       return nil unless hsh[:type] == 'stop'
       super
     end
 
-    def initialize hash
+    def initialize ch, hash
       super
     end
 

@@ -1,5 +1,5 @@
 require 'alarms'
-require 'channel_actor'
+# require 'channel_actor'
 require 'control'
 require 'log'
 require 'message'
@@ -8,7 +8,7 @@ require 'store'
 class Center # < Celluloid::Supervision::Container
   include Celluloid
   include Celluloid::Internals::Logger
-  attr_accessor :config
+  attr_accessor :config, :players
   finalizer :finalizer
 
   def self.current
@@ -16,6 +16,7 @@ class Center # < Celluloid::Supervision::Container
   end
 
   def initialize params = {}
+    @players = Players.new
     info params.inspect
     info 'starting centre'
     build_config
@@ -44,7 +45,7 @@ class Center # < Celluloid::Supervision::Container
 
   def stop
     info 'receive stop'
-    async.terminate
+    async.terminate if Actor[:center].alive?
   end
 
 

@@ -2,11 +2,11 @@ module Message
   class Base
     attr_accessor :at
     include Celluloid::Internals::Logger
-    def self.try_load(hsh)
-      new hsh
+    def self.try_load(ch, hsh)
+      new ch, hsh
     end
 
-    def initialize hash = {}
+    def initialize ch, hash = {}
       self.at = ('%10.6f' % Time.now).to_f
     end
 

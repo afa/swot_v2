@@ -15,19 +15,20 @@ class Control
   end
 
   def run
-    @redis.subscribe(@channel_name) do |on|
+    @redis.subscribe(@channel_name, '/game/*', '/player/*') do |on|
       on.message do |ch, msg|
         info "#{ch.inspect} :: #{msg.inspect}"
         sel = begin
-                MultiJson.load(msg).merge(incoming_channel: ch)
+                MultiJson.load(msg)
               rescue Exception => e
                 {error: e.message}
               end
+
         info sel.inspect
         unless sel[:error]
-          klass = ::Message.parse(sel)
+          klass = ::Message.parse(ch, sel)
           info klass
-          klass.new(sel).process if klass
+          klass.new(ch, sel).process if klass
         end
       end
       on.subscribe do |ch, subs|
