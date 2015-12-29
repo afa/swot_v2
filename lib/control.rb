@@ -15,8 +15,9 @@ class Control
   end
 
   def run
-    @redis.subscribe(@channel_name, '/game/*', '/player/*') do |on|
-      on.message do |ch, msg|
+    # @redis.subscribe(@channel_name, '/game/*', '/player/*') do |on|
+    @redis.psubscribe('/*/*') do |on|
+      on.pmessage do |pat, ch, msg|
         info "#{ch.inspect} :: #{msg.inspect}"
         sel = begin
                 MultiJson.load(msg)
@@ -31,12 +32,12 @@ class Control
           klass.new(ch, sel).process if klass
         end
       end
-      on.subscribe do |ch, subs|
-        self.control_channel = on
+      on.psubscribe do |ch, subs|
+        # self.control_channel = on
         info "sub #{ch.inspect} -- #{subs.inspect}"
         info on.inspect
       end
-      on.unsubscribe do
+      on.punsubscribe do
         info 'un'
         async.stop
       end

@@ -17,7 +17,7 @@ module Message
 
     def process
       super
-      Game.new(name: @name, players: @players)
+      ::Game.new(name: @name, players: @players)
     end
   end
 end

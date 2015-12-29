@@ -9,6 +9,6 @@ MultiJson.load_options = {symbolize_keys: true}
 require 'store'
 require 'center'
 Celluloid::Actor[:center] = Center.new
-Celluloid::Actor[:center].sleep(1) while Celluloid::Actor[:center] 
+Celluloid::Actor[:center].sleep(1) while Celluloid::Actor[:center].alive?
 # Celluloid::Actor[:center].run
 
