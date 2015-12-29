@@ -1,4 +1,3 @@
-# require 'sinatra/base'
 class Game
   include Celluloid
   include Celluloid::IO
@@ -6,25 +5,25 @@ class Game
   finalizer :finalizer
 
   attr_accessor :name, :players
+  def self.create params = {}
+    uuid = UUID.new.generate
+    p uuid
+    Center.current.to_supervise as: :"game_#{uuid}", type: Game, args: [{uuid: uuid}.merge(params)]
+  end
+
   def initialize params = {}
-    unless params[:uuid]
-      @uuid = UUID.new.generate
-      info "#{@uuid} created"
-      @redis = ::Redis.new(driver: :celluloid)
-      # @pubsub = Center.current.to_supervise as: :"game_#{@uuid}", type: ChannelActor, args: [{uuid: @uuid}]
-      @timers = Center.current.to_supervise as: :"timers_#{@uuid}", type: Alarms, args: [{uuid: @uuid}]
-      self.name = params[:name]
-      self.players = Array.new
-      if params[:players]
-        params[:players].each do |p|
-          player = Player.new(p.merge(game_uuid: @uuid))
-          players << player
-
-
-        end
+    @uuid = params[:uuid]
+    info "#{@uuid} created"
+    @redis = ::Redis.new(driver: :celluloid)
+    @timers = Center.current.to_supervise as: :"timers_#{@uuid}", type: Alarms, args: [{uuid: @uuid}]
+    self.name = params[:name]
+    self.players = Array.new
+    if params[:players]
+      params[:players].each do |p|
+        player = Player.new(p.merge(game_uuid: @uuid))
+        players << player
       end
     end
-    async.run
   end
 
   def run
