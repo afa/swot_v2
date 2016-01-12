@@ -8,7 +8,9 @@ class Game
   def self.create params = {}
     uuid = UUID.new.generate
     p uuid
+    p Actor.all.map(&:registered_name)
     Center.current.to_supervise as: :"game_#{uuid}", type: Game, args: [{uuid: uuid}.merge(params)]
+    p Actor.all.map(&:registered_name)
   end
 
   def initialize params = {}
