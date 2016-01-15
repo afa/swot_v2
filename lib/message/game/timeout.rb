@@ -3,12 +3,12 @@ module Message
     class Timeout < Base
       include Celluloid::Internals::Logger
       attr_accessor :game_uuid
-      def self.try_load(hsh)
+      def self.try_load(ch, hsh)
         return nil unless hsh[:type] == 'timeout'
         super
       end
 
-      def initialize hash
+      def initialize ch, hash
         super
         @game_uuid = hash[:uuid]
       end
