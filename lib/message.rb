@@ -13,7 +13,7 @@ module Message
   def subclasses
     cs = constants(false).map{|c| const_get(c) }.select{|c| c.is_a? Class } - [Message::Base]
     p cs
-    cs += (constants(false).map{|c| const_get(c) }.select{|c| not c.is_a? Class }).map(&:subclasses).flatten
+    cs += (constants(false).map{|c| const_get(c) }.select{|c| not c.is_a? Class }).map(&:subclasses).flatten.tap{|x| p x }
   end
 
   module_function :parse, :subclasses

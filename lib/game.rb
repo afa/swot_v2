@@ -8,24 +8,27 @@ class Game
   def self.create params = {}
     uuid = UUID.new.generate
     p uuid
-    p Actor.all.map(&:registered_name)
-    Center.current.to_supervise as: :"game_#{uuid}", type: Game, args: [{uuid: uuid}.merge(params)]
-    p Actor.all.map(&:registered_name)
+    Center.current.async.to_supervise as: :"game_#{uuid}", type: Game, args: [{uuid: uuid}.merge(params)]
   end
 
   def initialize params = {}
     @uuid = params[:uuid]
     info "#{@uuid} created"
     @redis = ::Redis.new(driver: :celluloid)
-    @timers = Center.current.to_supervise as: :"timers_#{@uuid}", type: Alarms, args: [{uuid: @uuid}]
+    @timers = Center.current.async.to_supervise as: :"timers_#{@uuid}", type: Alarms, args: [{uuid: @uuid}]
     self.name = params[:name]
     self.players = Array.new
     if params[:players]
       params[:players].each do |p|
-        player = Player.new(p.merge(game_uuid: @uuid))
-        players << player
+        p_id = UUID.new.generate
+        Center.current.async.to_supervise(as: :"player_#{p_id}", type: Player, args: [p.merge(game_uuid: @uuid, uuid: p_id)])
+        # player = Player.new(p.merge(game_uuid: @uuid))
+        players << p_id
+        info players.inspect
       end
     end
+    p 'game', @uuid, 'created'
+    async.run
   end
 
   def run

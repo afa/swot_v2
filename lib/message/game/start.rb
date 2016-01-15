@@ -4,6 +4,7 @@ module Message
       include Celluloid::Internals::Logger
       attr_accessor :game_uuid
       def self.try_load(ch, hsh)
+        Celluloid::Internals::Logger.info "msg #{ch} #{hsh.inspect}"
         return nil unless ch =~ /\A\/game\//
         return nil unless hsh[:type] == 'start'
         super
@@ -11,6 +12,7 @@ module Message
 
       def initialize ch, hash
         @game_uuid = (/\A\/game\/(?<id>[0-9a-fA-F-]+)\z/.match(ch)||{})[:id]
+        info "msg start #{@game_uuid}"
         super
 
       end
@@ -19,7 +21,8 @@ module Message
         super
         info 'starting game'
         game = Celluloid::Actor[:"game_#{@game_uuid}"]
-        p game, Celluloid::Actor.all.map(&:registered_name)
+        p 'ttt'
+        p game
         if game
           info 'game exist'
           info game.inspect

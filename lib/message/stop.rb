@@ -2,6 +2,7 @@ module Message
   class Stop < Base
     include Celluloid::Internals::Logger
     def self.try_load(ch, hsh)
+      return nil unless ch == Control::CONTROL_CHANNEL
       return nil unless hsh[:type] == 'stop'
       super
     end
