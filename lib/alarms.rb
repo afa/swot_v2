@@ -7,10 +7,10 @@ class Alarms # < Celluloid::Supervision::Container
 
   def initialize params = {}
     info 'setup timers'
-    @redis = Redis.new
+    @redis = ::Redis.new
     self.game_id = params[:game_uuid]
     self.group = Timers::Group.new
-    set_start
+    set_start params[:start] if params[:start]
     async.run
     # async.add_one
   end
