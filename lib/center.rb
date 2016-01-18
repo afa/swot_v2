@@ -37,7 +37,7 @@ class Center # < Celluloid::Supervision::Container
   def to_supervise hash
     info 'supervise'
     info hash.inspect
-    info @config.add(hash).inspect
+    @config.add(hash)
   end
 
   def delete_supervision name

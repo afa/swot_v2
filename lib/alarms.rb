@@ -19,11 +19,12 @@ class Alarms # < Celluloid::Supervision::Container
 
   def run
     info 'timers started'
-    loop{ group.wait }
+    # loop{ group.wait }
   end
 
   def finalizer
     info 'stopping timers'
-    group.terminate
+    group.cancel
+    # group.terminate
   end
 end
