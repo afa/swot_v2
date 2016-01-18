@@ -44,6 +44,8 @@ GEM
       nido
       redic (~> 1.5.0)
       stal
+    ohm-contrib (2.2.0)
+      ohm (~> 2.2)
     oj (2.14.1)
     redic (1.5.0)
       hiredis
@@ -81,10 +83,11 @@ DEPENDENCIES
   multi_json
   nio4r
   ohm
+  ohm-contrib
   oj
   redis
   rspec
   uuid
 
 BUNDLED WITH
-   1.10.6
+   1.11.2

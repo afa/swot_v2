@@ -1,0 +1,183 @@
+default: &default
+  min_players:
+    type: Integer
+    val: 4
+  max_players:
+    type: Integer
+    val: 12
+  max_statements:
+    type: Integer
+    val: 7
+  default_url_host:
+    type: String
+    val: 'localhost:3000'
+  default_invitation_template:
+    type: String
+    val: '%{admin_name} invites you to take part in swot analysis session. the session will be held online'
+  default_reminding_template:
+    type: String
+    val: 'We remind you that you are invited to play "%{game_name}"'
+  random_enabled:
+    type: Boolean
+    val: false
+
+  countries:
+    type: String
+    val: |-
+      Russia
+      USA
+      Pakistan
+  industries:
+    type: String
+    val: |-
+      IT
+      Medicine
+      Trade
+
+  min_games_for_benchmark:
+    type: Integer
+    val: 100
+
+  prepare_at_seconds:
+    type: Integer
+    val: 300
+
+  # pitcher scores
+  pitcher_no_replace_score:
+    type: BigDecimal
+    val: 1
+  pitcher_single_replace_score:
+    type: BigDecimal
+    val: 0.30
+  pitcher_double_replace_score:
+    type: BigDecimal
+    val: 0.50
+
+  # pitcher's ranks
+  pitcher_rank_multiplier_accepted:
+    type: BigDecimal
+    val: 1.2
+  pitcher_rank_multiplier_declined:
+    type: BigDecimal
+    val: 0.8
+  pitcher_rank_multiplier_pass:
+    type: BigDecimal
+    val: 0.9
+  pitcher_rank_multiplier_disconnected:
+    type: BigDecimal
+    val: 0.9
+  pitcher_minimum_rank:
+    type: BigDecimal
+    val: 0.3
+
+  # catcher zone borders
+  catcher_low_border:
+    type: BigDecimal
+    val: 0.25
+  catcher_high_border:
+    type: BigDecimal
+    val: 0.75
+
+  # catcher scores
+  catcher_pro_zone_1_score:
+    type: BigDecimal
+    val: -1.5
+  catcher_pro_zone_2_score:
+    type: BigDecimal
+    val: -1.0
+  catcher_pro_zone_3_score:
+    type: BigDecimal
+    val: +1.0
+  catcher_pro_zone_4_score:
+    type: BigDecimal
+    val: +1.5
+  catcher_contra_zone_1_score:
+    type: BigDecimal
+    val: +1.5
+  catcher_contra_zone_2_score:
+    type: BigDecimal
+    val: +1.0
+  catcher_contra_zone_3_score:
+    type: BigDecimal
+    val: -1.0
+  catcher_contra_zone_4_score:
+    type: BigDecimal
+    val: -1.5
+  catcher_abstainer_score:
+    type: BigDecimal
+    val: -0.5
+
+  # ranging scores
+  ranging_importance_0_score:
+    type: BigDecimal
+    val: +0.3
+  ranging_importance_1_score:
+    type: BigDecimal
+    val: +0.5
+  ranging_importance_2_score:
+    type: BigDecimal
+    val: +1.0
+  ranging_importance_3_score:
+    type: BigDecimal
+    val: +2.0
+  ranging_importance_4_score:
+    type: BigDecimal
+    val: +3.0
+
+  stage_timeout:
+    type: Integer
+    val: 1500
+  voting_quorum_timeout:
+    type: Integer
+    val: 60
+  voting_tail_timeout:
+    type: Integer
+    val: 15
+  results_timeout:
+    type: Integer
+    val: 5
+  between_stages_timeout:
+    type: Integer
+    val: 10
+  max_steps:
+    type: Integer
+    val: 60
+  first_pitching_timeout:
+    type: Integer
+    val: 120
+  pitching_timeout:
+    type: Integer
+    val: 20
+  ranging_timeout:
+    type: Integer
+    val: 30
+  # disconnect_timeout:
+  terminate_timeout:
+    type: Integer
+    val: 10
+
+  amnesty:
+    type: Boolean
+    val: false
+
+  declined_in_row_statements:
+    type: Integer
+    val: 3
+
+development:
+  <<: *default
+
+test:
+  <<: *default
+
+production:
+  <<: *default
+  default_url_host:
+    type: String
+    val: 'swot.dev.techranch.ru'
+
+staging:
+  <<: *default
+  default_url_host:
+    type: String
+    val: 'swot-s.dev.techranch.ru'

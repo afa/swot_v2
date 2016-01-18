@@ -3,13 +3,24 @@ class Alarms # < Celluloid::Supervision::Container
   include Celluloid::IO
   include Celluloid::Internals::Logger
   finalizer :finalizer
-  attr_accessor :group, :start
+  attr_accessor :game_id, :group, :start, :redis
 
   def initialize params = {}
     info 'setup timers'
+    @redis = Redis.new
+    self.game_id = params[:game_uuid]
     self.group = Timers::Group.new
+    set_start
     async.run
-    async.add_one
+    # async.add_one
+  end
+
+  def set_start tm
+    if self.start
+      start.cancel
+    end
+    group.after(tm.to_i - Time.now.to_i){Redis.publish "/game/#{game_id}", {type: 'start'}}
+    self.start = tm.to_i
   end
 
   def add_one
