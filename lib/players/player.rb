@@ -5,9 +5,10 @@ class Player
 
   finalizer :finalizer
 
-  attr_accessor :name, :email, :channel, :game_uuid, :uuid
+  attr_accessor :name, :email, :channel, :game_uuid, :uuid, :redis
 
   def initialize params = {}
+    @redis ||= ::Redis.new
     @game_uuid = params[:game_uuid]
     if params[:uuid]
       store = Store::Player.find(uuid: params[:uuid]).first
@@ -25,6 +26,9 @@ class Player
 
   # def run
   # end
+
+  def state
+  end
 
   def finalizer
     info "stopping pl #{@uuid}"
