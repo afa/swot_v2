@@ -15,7 +15,8 @@ class Game
     @uuid = params[:uuid]
     info "#{@uuid} created"
     @redis = ::Redis.new(driver: :celluloid)
-    @timers = Center.current.async.to_supervise as: :"timers_#{@uuid}", type: Alarms, args: [{uuid: @uuid}]
+    time_params = params.inject({}){|r, (k, v)| r.merge(%w(start).map(&:to_sym).include?(k) ? {k => v} : {}) }
+    @timers = Center.current.async.to_supervise as: :"timers_#{@uuid}", type: Alarms, args: [{uuid: @uuid}.merge(time_params)]
     self.name = params[:name]
     self.players = Array.new
     if params[:players]

@@ -3,14 +3,15 @@ class Alarms # < Celluloid::Supervision::Container
   include Celluloid::IO
   include Celluloid::Internals::Logger
   finalizer :finalizer
-  attr_accessor :game_id, :group, :start, :redis
+  attr_accessor :game_id, :group, :start, :start_at, :redis
 
   def initialize params = {}
     info 'setup timers'
     @redis = ::Redis.new
     self.game_id = params[:game_uuid]
     self.group = Timers::Group.new
-    set_start params[:start] if params[:start]
+    p 'time', params
+    async.set_start params[:start] if params[:start]
     async.run
     # async.add_one
   end
@@ -19,18 +20,19 @@ class Alarms # < Celluloid::Supervision::Container
     if self.start
       start.cancel
     end
-    group.after(tm.to_i - Time.now.to_i){Redis.publish "/game/#{game_id}", {type: 'start'}}
-    self.start = tm.to_i
-  end
+    self.start_at = tm.to_i
+    start = group.now_and_after(tm.to_i - Time.now.to_i) do
+      info 'start fire'
+      # Redis.publish "/game/#{game_id}", {type: 'start'}
+    end
+    info 'started start timer ' + (start.fires_in).to_s + start.inspect
 
-  def add_one
-    p 'add_one'
-    group.after(5) { p 'tim' }
   end
 
   def run
-    info 'timers started'
-    # loop{ group.wait }
+    # info 'timers started'
+    group.wait
+    async.run
   end
 
   def finalizer

@@ -7,8 +7,9 @@ require 'players'
 require 'store'
 class Center # < Celluloid::Supervision::Container
   include Celluloid
+  include Celluloid::IO
   include Celluloid::Internals::Logger
-  attr_accessor :config, :players
+  attr_accessor :config, :players, :times
   finalizer :finalizer
 
   def self.current
@@ -17,6 +18,7 @@ class Center # < Celluloid::Supervision::Container
 
   def initialize params = {}
     @players = Players.new
+    @times = {start_at: params[:start]}.delete_if{|k, v| v.nil? }
     info params.inspect
     info 'starting centre'
     build_config

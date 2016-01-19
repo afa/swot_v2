@@ -45,7 +45,7 @@ class Control
   end
 
   def stop
-    @redis.unsubscribe
+    @redis.punsubscribe
     async.terminate
   end
 
