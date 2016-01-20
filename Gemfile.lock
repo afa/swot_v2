@@ -1,10 +1,7 @@
 GEM
   remote: https://rubygems.org/
   specs:
-    amq-protocol (1.9.2)
-    bunny (1.7.1)
-      amq-protocol (~> 1.9.2)
-    celluloid (0.17.2)
+    celluloid (0.17.3)
       celluloid-essentials
       celluloid-extras
       celluloid-fsm
@@ -17,7 +14,7 @@ GEM
       timers (>= 4.1.1)
     celluloid-fsm (0.20.5)
       timers (>= 4.1.1)
-    celluloid-io (0.17.2)
+    celluloid-io (0.17.3)
       celluloid (>= 0.17.2)
       nio4r (>= 1.1)
       timers (>= 4.1.1)
@@ -30,18 +27,15 @@ GEM
       timers (>= 4.1.1)
     diff-lcs (1.2.5)
     gson (0.6.1-java)
-    hiredis (0.6.0)
-    hiredis (0.6.0-java)
-    hitimes (1.2.3)
+    hiredis (0.6.1-java)
     hitimes (1.2.3-java)
     macaddr (1.7.1)
       systemu (~> 2.6.2)
-    msgpack (0.5.12)
+    march_hare (2.16.0-java)
     msgpack (0.5.12-java)
     multi_json (1.11.2)
     nido (1.0.0)
-    nio4r (1.1.1)
-    nio4r (1.1.1-java)
+    nio4r (1.2.0-java)
     ohm (2.3.0)
       msgpack (~> 0.5.0)
       nido
@@ -49,7 +43,6 @@ GEM
       stal
     ohm-contrib (2.2.0)
       ohm (~> 2.2)
-    oj (2.14.1)
     redic (1.5.0)
       hiredis
     redis (3.2.2)
@@ -62,7 +55,7 @@ GEM
     rspec-expectations (3.4.0)
       diff-lcs (>= 1.2.0, < 2.0)
       rspec-support (~> 3.4.0)
-    rspec-mocks (3.4.0)
+    rspec-mocks (3.4.1)
       diff-lcs (>= 1.2.0, < 2.0)
       rspec-support (~> 3.4.0)
     rspec-support (3.4.1)
@@ -76,15 +69,14 @@ GEM
 
 PLATFORMS
   java
-  ruby
 
 DEPENDENCIES
-  bunny (= 1.7.1)
   celluloid
   celluloid-io
   celluloid-redis
   gson
   hiredis
+  march_hare
   multi_json
   nio4r
   ohm
