@@ -1,6 +1,9 @@
 GEM
   remote: https://rubygems.org/
   specs:
+    amq-protocol (1.9.2)
+    bunny (1.7.1)
+      amq-protocol (~> 1.9.2)
     celluloid (0.17.2)
       celluloid-essentials
       celluloid-extras
@@ -76,6 +79,7 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
+  bunny (= 1.7.1)
   celluloid
   celluloid-io
   celluloid-redis

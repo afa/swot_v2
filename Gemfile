@@ -8,6 +8,9 @@ gem 'celluloid-redis'
 gem 'hiredis'
 gem 'redis', :require => ["redis", "redis/connection/hiredis"]
 gem 'celluloid-io'
+# gem 'celluloid-zmq'
+# gem 'amq-protocol', '= 1.9.2'
+gem 'bunny', '= 1.7.1'
 
 gem 'rspec'
 gem 'uuid'
