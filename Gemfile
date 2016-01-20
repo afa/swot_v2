@@ -5,7 +5,8 @@ gem 'ohm-contrib'
 gem 'nio4r'
 gem 'celluloid', require: 'celluloid/current'
 gem 'celluloid-redis'
-gem 'redis'
+gem 'hiredis'
+gem 'redis', :require => ["redis", "redis/connection/hiredis"]
 gem 'celluloid-io'
 
 gem 'rspec'

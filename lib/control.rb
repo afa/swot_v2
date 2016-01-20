@@ -8,6 +8,7 @@ class Control
   attr_accessor :control_channel
   def initialize params = {}
     info "starting control"
+    @sub = ::Redis.new(driver: :celluloid)
     @redis = ::Redis.new(driver: :celluloid)
     @channel_name = params[:channel] || CONTROL_CHANNEL
     async.run
@@ -16,7 +17,7 @@ class Control
 
   def run
     # @redis.subscribe(@channel_name, '/game/*', '/player/*') do |on|
-    @redis.psubscribe('/*/*') do |on|
+    @sub.psubscribe('/*/*') do |on|
       on.pmessage do |pat, ch, msg|
         info "#{ch.inspect} :: #{msg.inspect}"
         sel = begin
@@ -45,7 +46,7 @@ class Control
   end
 
   def stop
-    @redis.punsubscribe
+    @sub.punsubscribe
     async.terminate
   end
 

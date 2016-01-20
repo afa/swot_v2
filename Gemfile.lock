@@ -80,6 +80,7 @@ DEPENDENCIES
   celluloid-io
   celluloid-redis
   gson
+  hiredis
   multi_json
   nio4r
   ohm

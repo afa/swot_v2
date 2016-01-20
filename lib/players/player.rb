@@ -8,7 +8,7 @@ class Player
   attr_accessor :name, :email, :channel, :game_uuid, :uuid, :redis
 
   def initialize params = {}
-    @redis ||= ::Redis.new
+    @redis ||= ::Redis.new(driver: :celluloid)
     @game_uuid = params[:game_uuid]
     if params[:uuid]
       store = Store::Player.find(uuid: params[:uuid]).first
