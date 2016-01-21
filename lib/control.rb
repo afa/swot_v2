@@ -13,7 +13,7 @@ class Control
     @ch = @conn.create_channel
     # @sub = ::Redis.new(driver: :celluloid)
     # @redis = ::Redis.new(driver: :celluloid)
-    @channel_name = params[:channel] || CONTROL_CHANNEL
+    # @channel_name = params[:channel] || CONTROL_CHANNEL
     async.run
     info "start control"
   end
@@ -50,7 +50,7 @@ class Control
   end
 
   def stop
-    @sub.punsubscribe
+    # @sub.punsubscribe
     async.terminate
   end
 
