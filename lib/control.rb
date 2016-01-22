@@ -11,11 +11,27 @@ class Control
     info "starting control"
     @conn = MarchHare.connect
     @ch = @conn.create_channel
+    @fan = 1111 #!!!!!!!!!TODO
+    @fan_game = @ch.topic('game')
+    @fan_player = @ch.topic('player')
+    @control_queue = @ch.queue('swot.control').bind(@fan)
     # @sub = ::Redis.new(driver: :celluloid)
     # @redis = ::Redis.new(driver: :celluloid)
     # @channel_name = params[:channel] || CONTROL_CHANNEL
     async.run
     info "start control"
+  end
+
+  def add_game(id)
+  end
+
+  def add_player(id)
+  end
+
+  def clear_game(id)
+  end
+
+  def clear_player(id)
   end
 
   def run
@@ -55,6 +71,8 @@ class Control
   end
 
   def finalizer
+    info 'closing control'
+    @conn.close
     info "stop control"
   end
 end
