@@ -5,16 +5,17 @@ class Control
   include Celluloid::IO
   CONTROL_CHANNEL = '/swot/control'
   finalizer :finalizer
+  @players = []
 
   attr_accessor :control_channel
   def initialize params = {}
     info "starting control"
     @conn = MarchHare.connect
     @ch = @conn.create_channel
-    @fan = 1111 #!!!!!!!!!TODO
-    @fan_game = @ch.topic('game')
-    @fan_player = @ch.topic('player')
+    @fan = @ch.topic('control')
+    @fan_channels = @ch.topic('channels')
     @control_queue = @ch.queue('swot.control').bind(@fan)
+    @channels_queue = @ch.queue('swot.channels').bind(@fan_channels)
     # @sub = ::Redis.new(driver: :celluloid)
     # @redis = ::Redis.new(driver: :celluloid)
     # @channel_name = params[:channel] || CONTROL_CHANNEL
@@ -23,9 +24,13 @@ class Control
   end
 
   def add_game(id)
+    @fan_game = @ch.topic('game')
+    @control_queue = @ch.queue('swot.game').bind(@fan_game)
   end
 
   def add_player(id)
+    @fan_player = @ch.topic("player.#{id})
+    @player_queue = @ch.queue("player.#{id}").bind(@fan_player)
   end
 
   def clear_game(id)

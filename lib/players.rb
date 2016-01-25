@@ -8,7 +8,15 @@ class Players
   def_delegators :@players, :<<, :+
 
   def initialize params = {}
-    @players = []
+    if params[:game_uuid]
+      @state = Celluloid::Actor[:"state_#{params[:game_uuid]}"]
+      @state.feature.players
+      self.players = @state.players
+    else
+      self.players = []
+    end
   end
+
+  def players
 
 end
