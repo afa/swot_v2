@@ -29,9 +29,9 @@ class Alarms # < Celluloid::Supervision::Container
   end
 
   def send_start
-    redis = ::Redis.new(driver: :celluloid)
-    p 'start pub', redis
-    p 'pub', redis.publish("/game/#{game_id}", {type: 'start'})
+    # redis = ::Redis.new(driver: :celluloid)
+    # p 'start pub', redis
+    # p 'pub', redis.publish("/game/#{game_id}", {type: 'start'})
     p 'pubed'
   end
   
@@ -39,7 +39,7 @@ class Alarms # < Celluloid::Supervision::Container
 
   def initialize params = {}
     info 'setup timers'
-    @redis = ::Redis.new(driver: :celluloid, timeout: 0)
+    # @redis = ::Redis.new(driver: :celluloid, timeout: 0)
     self.game_id = params[:game_uuid]
     self.group = Timers::Group.new
     p 'time', params
@@ -49,7 +49,7 @@ class Alarms # < Celluloid::Supervision::Container
   end
 
   def run
-    # info 'timers started'
+    info 'timers started'
     group.wait
     async.run
   end
