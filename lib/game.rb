@@ -45,6 +45,28 @@ class Game
     # @redis.publish('tst', 'tt')
   end
 
+  def start
+    # receive start
+    # before start prepare queue
+    # on start timer for pitch, set state, send to players
+    # check players online
+    #
+    state = Actor[:"state_#{@uuid}"]
+    if %i(waiting ready).include? @state.state
+      @state.state = :running
+      push_event(:running)
+      push_state
+      self.players.push_event(:started)
+      self.players.push_state
+    end
+  end
+
+  def push_event event, params = {}
+  end
+
+  def push_state params = {}
+  end
+
   def finalizer
     # Center.current.delete(:"timers_#{@uuid}")
     # Center.current.delete(:"game_#{@uuid}")

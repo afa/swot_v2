@@ -33,6 +33,7 @@ class Alarms # < Celluloid::Supervision::Container
     # p 'start pub', redis
     # p 'pub', redis.publish("/game/#{game_id}", {type: 'start'})
     p 'pubed'
+
   end
   
 
