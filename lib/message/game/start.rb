@@ -21,7 +21,6 @@ module Message
         super
         info 'starting game'
         game = Celluloid::Actor[:"game_#{@game_uuid}"]
-        p 'ttt'
         p game
         if game
           info 'game exist'
