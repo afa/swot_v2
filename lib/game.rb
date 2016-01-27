@@ -52,7 +52,7 @@ class Game
     # check players online
     #
     state = Actor[:"state_#{@uuid}"]
-    if %i(waiting ready).include? @state.state
+    if %w(waiting ready).map(&:to_sym).include? @state.state
       @state.state = :running
       push_event(:running)
       push_state

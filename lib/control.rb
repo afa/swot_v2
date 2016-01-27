@@ -17,9 +17,6 @@ class Control
     @control_queue = @ch.queue('swot.control', auto_delete: true).bind(@fan, routing_key: 'swot.controls')
     @channels_queue = @ch.queue('swot.channels', auto_delete: true).bind(@fan_channels, routing_key: 'swot.channels')
     @fan_channels.publish('swot.control', routing_key: 'swot.channels')
-    # @sub = ::Redis.new(driver: :celluloid)
-    # @redis = ::Redis.new(driver: :celluloid)
-    # @channel_name = params[:channel] || CONTROL_CHANNEL
     async.run
     info "start control"
   end
@@ -28,20 +25,22 @@ class Control
     info 'q gm'
     @fan_game = @ch.topic('game', auto_delete: true)
     @game_queue = @ch.queue("swot.game.#{id}", auto_delete: true).bind(@fan_game, routing_key: "swot.game.#{id}")
-    @game_queue.subscribe do |meta, opts, msg|
+    @game_queue.subscribe do |meta, msg|
       p meta.routing_key, msg
-      game_id = /swot\.game\.(.+)/.match(meta.routing_key).try(:[], 1)
-      if game_id
-        game = Actor[:"game_#{game_id}"]
-      end
+      parse_msg meta.routing_key, msg
+      # game_id = /swot\.game\.(.+)/.match(meta.routing_key).try(:[], 1)
+      # if game_id
+      #   game = Actor[:"game_#{game_id}"]
+      # end
     end
     info 'q gm'
   end
 
   def games_list
+
   end
 
-  def game_state(id)
+  def game_state id, params = {}
   end
 
   def player_state(id)
@@ -67,6 +66,7 @@ class Control
     @state.players["player.#{id}"]
     player_queue.subscribe do |meta, msg|
       p meta.routing_key, msg
+      parse_msg meta.routing_key, msg
     end
   end
 
@@ -82,25 +82,28 @@ class Control
     player[:fan].delete
   end
 
+  def parse_msg ch, msg
+    info "#{ch.inspect} :: #{msg.inspect}"
+    sel = begin
+            MultiJson.load(msg)
+          rescue Exception => e
+            {error: e.message}
+          end
+
+    info sel.inspect
+    unless sel[:error]
+      klass = ::Message.parse(ch, sel)
+      info klass
+      klass.new(ch, sel).process if klass
+    end
+  end
+
   def run
     info 'rn'
     
     @control_queue.subscribe do |meta, msg|
       p meta.routing_key, msg
-      ch = meta.routing_key
-      info "#{ch.inspect} :: #{msg.inspect}"
-      sel = begin
-              MultiJson.load(msg)
-            rescue Exception => e
-              {error: e.message}
-            end
-
-      info sel.inspect
-      unless sel[:error]
-        klass = ::Message.parse(ch, sel)
-        info klass
-        klass.new(ch, sel).process if klass
-      end
+      parse_msg meta.routing_key, msg
     end
     # @redis.subscribe(@channel_name, '/game/*', '/player/*') do |on|
     # @sub.psubscribe('/*/*') do |on|
