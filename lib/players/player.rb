@@ -27,7 +27,35 @@ class Player
   # def run
   # end
 
+  def pitch params = {}
+  end
+
+  def pass params = {}
+  end
+
+  def vote params = {}
+  end
+
+
   def state
+    msg = {
+      type: 'status',
+      game: {
+      },
+      statements: {
+        replaces: [],
+
+      },
+      current_stage: %w(s sw w wo o ot t tr rs rw ro rt), # one of stages
+      step: {
+        current: 1,
+        total: 60,
+        status: %w(pitch vote end)
+      },
+      started_at: timestamp,
+      timeout_at: when timeout
+    }
+    async.publish msg
   end
 
   def finalizer
