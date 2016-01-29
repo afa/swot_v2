@@ -15,11 +15,17 @@ class Game
     @uuid = params[:uuid]
     info "#{@uuid} created"
     # @redis = ::Redis.new(driver: :celluloid)
-    time_params = params.inject({}){|r, (k, v)| r.merge(%w(start).map(&:to_sym).include?(k) ? {k => v} : {}) }
+    time_params = {}
+    if params[:start]
+      time_params.merge!(start: params[:start][:time].to_i) if params[:start][:time]
+      @timezone = params[:start][:time_zone]
+    end
+      
+    # time_params = params.inject({}){|r, (k, v)| r.merge(%w(start).map(&:to_sym).include?(k) ? {k => v} : {}) }
     info 'timers'
     @timers = Center.current.async.to_supervise as: :"timers_#{@uuid}", type: Alarms, args: [{uuid: @uuid}.merge(time_params)]
     self.name = params[:name]
-    state = Actor[:"state_#{uuid}"]
+    state = Actor[:"state_#{@uuid}"]
     info "state #{state.inspect}"
 
     self.players = Array.new
@@ -32,6 +38,7 @@ class Game
         info players.inspect
       end
     end
+    Center.current.async.to_supervise as: "state_#{@uuid}", type: ::State, args: {}
     p 'game', @uuid, 'created'
     async.run
   end

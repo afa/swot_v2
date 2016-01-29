@@ -3,7 +3,7 @@ class Control
   include Celluloid
   include Celluloid::Internals::Logger
   include Celluloid::IO
-  CONTROL_CHANNEL = '/swot/control'
+  CONTROL_CHANNEL = 'swot.control'
   finalizer :finalizer
   @players = []
 
