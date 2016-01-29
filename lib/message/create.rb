@@ -20,7 +20,7 @@ module Message
     def process
       info "process create"
       super
-      ::Game.create(name: @name, players: @players, start: @start)
+      ::Game.create(name: @name, players: @players, start: @start, reply: 'create')
     end
   end
 end

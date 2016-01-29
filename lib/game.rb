@@ -43,6 +43,10 @@ class Game
     async.run
   end
 
+  def onconnect
+    push_state reply: 'connect'
+  end
+
   def run
     p @uuid
     puts 'ok'
@@ -59,21 +63,37 @@ class Game
     # check players online
     #
     state = Actor[:"state_#{@uuid}"]
+    players.future.build_queue
     if %w(waiting ready).map(&:to_sym).include? @state.state
       @state.state = :running
       push_event(:running)
       push_state
       self.players.push_event(:started)
       self.players.push_state
+
     end
+
   end
 
   def push_event event, params = {}
   end
 
   def push_state params = {}
+    state = Actor[:"state_#{@uuid}"]
+    state.future.step_state
+    state.future.step_total
+    state.future.step_current
+    players.future.to_hash
+    state.future.stage
+    alarm = Actor[:"timers_#{@uuid}"]
+    alarm.future.next_timer
+    msg = params.merge status: @status, stage: state.stage, timeout_at: alarm.next_timer, started_at: @start, players: players.to_hash, step: {total: state.step_total, current: state.step_current}
+    publish msg
   end
 
+  def publish hash
+    info 'todo publish'
+  end
   def finalizer
     # Center.current.delete(:"timers_#{@uuid}")
     # Center.current.delete(:"game_#{@uuid}")
