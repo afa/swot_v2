@@ -52,13 +52,14 @@ class Alarms # < Celluloid::Supervision::Container
     instance_variable_get("@#{what}").cancel if instance_variable_defined?("@#{what}") && instance_variable_get("@#{what}")
     if time
       instance_variable_set("@#{what}_at", time.to_i)
-      instance_variable_set("@#{what}", group.after(instance_variable_get("@#{what}_at") - Time.now.to_i){info "fire #{what}"
-      async.send(:"send_#{what}")
-      info "#{what} fired"
+      instance_variable_set("@#{what}", group.after(instance_variable_get("@#{what}_at") - Time.now.to_i){
+        info "fire #{what}"
+        async.send(:"send_#{what}")
+        info "#{what} fired"
       })
       info "started #{what} timer #{instance_variable_get("@#{what}")}"
-    else
-      instance_variable_set("@#{what}_at", nil)
+    # else
+    #   instance_variable_set("@#{what}_at", nil)
     end
     async.run
   end
