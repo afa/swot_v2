@@ -42,28 +42,43 @@ class Alarms # < Celluloid::Supervision::Container
     self.game_id = params[:uuid]
     self.group = Timers::Group.new
     p 'time', params
-    set_start params[:start] if params[:start]
+    set_out :start, params[:start] if params[:start]
     async.run
     # async.add_one
   end
 
-  def set_start time
-    info 'process start'
-    @start.cancel if @start
+  def set_out what, time
+    info "process #{what}"
+    instance_variable_get("@#{what}").cancel if instance_variable_defined?("@#{what}") && instance_variable_get("@#{what}")
     if time
-        p time, group
-        @start_at = time.to_i
-        @start = group.after(@start_at - Time.now.to_i){
-          info "fire start"
-          async.send_start
-          info "start fired"
-        }
-        info 'started start timer ' + (@start.fires_in).to_s
-    else 
-      @start_at = nil
+      instance_variable_set("@#{what}_at", time.to_i)
+      instance_variable_set("@#{what}", group.after(instance_variable_get("@#{what}_at") - Time.now.to_i){info "fire #{what}"
+      async.send(:"send_#{what}")
+      info "#{what} fired"
+      })
+      info "started #{what} timer #{instance_variable_get("@#{what}")}"
+    else
+      instance_variable_set("@#{what}_at", nil)
     end
     async.run
   end
+  # def set_start time
+  #   info 'process start'
+  #   @start.cancel if @start
+  #   if time
+  #       p time, group
+  #       @start_at = time.to_i
+  #       @start = group.after(@start_at - Time.now.to_i){
+  #         info "fire start"
+  #         async.send_start
+  #         info "start fired"
+  #       }
+  #       info 'started start timer ' + (@start.fires_in).to_s
+  #   else 
+  #     @start_at = nil
+  #   end
+  #   async.run
+  # end
 
   def send_start
     if @game_id
@@ -79,6 +94,16 @@ class Alarms # < Celluloid::Supervision::Container
 
   end
   
+  def send_stage
+    info 'stage timeout'
+  end
+
+  def send_pitch
+  end
+
+  def send_vote
+  end
+
   def run
     info "timers run #{group.wait_interval}"
     group.wait
