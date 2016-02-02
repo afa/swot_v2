@@ -1,5 +1,6 @@
 class Store::Player < Ohm::Model
   attribute :uuid
+  attribute :state
   attribute :game_uuid
   attribute :name
   attribute :email

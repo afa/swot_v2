@@ -58,10 +58,8 @@ class Alarms # < Celluloid::Supervision::Container
         info "#{what} fired"
       })
       info "started #{what} timer #{instance_variable_get("@#{what}")}"
-    # else
-    #   instance_variable_set("@#{what}_at", nil)
+      async.run if next_time.try(:>, 0)
     end
-    async.run
   end
   # def set_start time
   #   info 'process start'
