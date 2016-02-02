@@ -46,15 +46,15 @@ class Player
   end
 
   def send_pitch
-    {type: 'event', subtype: 'pitch'}
+    {type: 'event', subtype: 'pitched'}
   end
 
   def send_pass
-    {type: 'event', subtype: 'pass'}
+    {type: 'event', subtype: 'passed'}
   end
 
   def send_vote
-    {type: 'event', subtype: 'vote'}
+    {type: 'event', subtype: 'voted'}
   end
 
   def send_start_step
@@ -84,9 +84,7 @@ class Player
         current_stage: %w(s sw w wo o ot t tr rs rw ro rt), # one of stages
         conclusion: {},
           replaces: [],
-        statements: game.statements
-
-          ],
+        statements: game.statements,
 
         started_at: timers.started_at.to_i,
         timeout_at: timers.next_time

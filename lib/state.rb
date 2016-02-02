@@ -1,3 +1,4 @@
+require 'hashing'
 require 'ostruct'
 class State
   include Hashing
@@ -17,6 +18,7 @@ class State
     pl = Actor[:"player_#{id}"]
     if pl && pl.alive?
       @players[id] = pl.as_json
+    end
 
   end
 

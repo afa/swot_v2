@@ -28,13 +28,13 @@ class Game
     state = Actor[:"state_#{@uuid}"]
     info "state #{state.inspect}"
 
-    self.players = Array.new
+    self.players = Players.new
     if params[:players]
       params[:players].each do |p|
         p_id = UUID.new.generate
         Center.current.async.to_supervise(as: :"player_#{p_id}", type: Player, args: [p.merge(game_uuid: @uuid, uuid: p_id)])
         # player = Player.new(p.merge(game_uuid: @uuid))
-        players << p_id
+        players.add p_id
         info players.inspect
       end
     end
