@@ -9,12 +9,14 @@ class Players
   # def_delegators :@players, :<<, :+
 
   def initialize params = {}
+    @game_uuid = params[:game_uuid]
     if params[:game_uuid]
       state = Actor[:"state_#{params[:game_uuid]}"]
       state.players.each{|i| add(i) }
     else
       @players = []
     end
+    @queue = Queue.new(game_uuid: @game_uuid)
   end
 
   def push_event event, params = {}
