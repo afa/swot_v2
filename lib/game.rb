@@ -63,19 +63,26 @@ class Game
     # check players online
     #
     state = Actor[:"state_#{@uuid}"]
+    timers = Actor[:"timers_#{@uuid}"]
     players.future.build_queue
-    if %w(waiting ready).map(&:to_sym).include? @state.state
+    if %w(waiting ready).map(&:to_sym).include? state.state
       @state.state = :running
-      push_event(:running)
+      push_event(:start_stage, value: 's')
+      push_event(:start_step)
       push_state
       self.players.push_event(:started)
+      self.players.push_event(:start_stage)
+      self.players.push_start_step
       self.players.push_state
+      timers.async.set_out(:stage, timers.start_at.to_i + 1500)
+
 
     end
 
   end
 
   def push_event event, params = {}
+    {type: 'event', subtype: event}
   end
 
   def push_state params = {}

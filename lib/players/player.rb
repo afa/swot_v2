@@ -14,7 +14,7 @@ class Player
       store = Store::Player.find(uuid: params[:uuid]).first
       unless store
         info "player #{params.inspect} started"
-        store = Store::Player.create(params)
+        store = Store::Player.create(name: params[:name], email: params[:email], state: params[:state], uuid: params[:uuid], game_uuid: params[:game_uuid])
       end
       @uuid = store.uuid
       @game_uuid = store.game_uuid
