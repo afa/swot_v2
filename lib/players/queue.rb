@@ -7,13 +7,13 @@ class Queue
     @current = []
     @tail = []
     game = Actor[:"game_#{@game_uuid}"]
-    if game.alive?
-    list = game.players.players.sort_by(&:order)
-    3.times do
-      p = list.shift
-      @current << p.uuid if p
-    end
-    @tail += list
+    if game.try(:alive?)
+      list = game.players.players.sort_by(&:order)
+      3.times do
+        p = list.shift
+        @current << p.uuid if p
+      end
+      @tail += list
     end
   end
 

@@ -36,7 +36,9 @@ class Players
 
   def add player
     state = Actor[:"state_#{@game_uuid}"]
-    @players << player.is_a?(String) ? player : player.uuid
+    pl_id = player.is_a?(String) ? player : player.uuid
+    @players << pl_id
+    Control.current.add_player(@game_uuid, pl_id)
     # state.async
   end
 

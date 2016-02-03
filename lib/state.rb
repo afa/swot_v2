@@ -3,10 +3,12 @@ require 'ostruct'
 class State
   include Hashing
   include Celluloid
+  include Celluloid::Internals::Logger
   attr_accessor :state
   attr_accessor :game_uuid, :game, :players, :statements
 
   def initialize params = {}
+
     @game_uuid = params[:game_uuid]
     @game = {}
     @players = {}

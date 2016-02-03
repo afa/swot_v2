@@ -15,6 +15,7 @@ class Game
     @uuid = params[:uuid]
     info "#{@uuid} created"
     # @redis = ::Redis.new(driver: :celluloid)
+    Center.current.async.to_supervise as: :"state_#{@uuid}", type: ::State, args: [{game_uuid: @uuid}]
     time_params = {}
     if params[:start]
       time_params.merge!(start: params[:start][:time].to_i) if params[:start][:time]
@@ -38,7 +39,6 @@ class Game
         info players.inspect
       end
     end
-    Center.current.async.to_supervise as: "state_#{@uuid}", type: ::State, args: {}
     p 'game', @uuid, 'created'
     async.run
   end

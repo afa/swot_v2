@@ -8,6 +8,11 @@ class Control
   @players = []
 
   attr_accessor :control_channel
+
+  def self.current
+    Actor[:control]
+  end
+
   def initialize params = {}
     info "starting control"
     @conn = MarchHare.connect
@@ -23,8 +28,10 @@ class Control
 
   def add_game(id)
     info 'q gm'
+    state = Actor[:'state_#{id}']
     @fan_game = @ch.topic('game', auto_delete: true)
     @game_queue = @ch.queue("swot.game.#{id}", auto_delete: true).bind(@fan_game, routing_key: "swot.game.#{id}")
+    state.game["game_#{id}"] = {q: @game_queue, x: @fan_game}
     @game_queue.subscribe do |meta, msg|
       p meta.routing_key, msg
       parse_msg meta.routing_key, msg
@@ -33,6 +40,7 @@ class Control
       #   game = Actor[:"game_#{game_id}"]
       # end
     end
+    @fan_channels.publish("game.#{id}", routing_key: 'swot.channels')
     info 'q gm'
   end
 
@@ -59,15 +67,18 @@ class Control
   end
 
 
-  def add_player(id)
+  def add_player(game_id, id)
     info 'add pl'
+    game = Actor[:"game_#{game_id}"]
+    state = Actor[:"state_#{game_id}"]
     fan_player = @ch.topic("player.#{id}", auto_delete: true)
     player_queue = @ch.queue("player.#{id}", auto_delete: true).bind(fan_player, routing_key: "player.#{id}")
-    @state.players["player.#{id}"]
+    state.players["player.#{id}"] = {q: player_queue, x: fan_player}
     player_queue.subscribe do |meta, msg|
       p meta.routing_key, msg
       parse_msg meta.routing_key, msg
     end
+    @fan_channels.publish("player.#{id}", routing_key: 'swot.channels')
   end
 
   def clear_game(id)

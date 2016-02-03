@@ -95,7 +95,9 @@ class Player
         status: %w(pitch vote end)
       },
     }
-    async.publish msg.merge(params)
+    state = Actor[:"state_#{@game_uuid}"]
+    ch = state.players[:"player.#{@uuid}"]
+    ch.publish msg.merge(params)
   end
 
   def finalizer
