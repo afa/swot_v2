@@ -31,7 +31,7 @@ class Players
   end
 
   def players
-    @players.map{|i| Actor["player_#{i}"] }
+    @players.map{|i| Actor[:"player_#{i}"] }
   end
 
   def add player

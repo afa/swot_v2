@@ -8,14 +8,14 @@ class Game
   def self.create params = {}
     uuid = UUID.new.generate
     p uuid
-    Center.current.async.to_supervise as: :"game_#{uuid}", type: Game, args: [{uuid: uuid}.merge(params)]
+    Center.current.to_supervise as: :"game_#{uuid}", type: Game, args: [{uuid: uuid}.merge(params)]
   end
 
   def initialize params = {}
     @uuid = params[:uuid]
     info "#{@uuid} created"
     # @redis = ::Redis.new(driver: :celluloid)
-    Center.current.async.to_supervise as: :"state_#{@uuid}", type: ::State, args: [{game_uuid: @uuid}]
+    Center.current.to_supervise as: :"state_#{@uuid}", type: State, args: [{game_uuid: @uuid}]
     time_params = {}
     if params[:start]
       time_params.merge!(start: params[:start][:time].to_i) if params[:start][:time]
@@ -26,6 +26,7 @@ class Game
     info 'timers'
     @timers = Center.current.async.to_supervise as: :"timers_#{@uuid}", type: Alarms, args: [{uuid: @uuid}.merge(time_params)]
     self.name = params[:name]
+    # state = stat.value
     state = Actor[:"state_#{@uuid}"]
     info "state #{state.inspect}"
 
@@ -33,7 +34,7 @@ class Game
     if params[:players]
       params[:players].each do |p|
         p_id = UUID.new.generate
-        Center.current.async.to_supervise(as: :"player_#{p_id}", type: Player, args: [p.merge(game_uuid: @uuid, uuid: p_id)])
+        Center.current.to_supervise(as: :"player_#{p_id}", type: Player, args: [p.merge(game_uuid: @uuid, uuid: p_id)])
         # player = Player.new(p.merge(game_uuid: @uuid))
         players.add p_id
         info players.inspect
@@ -66,7 +67,7 @@ class Game
     timers = Actor[:"timers_#{@uuid}"]
     players.future.build_queue
     if %w(waiting ready).map(&:to_sym).include? state.state
-      @state.state = :running
+      state.state = :running
       push_event(:start_stage, value: 's')
       push_event(:start_step)
       push_state

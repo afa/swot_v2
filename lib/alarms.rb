@@ -1,34 +1,34 @@
-class Alarms # < Celluloid::Supervision::Container
+class Alarms
   include Celluloid
   include Celluloid::IO
-  include Celluloid::Redis
+  # include Celluloid::Redis
   include Celluloid::Internals::Logger
   finalizer :finalizer
   attr_accessor :game_id, :group, :redis
   attr :start, :start_at, :stage, :stage_at
   # disconnect_timeout
   %w(stage voting_quorum voting_tail results between_stages first_pitching pitching ranging terminate).each do |sym|
-    attr_accessor "#{sym}_at".to_sym
-    attr_accessor "#{sym}".to_sym
-    define_method("set_#{sym}") do |tm|
-      info "process #{sym}"
-      if instance_variable_defined?('@' + sym) && instance_variable_get('@' + sym)
-        instance_variable_get('@' + sym).cancel
-      end
-      if tm
-        p tm, group
-        instance_variable_set "@#{sym}_at", tm.to_i
-        instance_variable_set "@#{sym}", group.after(tm.to_i - Time.now.to_i){
-          @start.cancel if @start
-          group.cancel unless group.timers.detect{|t| t.fires_in > 0 }
-          # @start = nil
-          info "fire #{sym}"
-          async.send :"send_#{sym}"
-          info "#{sym} fired"
-        }
-        info 'started start timer ' + (start.fires_in).to_s + ' ' + start.inspect
-      end
-    end
+    # attr_accessor "#{sym}_at".to_sym
+    # attr_accessor "#{sym}".to_sym
+    # define_method("set_#{sym}") do |tm|
+    #   info "process #{sym}"
+    #   if instance_variable_defined?('@' + sym) && instance_variable_get('@' + sym)
+    #     instance_variable_get('@' + sym).cancel
+    #   end
+    #   if tm
+    #     p tm, group
+    #     instance_variable_set "@#{sym}_at", tm.to_i
+    #     instance_variable_set "@#{sym}", group.after(tm.to_i - Time.now.to_i){
+    #       @start.cancel if @start
+    #       group.cancel unless group.timers.detect{|t| t.fires_in > 0 }
+    #       # @start = nil
+    #       info "fire #{sym}"
+    #       async.send :"send_#{sym}"
+    #       info "#{sym} fired"
+    #     }
+    #     info 'started start timer ' + (start.fires_in).to_s + ' ' + start.inspect
+    #   end
+    # end
 
   end
 
@@ -39,7 +39,7 @@ class Alarms # < Celluloid::Supervision::Container
   def initialize params = {}
     info 'setup timers'
     # @redis = ::Redis.new(driver: :celluloid, timeout: 0)
-    self.game_id = params[:uuid]
+    @game_id = params[:uuid]
     self.group = Timers::Group.new
     p 'time', params
     set_out :start, params[:start] if params[:start]
@@ -82,6 +82,7 @@ class Alarms # < Celluloid::Supervision::Container
   def send_start
     if @game_id
       gm = Actor[:"game_#{@game_id}"]
+      p gm
       gm.async.start
       info "game #{@game_id} send start"
     end

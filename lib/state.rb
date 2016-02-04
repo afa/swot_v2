@@ -9,7 +9,9 @@ class State
 
   def initialize params = {}
 
+    info "state init"
     @game_uuid = params[:game_uuid]
+    info @game_uuid
     @game = {}
     @players = {}
     @statements = []

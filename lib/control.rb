@@ -28,7 +28,7 @@ class Control
 
   def add_game(id)
     info 'q gm'
-    state = Actor[:'state_#{id}']
+    state = Actor[:"state_#{id}"]
     @fan_game = @ch.topic('game', auto_delete: true)
     @game_queue = @ch.queue("swot.game.#{id}", auto_delete: true).bind(@fan_game, routing_key: "swot.game.#{id}")
     state.game["game_#{id}"] = {q: @game_queue, x: @fan_game}
@@ -71,6 +71,8 @@ class Control
     info 'add pl'
     game = Actor[:"game_#{game_id}"]
     state = Actor[:"state_#{game_id}"]
+    info "state #{state.inspect}"
+    info "game #{game.inspect}"
     fan_player = @ch.topic("player.#{id}", auto_delete: true)
     player_queue = @ch.queue("player.#{id}", auto_delete: true).bind(fan_player, routing_key: "player.#{id}")
     state.players["player.#{id}"] = {q: player_queue, x: fan_player}
