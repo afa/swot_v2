@@ -4,8 +4,8 @@ class State
   include Hashing
   include Celluloid
   include Celluloid::Internals::Logger
-  attr_accessor :state
-  attr_accessor :game_uuid, :game, :players, :statements
+  attr_accessor :state, :step, :total_steps, :step_status, :stage
+  attr_accessor :game_uuid, :game, :players, :statements, :player_channels
 
   def initialize params = {}
 
@@ -15,6 +15,12 @@ class State
     @game = {}
     @players = {}
     @statements = []
+    @stage = 'w'
+    @player_channels = {}
+    @step = params[:step] || 1
+    @total_steps = params[:total_steps] || 60
+    @step_status = params[:step_status] || :pitch
+
 
   end
 

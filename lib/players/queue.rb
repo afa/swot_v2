@@ -47,4 +47,9 @@ class Queue
     list -= @tail
     @tail += list
   end
+
+  def index(pl_id)
+    @current.index(pl_id)
+  end
+
 end

@@ -11,15 +11,15 @@ class Players
 
   def initialize params = {}
     @game_uuid = params[:game_uuid]
-    @queue = Queue.new
     if params[:game_uuid]
+      @players = []
       @game_uuid = params[:game_uuid]
+      @queue = Center.current.to_supervise as: :"queue_#{@game_uuid}", type: Queue, args: [{game_uuid: @game_uuid}]
       state = Actor[:"state_#{params[:game_uuid]}"]
       state.players.each{|i| add(i) }
     else
       @players = []
     end
-    @queue = Queue.new(game_uuid: @game_uuid)
   end
 
   def push_event event, params = {}
@@ -42,15 +42,27 @@ class Players
     # state.async
   end
 
-  def push_start_step
+  def push_start_stage
     game = Actor[:"game_#{@game_uuid}"]
     players.each do |pl|
-      push_event(:start_step, turn_in: @queue.ids.index(@uuid), pitcher_name: current_pitcher.uglify_name(game.stage), step: {current: game.step, total: game.total_steps, status: 'pitch'})
+      push_event(:start_stage, value: game.stage)
+    end
+  end
+
+  def push_start_step
+    game = Actor[:"game_#{@game_uuid}"]
+    queue = Actor[:"queue_#{@game_uuid}"]
+    players.each do |pl|
+      push_event(:start_step, turn_in: queue.ids.index(@uuid), pitcher_name: current_pitcher.uglify_name(game.stage), step: {current: game.step, total: game.total_steps, status: 'pitch'})
     end
   end
 
   def current_pitcher
-    @queue.first
+    queue = Actor[:"queue_#{@game_uuid}"]
+    Actor[:"player_#{queue.first}"]
   end
 
+  def queue
+    Actor[:"queue_#{@game_uuid}"]
+  end
 end

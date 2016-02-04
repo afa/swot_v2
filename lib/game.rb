@@ -2,13 +2,19 @@ class Game
   include Celluloid
   include Celluloid::IO
   include Celluloid::Internals::Logger
+  extend Forwardable
   finalizer :finalizer
+  def_delegators :int_state, :stage, :step, :total_steps, :step_status, :statements
 
   attr_accessor :name, :players
   def self.create params = {}
     uuid = UUID.new.generate
     p uuid
     Center.current.to_supervise as: :"game_#{uuid}", type: Game, args: [{uuid: uuid}.merge(params)]
+  end
+
+  def int_state
+    Actor[:"state_#{@uuid}"]
   end
 
   def initialize params = {}
@@ -23,23 +29,24 @@ class Game
     end
       
     # time_params = params.inject({}){|r, (k, v)| r.merge(%w(start).map(&:to_sym).include?(k) ? {k => v} : {}) }
-    info 'timers'
-    @timers = Center.current.async.to_supervise as: :"timers_#{@uuid}", type: Alarms, args: [{uuid: @uuid}.merge(time_params)]
     self.name = params[:name]
     # state = stat.value
     state = Actor[:"state_#{@uuid}"]
     info "state #{state.inspect}"
 
-    self.players = Players.new
+    Center.current.to_supervise(as: :"players_#{@uuid}", type: Players, args: [{game_uuid: @uuid}])
+    self.players = Actor[:"players_#{@uuid}"]
     if params[:players]
       params[:players].each do |p|
         p_id = UUID.new.generate
-        Center.current.to_supervise(as: :"player_#{p_id}", type: Player, args: [p.merge(game_uuid: @uuid, uuid: p_id)])
+        Center.current.async.to_supervise(as: :"player_#{p_id}", type: Player, args: [p.merge(game_uuid: @uuid, uuid: p_id)])
         # player = Player.new(p.merge(game_uuid: @uuid))
         players.add p_id
         info players.inspect
       end
     end
+    info 'timers'
+    @timers = Center.current.async.to_supervise as: :"timers_#{@uuid}", type: Alarms, args: [{uuid: @uuid}.merge(time_params)]
     p 'game', @uuid, 'created'
     async.run
   end
@@ -87,20 +94,14 @@ class Game
   end
 
   def push_state params = {}
-    state = Actor[:"state_#{@uuid}"]
-    state.future.step_state
-    state.future.step_total
-    state.future.step_current
-    players.future.to_hash
-    state.future.stage
+    state = int_state
     alarm = Actor[:"timers_#{@uuid}"]
-    alarm.future.next_timer
-    msg = params.merge status: @status, stage: state.stage, timeout_at: alarm.next_timer, started_at: @start, players: players.to_hash, step: {total: state.step_total, current: state.step_current}
+    msg = params.merge status: @status, stage: state.stage, timeout_at: alarm.next_timer, started_at: @start, players: players.to_hash, step: {total: total_steps, current: step}
     publish msg
   end
 
   def publish hash
-    info 'todo publish'
+    info "todo publish game #{hash.inspect}"
   end
   def finalizer
     # Center.current.delete(:"timers_#{@uuid}")

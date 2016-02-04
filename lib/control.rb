@@ -75,7 +75,7 @@ class Control
     info "game #{game.inspect}"
     fan_player = @ch.topic("player.#{id}", auto_delete: true)
     player_queue = @ch.queue("player.#{id}", auto_delete: true).bind(fan_player, routing_key: "player.#{id}")
-    state.players["player.#{id}"] = {q: player_queue, x: fan_player}
+    state.player_channels[:"player.#{id}"] = {q: player_queue, x: fan_player}
     player_queue.subscribe do |meta, msg|
       p meta.routing_key, msg
       parse_msg meta.routing_key, msg

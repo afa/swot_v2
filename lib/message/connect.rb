@@ -21,7 +21,8 @@ module Message
     def process
       info "process connect"
       super
-      m = /\/faye\/(player|game)\/(.+)/.match(@channel)
+      m = /(player|game)\.(.+)/.match(@channel)
+      p m
       if m
         case m[1]
         when 'game'
@@ -29,7 +30,12 @@ module Message
           gm.async.online! if gm
         when 'player'
           pl = Celluloid::Actor[:"player_#{m[2]}"]
-          pl.async.online! if pl
+          if pl && pl.alive?
+            pl.async.online!
+            p 'sent player online', pl.uuid
+          else
+            p 'pl null'
+          end
         end
       end
       # ::Game.create(name: @name, players: @players, start: @start)

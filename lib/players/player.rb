@@ -46,6 +46,7 @@ class Player
   end
 
   def send_pitch
+    ch = 
     {type: 'event', subtype: 'pitched'}
   end
 
@@ -73,31 +74,42 @@ class Player
     {type: 'event', subtype: 'end_stage'}
   end
 
+  def uglify_name(stage)
+    %w(s t).include?(stage) ? "Player #{order}" : name
+  end
 
   def state params = {}
     game = Actor[:"game_#{@game_uuid}"]
+    players = Actor[:"players_#{@game_uuid}"]
     timers = Actor[:"timers_#{@game_uuid}"]
     msg = {
       type: 'status',
+      state: 'started',
       game: {
-        step: {},
-        current_stage: %w(s sw w wo o ot t tr rs rw ro rt), # one of stages
+        step: {
+          current: game.step,
+          total: game.total_steps,
+          status: game.step_status
+        },
+        current_stage: game.stage, # one of stages
         conclusion: {},
           replaces: [],
         statements: game.statements,
+        player: {
+          turn_in: (players.queue.index(@uuid) || 3)
+        },
 
-        started_at: timers.started_at.to_i,
+        started_at: timers.start_at.to_i,
         timeout_at: timers.next_time
       },
-      step: {
-        current: 1,
-        total: 60,
-        status: %w(pitch vote end)
-      },
     }
+  end
+
+  def send_state params = {}
     state = Actor[:"state_#{@game_uuid}"]
-    ch = state.players[:"player.#{@uuid}"]
-    ch.publish msg.merge(params)
+    ch = state.player_channels[:"player.#{@uuid}"]
+    ch[:x].publish state(params).to_json, routing_key: "player.#{@uuid}"
+    info state(params).to_json
   end
 
   def finalizer
