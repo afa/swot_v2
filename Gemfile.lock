@@ -1,6 +1,12 @@
 GEM
   remote: https://rubygems.org/
   specs:
+    activesupport (4.2.5.1)
+      i18n (~> 0.7)
+      json (~> 1.7, >= 1.7.7)
+      minitest (~> 5.1)
+      thread_safe (~> 0.3, >= 0.3.4)
+      tzinfo (~> 1.1)
     celluloid (0.17.3)
       celluloid-essentials
       celluloid-extras
@@ -29,9 +35,12 @@ GEM
     gson (0.6.1-java)
     hiredis (0.6.1-java)
     hitimes (1.2.3-java)
+    i18n (0.7.0)
+    json (1.8.3-java)
     macaddr (1.7.1)
       systemu (~> 2.6.2)
     march_hare (2.16.0-java)
+    minitest (5.8.4)
     msgpack (0.5.12-java)
     multi_json (1.11.2)
     nido (1.0.0)
@@ -59,11 +68,16 @@ GEM
       diff-lcs (>= 1.2.0, < 2.0)
       rspec-support (~> 3.4.0)
     rspec-support (3.4.1)
+    simple_enum (2.3.0)
+      activesupport (>= 4.0.0)
     stal (0.1.0)
       redic
     systemu (2.6.5)
+    thread_safe (0.3.5-java)
     timers (4.1.1)
       hitimes
+    tzinfo (1.2.2)
+      thread_safe (~> 0.1)
     uuid (2.3.8)
       macaddr (~> 1.0)
 
@@ -84,7 +98,8 @@ DEPENDENCIES
   oj
   redis
   rspec
+  simple_enum
   uuid
 
 BUNDLED WITH
-   1.10.6
+   1.11.2

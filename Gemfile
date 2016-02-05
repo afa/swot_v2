@@ -2,6 +2,7 @@ source "https://rubygems.org"
 # gem 'hiredis'
 gem 'ohm'
 gem 'ohm-contrib'
+gem 'simple_enum'
 gem 'nio4r'
 gem 'celluloid', require: 'celluloid/current'
 gem 'celluloid-redis'

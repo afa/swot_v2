@@ -48,6 +48,7 @@ class Game
     info 'timers'
     @timers = Center.current.async.to_supervise as: :"timers_#{@uuid}", type: Alarms, args: [{uuid: @uuid}.merge(time_params)]
     p 'game', @uuid, 'created'
+    cntrl = Control.current.publish_control(uuid: @uuid, replly_to: 'create')
     async.run
   end
 
@@ -75,12 +76,13 @@ class Game
     players.future.build_queue
     if %w(waiting ready).map(&:to_sym).include? state.state
       state.state = :running
-      push_event(:start_stage, value: 's')
-      push_event(:start_step)
-      push_state
+      push_event(:started, value: 's')
       self.players.push_event(:started)
+      push_event(:start_stage, value: 's')
       self.players.push_event(:start_stage)
+      push_event(:start_step)
       self.players.push_start_step
+      push_state
       self.players.push_state
       timers.async.set_out(:stage, timers.start_at.to_i + 1500)
 
@@ -89,6 +91,9 @@ class Game
 
   end
 
+  def start_stage
+
+  end
   def push_event event, params = {}
     {type: 'event', subtype: event}
   end
