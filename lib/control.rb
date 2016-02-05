@@ -17,18 +17,19 @@ class Control
     info "starting control"
     @conn = MarchHare.connect
     @ch = @conn.create_channel
+    @ctl = @ch.queue('swot')
     @fan = @ch.topic('control', auto_delete: true)
     @fan_channels = @ch.topic('channels', auto_delete: true)
-    @control_queue = @ch.queue('swot.control', exclusive: false, auto_delete: true).bind(@fan, routing_key: 'swot.controls')
-    @channels_queue = @ch.queue('swot.channels', exclusive: false, auto_delete: true).bind(@fan_channels, routing_key: 'swot.channels')
-    @fan_channels.publish('swot.control', routing_key: 'swot.channels')
+    @control_queue = @ch.queue('swot.control', exclusive: false, auto_delete: true).bind(@fan, routing_key: 'swot.control')
+    @channels_queue = @ch.queue('swot.channels', exclusive: false, auto_delete: true).bind(@fan_channels, routing_key: 'swot.channel')
+    # @fan_channels.publish('swot.control', routing_key: 'swot.channels')
     async.run
     info "start control"
   end
 
   def publish_control params
     info "publish_control #{params.inspect}"
-    @fan.publish(params.to_json)
+    @fan.publish(params.to_json, routing_key: 'swot.control')
   end
 
   def add_game(id)
@@ -45,7 +46,7 @@ class Control
       #   game = Actor[:"game_#{game_id}"]
       # end
     end
-    @fan_channels.publish("game.#{id}", routing_key: 'swot.channels')
+    # @fan_channels.publish("game.#{id}", routing_key: 'swot.channels')
     info 'q gm'
   end
 
@@ -85,7 +86,7 @@ class Control
       p meta.routing_key, msg
       parse_msg meta.routing_key, msg
     end
-    @fan_channels.publish("player.#{id}", routing_key: 'swot.channels')
+    # @fan_channels.publish("player.#{id}", routing_key: 'swot.channels')
   end
 
   def clear_game(id)
