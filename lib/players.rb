@@ -57,6 +57,25 @@ class Players
     end
   end
 
+  def push_pitch params = {}
+    players.each do |pl|
+      pl.send_pitch params
+    end
+  end
+
+  def push_pass
+    players.each do |pl|
+      pl.send_pass
+    end
+  end
+
+  def push_vote
+    players.each do |pl|
+      pl.send_vote
+    end
+  end
+
+
   def current_pitcher
     queue = Actor[:"queue_#{@game_uuid}"]
     Actor[:"player_#{queue.first}"]

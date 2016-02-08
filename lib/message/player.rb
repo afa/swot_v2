@@ -7,7 +7,7 @@ module Message
     module_function :subclasses
   end
 end
-# require 'message/player/pitch'
+require 'message/player/pitch'
 # require 'message/player/vote'
 # require 'message/player/importate'
 # require 'message/player/pass'

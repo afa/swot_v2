@@ -83,7 +83,9 @@ class Alarms
     if @game_id
       gm = Actor[:"game_#{@game_id}"]
       p gm
+      state = Actor[:"state_#{@game_id}"]
       gm.async.start
+      set_out(:pitch, state.settings[:pitch_timeout])
       info "game #{@game_id} send start"
     end
 
@@ -102,6 +104,10 @@ class Alarms
   end
 
   def send_vote
+  end
+
+  def pitch
+    @pitch
   end
 
   def run
