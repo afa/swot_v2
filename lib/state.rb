@@ -5,7 +5,7 @@ class State
   include Celluloid
   include Celluloid::Internals::Logger
   attr_accessor :state, :step, :total_steps, :step_status, :stage
-  attr_accessor :game_uuid, :game, :players, :statements, :player_channels
+  attr_accessor :game_uuid, :game, :players, :statements, :player_channels, :settings
   STAGES = {
     s: {beetwen: false, order: 1, name: 'Strengths'},
     sw: {beetwen: true, order: 2},
@@ -55,7 +55,7 @@ class State
   end
 
   def try_recover
-    store_game = Store::Game.find(@game_uuid)
+    store_game = Store::Game.find(uuid: @game_uuid)
     return false unless store_game
   end
 
@@ -71,11 +71,11 @@ class State
   end
 
   def stage
-    @stage ||= @state == :running ? first_enum(STAGES) : nil
+    @stage ||= @state == :started ? first_enum(STAGES) : nil
   end
 
   def next_stage!
-    if @state == :running
+    if @state == :started
       @stage = next_enum(STAGES, @stage)
     end
   end

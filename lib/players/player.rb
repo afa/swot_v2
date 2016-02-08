@@ -5,7 +5,7 @@ class Player
 
   finalizer :finalizer
 
-  attr_accessor :name, :email, :channel, :game_uuid, :uuid, :redis
+  attr_accessor :name, :email, :channel, :game_uuid, :uuid, :redis, :order
 
   def initialize params = {}
     # @redis ||= ::Redis.new(driver: :celluloid)
@@ -51,12 +51,43 @@ class Player
   end
 
   def online!
-    send_state reply_to: 'connect'
+    state = Actor[:"state_#{@game_uuid}"]
+    p state.state
+    send_ready reply_to: 'connect' if state.state.to_s == 'waiting'
+    send_state reply_to: 'connect' if state.state.to_s == 'started'
+    send_result reply_to: 'connect' unless %w(waiting started).include?(state.state.to_s)
     info 'online'
   end
 
   def offline!
     info 'offline'
+  end
+
+  def send_result params = {}
+    state = Actor[:"state_#{@game_uuid}"]
+    msg = {type: 'event', subtype: 'result'}
+    ch = state.player_channels[:"player.#{@uuid}"]
+    p msg
+    ch[:x].publish msg.to_json, routing_key: "player.#{@uuid}"
+  end
+
+  def send_ready params = {}
+    state = Actor[:"state_#{@game_uuid}"]
+    timers = Actor[:"timers_#{@game_uuid}"]
+    players = Actor[:"players_#{@game_uuid}"]
+    msg = {type: 'event', subtype: 'ready', start_at: timers.start_at.to_i, pitcher: (players.queue.index(@uuid) == 0 ? 1 : nil)}
+    ch = state.player_channels[:"player.#{@uuid}"]
+    p msg
+    ch[:x].publish msg.to_json, routing_key: "player.#{@uuid}"
+  end
+
+  def send_event ev, params = {}
+    state = Actor[:"state_#{@game_uuid}"]
+    msg = {
+      type: 'event', subtype: ev
+    }.merge params
+    ch = state.player_channels[:"player.#{@uuid}"]
+    ch[:x].publish msg.to_json, routing_key: "player.#{@uuid}"
   end
 
   def send_pitch
@@ -81,8 +112,11 @@ class Player
   end
 
   def send_start_step
+    game = Actor[:"game_#{@game_uuid}"]
     state = Actor[:"state_#{@game_uuid}"]
-    msg = {type: 'event', subtype: 'start_step'}
+    queue = Actor[:"queue_#{@game_uuid}"]
+    players = Actor[:"players_#{@game_uuid}"]
+    msg = {type: 'event', subtype: 'start_step', turn_in: queue.ids.index(@uuid), pitcher_name: queue.first.uglify_name(game.stage), step: {current: game.step, total: game.total_steps, status: 'pitch'}}
     ch = state.player_channels[:"player.#{@uuid}"]
     ch[:x].publish msg.to_json, routing_key: "player.#{@uuid}"
   end
@@ -95,8 +129,10 @@ class Player
   end
 
   def start_stage
+    players = Actor[:"players_#{@game_uuid}"]
     state = Actor[:"state_#{@game_uuid}"]
-    msg = {type: 'event', subtype: 'start_stage'}
+    game = Actor[:"game_#{@game_uuid}"]
+    msg = {type: 'event', subtype: 'start_stage', value: game.stage, turn_in: (players.queue.index(@uuid) || 3)}
     ch = state.player_channels[:"player.#{@uuid}"]
     ch[:x].publish msg.to_json, routing_key: "player.#{@uuid}"
   end
@@ -140,6 +176,7 @@ class Player
   end
 
   def send_state params = {}
+    info "send_state #{@uuid}"
     state = Actor[:"state_#{@game_uuid}"]
     ch = state.player_channels[:"player.#{@uuid}"]
     ch[:x].publish state(params).to_json, routing_key: "player.#{@uuid}"

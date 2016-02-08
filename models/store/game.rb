@@ -1,6 +1,7 @@
 class Store::Game < Ohm::Model
   attribute :name
   attribute :uuid
+  index :uuid
   unique :uuid
 
   def initialize params = {}

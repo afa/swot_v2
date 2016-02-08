@@ -27,7 +27,10 @@ module Message
         case m[1]
         when 'game'
           gm = Celluloid::Actor[:"game_#{m[2]}"]
-          gm.async.online! if gm
+          if gm && gm.alive?
+            gm.async.online! 
+            p 'sent game online', gm.uuid
+          end
         when 'player'
           pl = Celluloid::Actor[:"player_#{m[2]}"]
           if pl && pl.alive?

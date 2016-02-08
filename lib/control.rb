@@ -78,7 +78,6 @@ class Control
     game = Actor[:"game_#{game_id}"]
     state = Actor[:"state_#{game_id}"]
     info "state #{state.inspect}"
-    info "game #{game.inspect}"
     fan_player = @ch.topic("player.#{id}", auto_delete: true)
     player_queue = @ch.queue("player.#{id}", exclusive: false, auto_delete: true).bind(fan_player, routing_key: "player.#{id}")
     state.player_channels[:"player.#{id}"] = {q: player_queue, x: fan_player}

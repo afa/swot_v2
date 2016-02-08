@@ -21,14 +21,14 @@ module Message
         super
         info 'starting game'
         game = Celluloid::Actor[:"game_#{@game_uuid}"]
-        p game
+        p game.uuid
         if game
           info 'game exist'
-          info game.inspect
+          info game.uuid
           info game.alive?.inspect
           if game.alive?
             game.async.start 
-            info "game #{game} found and alive"
+            info "game #{game.uuid} found and alive"
           end
         end
         info "send start to #{@game_uuid}"

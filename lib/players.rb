@@ -1,42 +1,51 @@
+require 'hashing'
 require 'players/player'
 require 'players/queue'
 # require 'forwardable'
 class Players
+  include Hashing
   # extend Forwardable
   include Celluloid
   include Celluloid::Internals::Logger
 
-  attr_accessor :players
+  # attr_accessor :players
   # def_delegators :@players, :<<, :+
 
   def initialize params = {}
-    @game_uuid = params[:game_uuid]
+    @players = []
     if params[:game_uuid]
-      @players = []
       @game_uuid = params[:game_uuid]
+      p 'game_uuid players create', @game_uuid, params
       @queue = Center.current.to_supervise as: :"queue_#{@game_uuid}", type: Queue, args: [{game_uuid: @game_uuid}]
       state = Actor[:"state_#{params[:game_uuid]}"]
       state.players.each{|i| add(i) }
-    else
-      @players = []
     end
   end
 
   def push_event event, params = {}
-    players.each{|p| p.push_event event, params }
+    players.each{|p| p.send_event event, params }
   end
 
   def push_state params = {}
-    players.each{|p| p.push_state params }
+    p 'send state to:', @players
+    players.each{|p| p.send_state params }
   end
 
   def players
-    @players.map{|i| Actor[:"player_#{i}"] }
+    p 'players.players', @players
+    @players.map{|i| Actor[:"player_#{i}"] }.select{|p| p && p.alive? }
   end
 
   def add player
+    ord = players.inject(0){|r, p| r >= p.order.to_i ? r : p.order.to_i }
+    if player.is_a? String
+      Actor[:"player_#{player}"].order = ord + 1
+    else
+      player = ord + 1
+    end
     state = Actor[:"state_#{@game_uuid}"]
     pl_id = player.is_a?(String) ? player : player.uuid
+    info "add pl_id #{pl_id.inspect}"
     @players << pl_id
     Control.current.add_player(@game_uuid, pl_id)
     # state.async
@@ -45,7 +54,7 @@ class Players
   def push_start_stage
     game = Actor[:"game_#{@game_uuid}"]
     players.each do |pl|
-      push_event(:start_stage, value: game.stage)
+      pl.start_stage
     end
   end
 
@@ -53,7 +62,8 @@ class Players
     game = Actor[:"game_#{@game_uuid}"]
     queue = Actor[:"queue_#{@game_uuid}"]
     players.each do |pl|
-      push_event(:start_step, turn_in: queue.ids.index(@uuid), pitcher_name: current_pitcher.uglify_name(game.stage), step: {current: game.step, total: game.total_steps, status: 'pitch'})
+      pl.send_start_step
+      # push_event(:start_step, turn_in: queue.ids.index(@uuid), pitcher_name: current_pitcher.uglify_name(game.stage), step: {current: game.step, total: game.total_steps, status: 'pitch'})
     end
   end
 
@@ -75,9 +85,12 @@ class Players
     end
   end
 
+  def build_queue
+    queue.rebuild_tail
+    queue.fill_current
+  end
 
   def current_pitcher
-    queue = Actor[:"queue_#{@game_uuid}"]
     Actor[:"player_#{queue.first}"]
   end
 

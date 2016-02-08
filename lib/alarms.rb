@@ -82,7 +82,6 @@ class Alarms
   def send_start
     if @game_id
       gm = Actor[:"game_#{@game_id}"]
-      p gm
       state = Actor[:"state_#{@game_id}"]
       gm.async.start
       set_out(:pitch, state.settings[:pitch_timeout])

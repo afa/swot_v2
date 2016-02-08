@@ -38,12 +38,20 @@ class Queue
     end
   end
 
+  def ids
+    @current + @tail
+  end
+
+  def first
+    @current.first || @tail.first
+  end
+
   def rebuild_tail
     game = Actor[:"game_#{@game_uuid}"]
     list = game.players.players.sort_by(&:order)
     list -= @current + @tail
     mx = @tail.last.try(:order)
-    @tail += list.select{|l| l.order > mx }
+    @tail += list.select{|l| l.order.to_i > mx.to_i }
     list -= @tail
     @tail += list
   end
