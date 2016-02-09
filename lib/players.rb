@@ -37,6 +37,7 @@ class Players
   end
 
   def add player
+    queue = Actor[:"queue_#{@game_uuid}"]
     ord = players.inject(0){|r, p| r >= p.order.to_i ? r : p.order.to_i }
     if player.is_a? String
       Actor[:"player_#{player}"].order = ord + 1
@@ -47,6 +48,7 @@ class Players
     pl_id = player.is_a?(String) ? player : player.uuid
     info "add pl_id #{pl_id.inspect}"
     @players << pl_id
+    queue.add pl_id
     Control.current.add_player(@game_uuid, pl_id)
     # state.async
   end

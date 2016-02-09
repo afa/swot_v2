@@ -7,14 +7,25 @@ class Queue
     @current = []
     @tail = []
     game = Actor[:"game_#{@game_uuid}"]
+    players = Actor[:"players_#{@game_uuid}"]
     if game.try(:alive?)
-      list = game.players.players.sort_by(&:order)
-      3.times do
-        p = list.shift
-        @current << p.uuid if p
-      end
-      @tail += list
+      rebuild_tail
+      fill_current
+      # list = players.players.sort_by(&:order)
+      # 3.times do
+      #   p = list.shift
+      #   @current << p.uuid if p
+      # end
+      # @tail += list
     end
+  end
+
+  def add(pl)
+    players = Actor[:"players_#{@game_uuid}"]
+    pl_id = pl.is_a?(String) ? pl : pl.uuid
+    players.players << pl_id unless players.players.include?(pl_id)
+    rebuild_tail
+    fill_current
   end
 
   def pitcher
@@ -24,6 +35,7 @@ class Queue
   def next!
     skip!
     rebuild_tail
+    fill_current
   end
 
   def skip!
@@ -47,16 +59,19 @@ class Queue
   end
 
   def rebuild_tail
-    game = Actor[:"game_#{@game_uuid}"]
-    list = game.players.players.sort_by(&:order)
+    info "rebuild"
+    players = Actor[:"players_#{@game_uuid}"]
+    list = players.players.sort_by(&:order)
     list -= @current + @tail
     mx = @tail.last.try(:order)
     @tail += list.select{|l| l.order.to_i > mx.to_i }
     list -= @tail
     @tail += list
+    info "size #{ids.size}"
   end
 
   def index(pl_id)
+    info "queue index #{pl_id.inspect} size #{ids.size} #{pitcher.inspect}}"
     @current.index(pl_id)
   end
 

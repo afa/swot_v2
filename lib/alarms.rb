@@ -23,7 +23,7 @@ class Alarms
     @game_id = params[:uuid]
     self.group = Timers::Group.new
     p 'time', params
-    set_out :start, params[:start] if params[:start]
+    set_out :start, params[:start] - Time.now.to_i if params[:start]
     async.run
     # async.add_one
   end
@@ -36,7 +36,7 @@ class Alarms
         instance_variable_get("@#{what}").reset
       else
         instance_variable_set("@#{what}_at", Time.now + time.to_i)
-        instance_variable_set("@#{what}", group.after(instance_variable_get("@#{what}_at")){
+        instance_variable_set("@#{what}", group.after(time.to_i){
           info "fire #{what}"
           async.send(:"send_#{what}")
           info "#{what} fired"
@@ -67,6 +67,7 @@ class Alarms
   end
 
   def send_first_pitch
+    info 'first pitch send'
   end
 
   def send_pitch

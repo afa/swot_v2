@@ -21,6 +21,10 @@ class Player
       @name = store.name
       @email = store.email
     end
+    queue = Actor[:"queue_#{@game_uuid}"]
+    queue.add @uuid
+    info "q first #{queue.first}"
+    
     info store.inspect
   end
 
@@ -181,6 +185,7 @@ class Player
     info "send_state #{@uuid}"
     state = Actor[:"state_#{@game_uuid}"]
     ch = state.player_channels[:"player.#{@uuid}"]
+    info state(params).to_json
     ch[:x].publish state(params).to_json, routing_key: "player.#{@uuid}"
     info state(params).to_json
   end
