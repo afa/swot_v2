@@ -32,11 +32,13 @@ class Player
     timers.set_out :pitch, nil
     players = Actor[:"players_#{@game_uuid}"]
     game = Actor[:"game_#{@game_uuid}"]
-    game.pitch #TODO params for game on pitch done
     state = Actor[:"state_#{@game_uuid}"]
+    game.pitch #TODO params for game on pitch done
     players.async.push_pitch(value: params[:value], to_replace: params[:to_replace], author: uglify_name(state.stage.to_s), timer: Time.now.to_i + state.settings[:vote_timeout])
-    timers.set_out :vote, Time.now.to_i + state.settings[:vote_timeout]
+    timers.set_out :vote, game.setting[:vote_timeout]
     statement = Statement.new(value: params[:value], replaces: params[:to_replace], author: @uuid, stage: state.stage, step: state.step, game_uuid: @game_uuid)
+    # TODO validate statement for duplication
+    state.statements << statement
   end
 
   def pass params = {}

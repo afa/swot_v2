@@ -6,7 +6,7 @@ class Game
   finalizer :finalizer
   def_delegators :int_state, :stage, :step, :total_steps, :step_status, :statements
 
-  attr_accessor :name, :players
+  attr_accessor :name, :players, :setting
   def self.create params = {}
     uuid = UUID.new.generate
     p uuid
@@ -19,6 +19,12 @@ class Game
 
   def initialize params = {}
     @uuid = params[:uuid]
+    sett = Store::Setting.find(game_uuid: @uuid)
+    unless sett
+      sett = Store::Setting.new(game_uuid: @uuid)
+      sett.save
+    end
+    @setting = sett
     info "#{@uuid} created"
     # @redis = ::Redis.new(driver: :celluloid)
     Center.current.to_supervise as: :"state_#{@uuid}", type: State, args: [{game_uuid: @uuid}]
@@ -71,25 +77,25 @@ class Game
     #
     state = Actor[:"state_#{@uuid}"]
     timers = Actor[:"timers_#{@uuid}"]
-    players.async.build_queue
+    players.async.build_queue # TODO move to create
     if %w(waiting started).map(&:to_sym).include? state.state
       state.state = :started
       push_event(:started, value: 's')
       self.players.push_event(:started)
       push_event(:start_stage, value: stage)
       self.players.push_start_stage
+      timers.async.set_out(:stage, setting[:stage_timeout])
       push_event(:start_step)
       self.players.push_start_step
-      push_state
-      self.players.push_state
-      timers.async.set_out(:stage, Time.now.to_i + 1500)
-      timers.async.set_out(:pitch, Time.now.to_i + 20)
+      # push_state
+      # self.players.push_state
+      set_out(step == 1 ? :first_pitch : :pitch, settings[step == 1 ? :first_pitch_timeout : pitch_timeout])
     end
   end
 
   def start_stage
-
   end
+
   def push_event event, params = {}
     {type: 'event', subtype: event}
   end
@@ -99,6 +105,9 @@ class Game
     alarm = Actor[:"timers_#{@uuid}"]
     msg = params.merge status: @status, stage: state.stage, timeout_at: alarm.next_time, started_at: @start, players: players.to_hash, step: {total: total_steps, current: step}
     publish msg
+  end
+
+  def stage_timeout
   end
 
   def publish hash
