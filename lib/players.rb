@@ -8,6 +8,7 @@ class Players
   include Celluloid
   include Celluloid::Internals::Logger
 
+  attr :players
   # attr_accessor :players
   # def_delegators :@players, :<<, :+
 
@@ -32,20 +33,19 @@ class Players
   end
 
   def players
-    p 'players.players', @players
     @players.map{|i| Actor[:"player_#{i}"] }.select{|p| p && p.alive? }
+  end
+
+  def player_ids
+    @players
   end
 
   def add player
     queue = Actor[:"queue_#{@game_uuid}"]
     ord = players.inject(0){|r, p| r >= p.order.to_i ? r : p.order.to_i }
-    if player.is_a? String
-      Actor[:"player_#{player}"].order = ord + 1
-    else
-      player = ord + 1
-    end
-    state = Actor[:"state_#{@game_uuid}"]
     pl_id = player.is_a?(String) ? player : player.uuid
+    Actor[:"player_#{pl_id}"].order = ord + 1
+    state = Actor[:"state_#{@game_uuid}"]
     info "add pl_id #{pl_id.inspect}"
     @players << pl_id
     queue.add pl_id
@@ -56,7 +56,8 @@ class Players
   def push_start_stage
     game = Actor[:"game_#{@game_uuid}"]
     players.each do |pl|
-      pl.start_stage
+      info "send start stage to #{pl.uuid}"
+      pl.send_start_stage
     end
   end
 
@@ -64,6 +65,7 @@ class Players
     game = Actor[:"game_#{@game_uuid}"]
     queue = Actor[:"queue_#{@game_uuid}"]
     players.each do |pl|
+      info "send start step to #{pl.uuid}"
       pl.send_start_step
       # push_event(:start_step, turn_in: queue.ids.index(@uuid), pitcher_name: current_pitcher.uglify_name(game.stage), step: {current: game.step, total: game.total_steps, status: 'pitch'})
     end
@@ -93,6 +95,7 @@ class Players
   end
 
   def current_pitcher
+    queue = Actor[:"queue_#{@game_uuid}"]
     Actor[:"player_#{queue.first}"]
   end
 

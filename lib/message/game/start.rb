@@ -4,9 +4,9 @@ module Message
       include Celluloid::Internals::Logger
       attr_accessor :game_uuid
       def self.try_load(ch, hsh)
-        Celluloid::Internals::Logger.info "msg #{ch} #{hsh.inspect}"
         return nil unless ch =~ /\A\/game\//
         return nil unless hsh[:type] == 'start'
+        Celluloid::Internals::Logger.info "msg #{ch} #{hsh.inspect}"
         super
       end
 

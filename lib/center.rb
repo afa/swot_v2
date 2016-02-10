@@ -6,6 +6,8 @@ require 'message'
 require 'players'
 require 'store'
 require 'state'
+require 'statements'
+require 'statement'
 class Center # < Celluloid::Supervision::Container
   include Celluloid
   include Celluloid::IO

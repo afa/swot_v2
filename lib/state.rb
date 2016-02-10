@@ -67,14 +67,13 @@ class State
     @step = 1
     @total_steps = @setting[:max_steps] || 60
     @step_status = first_enum(STEP_STATUSES)
-    statements.clear_current
+    statements.clean_current
 
     info 'init state done'
   end
 
   def load_default_settings
-    @setting = Store::Setting.find(game_uuid: @game_uuid) || Store.Setting.new
-    @setting.save
+    @setting = Store::Setting.find(game_uuid: @game_uuid) || Store::Setting.create(game_uuid: @game_uuid)
   end
 
   def stage
@@ -101,10 +100,11 @@ class State
   def add_statement id
   end
 
-  def locate_player id
-    pl = @players[id]
-    if pl && pl.alive?
-      pl
-    end
-  end
+  # def locate_player id
+  #   pls = Actor[:"players_#{@game_uuid}"]
+  #   pl = @players[id]
+  #   if pl && pl.alive?
+  #     pl
+  #   end
+  # end
 end

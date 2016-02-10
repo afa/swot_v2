@@ -3,9 +3,9 @@ module Message
   class Connect < Base
     include Celluloid::Internals::Logger
     def self.try_load(ch, hsh)
-      Celluloid::Internals::Logger.info "connect #{ch.inspect} #{hsh.inspect}"
       return nil unless hsh[:type] == 'connect'
       # return nil unless ch == Control::CONTROL_CHANNEL
+      Celluloid::Internals::Logger.info "connect #{ch.inspect} #{hsh.inspect}"
       super
     end
 

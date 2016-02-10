@@ -23,6 +23,7 @@ class Player
     end
     queue = Actor[:"queue_#{@game_uuid}"]
     queue.add @uuid
+    p queue.ids
     info "q first #{queue.first}"
     
     info store.inspect
@@ -38,7 +39,7 @@ class Player
     game = Actor[:"game_#{@game_uuid}"]
     state = Actor[:"state_#{@game_uuid}"]
     game.async.pitch(params) #TODO params for game on pitch done
-    players.async.push_pitch(value: params[:value], to_replace: params[:to_replace], author: uglify_name(state.stage.to_s), timer: Time.now.to_i + state.settings[:vote_timeout])
+    players.async.push_pitch(value: params[:value], to_replace: params[:to_replace], author: uglify_name(state.stage.to_s), timer: Time.now.to_i + state.setting[:vote_timeout])
     timers.set_out :vote, game.setting[:vote_timeout]
     statement = Statement.new(value: params[:value], replaces: params[:to_replace], author: @uuid, stage: state.stage, step: state.step, game_uuid: @game_uuid)
     # TODO validate statement for duplication
@@ -92,6 +93,7 @@ class Player
     msg = {
       type: 'event', subtype: ev
     }.merge params
+    p @uuid, state.player_channels.keys
     ch = state.player_channels[:"player.#{@uuid}"]
     ch[:x].publish msg.to_json, routing_key: "player.#{@uuid}"
   end
@@ -122,8 +124,10 @@ class Player
     state = Actor[:"state_#{@game_uuid}"]
     queue = Actor[:"queue_#{@game_uuid}"]
     players = Actor[:"players_#{@game_uuid}"]
-    msg = {type: 'event', subtype: 'start_step', turn_in: queue.ids.index(@uuid), pitcher_name: queue.first.uglify_name(state.stage), step: {current: state.step, total: state.total_steps, status: 'pitch'}}
+    info "::::::ids #{ queue.ids.index(@uuid)}"
+    msg = {type: 'event', subtype: 'start_step', turn_in: queue.ids.index(@uuid), pitcher_name: queue.pitcher.uglify_name(state.stage), step: {current: state.step, total: state.total_steps, status: 'pitch'}}
     ch = state.player_channels[:"player.#{@uuid}"]
+    ch[:x].publish msg.to_json, routing_key: "player.#{@uuid}"
     ch[:x].publish msg.to_json, routing_key: "player.#{@uuid}"
   end
 
@@ -131,6 +135,7 @@ class Player
     state = Actor[:"state_#{@game_uuid}"]
     msg = {type: 'event', subtype: 'end_step'}
     ch = state.player_channels[:"player.#{@uuid}"]
+    ch[:x].publish msg.to_json, routing_key: "player.#{@uuid}"
     ch[:x].publish msg.to_json, routing_key: "player.#{@uuid}"
   end
 
@@ -141,12 +146,14 @@ class Player
     msg = {type: 'event', subtype: 'start_stage', value: game.stage, turn_in: (players.queue.index(@uuid) || 3)}
     ch = state.player_channels[:"player.#{@uuid}"]
     ch[:x].publish msg.to_json, routing_key: "player.#{@uuid}"
+    ch[:x].publish msg.to_json, routing_key: "player.#{@uuid}"
   end
 
   def send_end_stage
     state = Actor[:"state_#{@game_uuid}"]
     msg = {type: 'event', subtype: 'end_stage'}
     ch = state.player_channels[:"player.#{@uuid}"]
+    ch[:x].publish msg.to_json, routing_key: "player.#{@uuid}"
     ch[:x].publish msg.to_json, routing_key: "player.#{@uuid}"
   end
 
@@ -158,6 +165,7 @@ class Player
     game = Actor[:"game_#{@game_uuid}"]
     players = Actor[:"players_#{@game_uuid}"]
     timers = Actor[:"timers_#{@game_uuid}"]
+    statements = Actor[:"statements_#{@game_uuid}"]
     msg = {
       type: 'status',
       state: 'started',
@@ -170,7 +178,7 @@ class Player
         current_stage: game.stage, # one of stages
         conclusion: {},
           replaces: [],
-        statements: game.statements,
+        statements: statements.all,
         player: {
           turn_in: (players.queue.index(@uuid) || 3)
         },

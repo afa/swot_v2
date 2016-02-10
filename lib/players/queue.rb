@@ -17,6 +17,8 @@ class Queue
       #   @current << p.uuid if p
       # end
       # @tail += list
+    else
+      info "no queue rebuild, game died"
     end
   end
 
@@ -29,7 +31,7 @@ class Queue
   end
 
   def pitcher
-    @current.first
+    Actor[:"player_#{@current.first}"]
   end
 
   def next!
@@ -62,16 +64,17 @@ class Queue
     info "rebuild"
     players = Actor[:"players_#{@game_uuid}"]
     list = players.players.sort_by(&:order)
-    list -= @current + @tail
-    mx = @tail.last.try(:order)
-    @tail += list.select{|l| l.order.to_i > mx.to_i }
-    list -= @tail
-    @tail += list
+    (@current + @tail).each{|i| list.delete_if{|s| s.uuid == i } }
+    mx = Actor[:"player_#{@tail.last}"].try(:order)
+    mx ||= Actor[:"player_#{@current.last}"].try(:order)
+    @tail += list.select{|l| l.order.to_i > mx.to_i }.map(&:uuid)
+    (@tail).each{|i| list.delete_if{|s| s.uuid == i } }
+    @tail += list.map(&:uuid)
     info "size #{ids.size}"
   end
 
   def index(pl_id)
-    info "queue index #{pl_id.inspect} size #{ids.size} #{pitcher.inspect}}"
+    info "queue index #{pl_id.inspect} size #{ids.size}"
     @current.index(pl_id)
   end
 

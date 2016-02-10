@@ -4,7 +4,7 @@ class Game
   include Celluloid::Internals::Logger
   extend Forwardable
   finalizer :finalizer
-  def_delegators :int_state, :stage, :step, :total_steps, :step_status, :statements
+  def_delegators :int_state, :stage, :step, :total_steps, :step_status, :statements, :setting
 
   attr_accessor :name, :setting
   def self.create params = {}
@@ -49,10 +49,12 @@ class Game
       end
     end
     info 'timers'
-    @timers = Center.current.async.to_supervise as: :"timers_#{@uuid}", type: Alarms, args: [{uuid: @uuid}.merge(time_params)]
+    timers = Center.current.async.to_supervise as: :"timers_#{@uuid}", type: Alarms, args: [{uuid: @uuid}.merge(time_params)]
     p 'game', @uuid, 'created'
-    state.state = @timers.start_at && @timers.start_at > Time.now.to_i ? :started : :waiting
+    state.state = timers.start_at && timers.start_at > Time.now.to_i ? :started : :waiting
     cntrl = Control.current.publish_control( (params.has_key?(:players) ? {players: players.players.map{|p| {name: p.name, uuid: p.uuid, email: p.email}}} : {}).merge(type: 'status', uuid: @uuid, replly_to: 'create'))
+    Control.current.add_game(@uuid)
+    state.add_game @uuid
     async.run
   end
 
@@ -78,19 +80,22 @@ class Game
     state = Actor[:"state_#{@uuid}"]
     players = Actor[:"players_#{@uuid}"]
     timers = Actor[:"timers_#{@uuid}"]
+    queue = Actor[:"queue_#{@uuid}"]
     players.async.build_queue # TODO move to create
     if %w(waiting started).map(&:to_sym).include? state.state
       state.state = :started
-      push_event(:started, value: 's')
-      players.push_event(:started)
-      push_event(:start_stage, value: stage)
-      players.push_start_stage
+      # push_event(:started, value: 's')
+      # players.push_event(:started)
+      async.publish(type: 'event', subtype: 'start_stage', value: stage)
+      # async.push_event(:start_stage, value: stage)
+      players.async.push_start_stage
       timers.async.set_out(:stage, setting[:stage_timeout])
-      push_event(:start_step)
-      players.push_start_step
-      # push_state
-      # self.players.push_state
-      set_out(step == 1 ? :first_pitch : :pitch, settings[step == 1 ? :first_pitch_timeout : :pitch_timeout])
+      async.publish(type: 'event', subtype: 'start_step')
+      # async.push_event(:start_step)
+      players.async.push_start_step
+      timers.async.set_out(step == 1 ? :first_pitch : :pitch, setting[step == 1 ? :first_pitch_timeout : :pitch_timeout])
+      # async.push_state
+      # players.async.push_state
     end
   end
 
@@ -104,8 +109,9 @@ class Game
 
   def push_state params = {}
     state = int_state
+    players = Actor[:"players_#{@uuid}"]
     alarm = Actor[:"timers_#{@uuid}"]
-    msg = params.merge status: @status, stage: state.stage, timeout_at: alarm.next_time, started_at: @start_at, players: players.to_hash, step: {total: total_steps, current: step, status: step_status}
+    msg = params.merge status: state.state, stage: state.stage, timeout_at: alarm.next_time, started_at: alarm.start_at, players: players.players.map(&:uuid), step: {total: total_steps, current: step, status: step_status}
     publish msg
   end
 
@@ -114,6 +120,7 @@ class Game
   end
 
   def publish hash
+    state = int_state
     info "publish game #{hash.inspect}"
     fan = state.game[:fan]
     fan.publish hash.to_json, routing_key: "game.#{@uuid}"

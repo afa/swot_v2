@@ -4,9 +4,9 @@ module Message
     class Pitch < Base
       include Celluloid::Internals::Logger
       def self.try_load(ch, hsh)
-        Celluloid::Internals::Logger.info "pitch #{ch.inspect} #{hsh.inspect}"
         return nil unless hsh[:type] == 'pitch'
         return nil unless ch =~ /\A\/player\//
+        Celluloid::Internals::Logger.info "pitch #{ch.inspect} #{hsh.inspect}"
         super
       end
 

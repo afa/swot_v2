@@ -3,9 +3,9 @@ module Message
   class Disconnect < Base
     include Celluloid::Internals::Logger
     def self.try_load(ch, hsh)
-      Celluloid::Internals::Logger.info "disconnect #{ch.inspect}"
       return nil unless hsh[:type] == 'disconnect'
       # return nil unless ch == Control::CONTROL_CHANNEL
+      Celluloid::Internals::Logger.info "disconnect #{ch.inspect}"
       super
     end
 

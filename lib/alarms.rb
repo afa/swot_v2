@@ -9,9 +9,9 @@ class Alarms
   attr :pitch, :pitch_at, :first_pitch, :first_pitch_at, :voting_quorum, :voting_quorum_at, :voting_tail, :voting_tail_at
   attr :results, :results_at, :between_stages, :between_stages_at
   # disconnect_timeout
-  %w(stage voting_quorum voting_tail results between_stages first_pitching pitching ranging terminate).each do |sym|
+  # %w(stage voting_quorum voting_tail results between_stages first_pitching pitching ranging terminate).each do |sym|
 
-  end
+  # end
 
   def next_time
     group.wait_interval
@@ -43,8 +43,8 @@ class Alarms
         })
       end
       info "started #{what} timer #{instance_variable_get("@#{what}")}"
-      async.run if next_time.try(:>, 0)
     end
+    async.run if next_time.try(:>, 0)
   end
 
   def send_start
@@ -56,8 +56,6 @@ class Alarms
     end
   end
   
-  attr :pitch, :pitch_at, :first_pitch, :first_pitch_at, :voting_quorum, :voting_quorum_at, :voting_tail, :voting_tail_at
-  attr :results, :results_at, :between_stages, :between_stages_at
   def send_stage
     info 'stage timeout'
     set_out :stage, nil
@@ -68,18 +66,23 @@ class Alarms
 
   def send_first_pitch
     info 'first pitch send'
+    send_pitch
   end
 
   def send_pitch
+    info 'pitch send'
   end
 
   def send_voting_quorum
+    info 'voting_quorum send'
   end
 
   def send_voting_tail
+    info 'voting tail send'
   end
 
   def send_results
+    info 'results send'
   end
 
   def send_between_stages

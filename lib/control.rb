@@ -77,7 +77,6 @@ class Control
     info 'add pl'
     game = Actor[:"game_#{game_id}"]
     state = Actor[:"state_#{game_id}"]
-    info "state #{state.inspect}"
     fan_player = @ch.topic("player.#{id}", auto_delete: true)
     player_queue = @ch.queue("player.#{id}", exclusive: false, auto_delete: true).bind(fan_player, routing_key: "player.#{id}")
     state.player_channels[:"player.#{id}"] = {q: player_queue, x: fan_player}
@@ -85,17 +84,19 @@ class Control
       p meta.routing_key, msg
       parse_msg meta.routing_key, msg
     end
-    # @fan_channels.publish("player.#{id}", routing_key: 'swot.channels')
+    info "state #{state.inspect}"
   end
 
   def clear_game(id)
-    game = @state.game["game.#{id}"]
-    game[:queue].unbind if player[:queue]
-    game[:fan].delete
+    state = Actor[:"state_#{game_id}"]
+    g = state.game
+    g[:queue].unbind if g[:queue]
+    g[:fan].delete
   end
 
   def clear_player(id)
-    player = @state.players["player.#{id}"]
+    state = Actor[:"state_#{game_id}"]
+    player = state.player_channels[:"player.#{id}"]
     player[:queue].unbind if player[:queue]
     player[:fan].delete
   end

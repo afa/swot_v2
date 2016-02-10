@@ -79,12 +79,12 @@ class Store::Setting < Ohm::Model
   end
 
   def [] key
-    data[key]
+    Store::Setting.defaults.merge(data)[key]
   end
 
   def initialize params = {}
     self.game_uuid = params.delete :game_uuid
     self.data = Store::Setting.defaults.merge params
-    # @current = OpenStruct.new params
+    p '-----------------------------------', data
   end
 end
