@@ -39,8 +39,9 @@ class Player
     game = Actor[:"game_#{@game_uuid}"]
     state = Actor[:"state_#{@game_uuid}"]
     game.async.pitch(params) #TODO params for game on pitch done
-    players.async.push_pitch(value: params[:value], to_replace: params[:to_replace], author: uglify_name(state.stage.to_s), timer: Time.now.to_i + state.setting[:vote_timeout])
-    timers.set_out :vote, game.setting[:vote_timeout]
+    p state.setting.data
+    players.async.push_pitch(value: params[:value], to_replace: params[:to_replace], author: uglify_name(state.stage.to_s), timer: Time.now.to_i + state.setting[:voting_quorum_timeout])
+    timers.set_out :vote, game.setting[:voting_quorum_timeout]
     statement = Statement.new(value: params[:value], replaces: params[:to_replace], author: @uuid, stage: state.stage, step: state.step, game_uuid: @game_uuid)
     # TODO validate statement for duplication
     state.statements << statement

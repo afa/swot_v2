@@ -79,7 +79,8 @@ class Store::Setting < Ohm::Model
   end
 
   def [] key
-    Store::Setting.defaults.merge(data)[key]
+    p data
+    Store::Setting.defaults.merge(data || {})[key]
   end
 
   def initialize params = {}
