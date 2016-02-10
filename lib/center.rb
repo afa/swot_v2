@@ -19,7 +19,7 @@ class Center # < Celluloid::Supervision::Container
 
   def initialize params = {}
     @players = Players.new
-    @times = {start_at: params[:start]}.delete_if{|k, v| v.nil? }
+    @times = {start_at: params[:start]}.delete_if{|_k, v| v.nil? }
     info params.inspect
     info 'starting centre'
     build_config
