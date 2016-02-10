@@ -5,7 +5,7 @@ class State
   include Celluloid
   include Celluloid::Internals::Logger
   attr_accessor :state, :step, :total_steps, :step_status, :stage
-  attr_accessor :game_uuid, :game, :players, :statements, :player_channels, :settings
+  attr_accessor :game_uuid, :game, :players, :player_channels, :setting
   STAGES = {
     s: {beetwen: false, order: 1, name: 'Strengths'},
     sw: {beetwen: true, order: 2},
@@ -43,12 +43,11 @@ class State
     info "state init for #{@game_uuid}"
     @game = {}
     @players = {}
-    @statements = []
     @stage = nil
     @player_channels = {}
     unless try_recover
-      __load_default_settings__
-      __init__
+      load_default_settings
+      init
     end
 
 
@@ -57,17 +56,25 @@ class State
   def try_recover
     store_game = Store::Game.find(uuid: @game_uuid)
     return false unless store_game
+    false # change when recovery will work TODO
   end
 
-  def  __init__
+  def init
+    unless Actor[:"statements_#{@game_uuid}"]
+      Center.current.to_supervise as: :"statements_#{@game_uuid}", type: Statements, args: [{game_uuid: @game_uuid}]
+    end
+    statements = Actor[:"statements_#{@game_uuid}"]
     @step = 1
-    @total_steps = @settings[:total_steps] || 60
+    @total_steps = @setting[:max_steps] || 60
     @step_status = first_enum(STEP_STATUSES)
+    statements.clear_current
+
     info 'init state done'
   end
 
-  def __load_default_settings__
-    @settings = {total_steps: 60}
+  def load_default_settings
+    @setting = Store::Setting.find(game_uuid: @game_uuid) || Store.Setting.new
+    @setting.save
   end
 
   def stage
@@ -78,6 +85,7 @@ class State
     if @state == :started
       @stage = next_enum(STAGES, @stage)
     end
+    statements.clear_current
   end
 
   def store_player id

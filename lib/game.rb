@@ -6,7 +6,7 @@ class Game
   finalizer :finalizer
   def_delegators :int_state, :stage, :step, :total_steps, :step_status, :statements
 
-  attr_accessor :name, :players, :setting
+  attr_accessor :name, :setting
   def self.create params = {}
     uuid = UUID.new.generate
     p uuid
@@ -40,7 +40,7 @@ class Game
     info "state #{state.inspect}"
 
     Center.current.to_supervise(as: :"players_#{@uuid}", type: Players, args: [{game_uuid: @uuid}])
-    self.players = Actor[:"players_#{@uuid}"]
+    players = Actor[:"players_#{@uuid}"]
     if params[:players]
       params[:players].each do |p|
         p_id = UUID.new.generate
@@ -76,24 +76,26 @@ class Game
     # check players online
     #
     state = Actor[:"state_#{@uuid}"]
+    players = Actor[:"players_#{@uuid}"]
     timers = Actor[:"timers_#{@uuid}"]
     players.async.build_queue # TODO move to create
     if %w(waiting started).map(&:to_sym).include? state.state
       state.state = :started
       push_event(:started, value: 's')
-      self.players.push_event(:started)
+      players.push_event(:started)
       push_event(:start_stage, value: stage)
-      self.players.push_start_stage
+      players.push_start_stage
       timers.async.set_out(:stage, setting[:stage_timeout])
       push_event(:start_step)
-      self.players.push_start_step
+      players.push_start_step
       # push_state
       # self.players.push_state
-      set_out(step == 1 ? :first_pitch : :pitch, settings[step == 1 ? :first_pitch_timeout : pitch_timeout])
+      set_out(step == 1 ? :first_pitch : :pitch, settings[step == 1 ? :first_pitch_timeout : :pitch_timeout])
     end
   end
 
   def start_stage
+    info 'TODO start stage'
   end
 
   def push_event event, params = {}
@@ -103,16 +105,20 @@ class Game
   def push_state params = {}
     state = int_state
     alarm = Actor[:"timers_#{@uuid}"]
-    msg = params.merge status: @status, stage: state.stage, timeout_at: alarm.next_time, started_at: @start, players: players.to_hash, step: {total: total_steps, current: step}
+    msg = params.merge status: @status, stage: state.stage, timeout_at: alarm.next_time, started_at: @start_at, players: players.to_hash, step: {total: total_steps, current: step, status: step_status}
     publish msg
   end
 
   def stage_timeout
+    info 'TODO stage timeout'
   end
 
   def publish hash
-    info "todo publish game #{hash.inspect}"
+    info "publish game #{hash.inspect}"
+    fan = state.game[:fan]
+    fan.publish hash.to_json, routing_key: "game.#{@uuid}"
   end
+
   def finalizer
     # Center.current.delete(:"timers_#{@uuid}")
     # Center.current.delete(:"game_#{@uuid}")

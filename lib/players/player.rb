@@ -37,7 +37,7 @@ class Player
     players = Actor[:"players_#{@game_uuid}"]
     game = Actor[:"game_#{@game_uuid}"]
     state = Actor[:"state_#{@game_uuid}"]
-    game.pitch #TODO params for game on pitch done
+    game.async.pitch(params) #TODO params for game on pitch done
     players.async.push_pitch(value: params[:value], to_replace: params[:to_replace], author: uglify_name(state.stage.to_s), timer: Time.now.to_i + state.settings[:vote_timeout])
     timers.set_out :vote, game.setting[:vote_timeout]
     statement = Statement.new(value: params[:value], replaces: params[:to_replace], author: @uuid, stage: state.stage, step: state.step, game_uuid: @game_uuid)
@@ -122,7 +122,7 @@ class Player
     state = Actor[:"state_#{@game_uuid}"]
     queue = Actor[:"queue_#{@game_uuid}"]
     players = Actor[:"players_#{@game_uuid}"]
-    msg = {type: 'event', subtype: 'start_step', turn_in: queue.ids.index(@uuid), pitcher_name: queue.first.uglify_name(game.stage), step: {current: game.step, total: game.total_steps, status: 'pitch'}}
+    msg = {type: 'event', subtype: 'start_step', turn_in: queue.ids.index(@uuid), pitcher_name: queue.first.uglify_name(state.stage), step: {current: state.step, total: state.total_steps, status: 'pitch'}}
     ch = state.player_channels[:"player.#{@uuid}"]
     ch[:x].publish msg.to_json, routing_key: "player.#{@uuid}"
   end
@@ -134,7 +134,7 @@ class Player
     ch[:x].publish msg.to_json, routing_key: "player.#{@uuid}"
   end
 
-  def start_stage
+  def send_start_stage
     players = Actor[:"players_#{@game_uuid}"]
     state = Actor[:"state_#{@game_uuid}"]
     game = Actor[:"game_#{@game_uuid}"]
@@ -143,7 +143,7 @@ class Player
     ch[:x].publish msg.to_json, routing_key: "player.#{@uuid}"
   end
 
-  def end_stage
+  def send_end_stage
     state = Actor[:"state_#{@game_uuid}"]
     msg = {type: 'event', subtype: 'end_stage'}
     ch = state.player_channels[:"player.#{@uuid}"]

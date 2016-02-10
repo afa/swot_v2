@@ -37,7 +37,7 @@ class Control
     state = Actor[:"state_#{id}"]
     @fan_game = @ch.topic('game', auto_delete: true)
     @game_queue = @ch.queue("swot.game.#{id}", exclusive: false, auto_delete: true).bind(@fan_game, routing_key: "swot.game.#{id}")
-    state.game["game_#{id}"] = {q: @game_queue, x: @fan_game}
+    state.game = {queue: @game_queue, fan: @fan_game}
     @game_queue.subscribe do |meta, msg|
       p meta.routing_key, msg
       parse_msg meta.routing_key, msg
