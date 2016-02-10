@@ -40,8 +40,9 @@ class Statement
     contributors_hash = { @author => share }
     unless replaces_amount.zero?
       others_share_part = ( 1 - share ) / replaces_amount
-      # FIXME: !
+      # FIXME: найти утвержения с текущим стеджом в текущей игре с ид в массиве @replaces
       replaced = Statement.find(@replaces)
+
       replaced.each do |statement|
         statement.contribution.each do |player, share|
           player_share = contributors_hash.fetch player, 0.0
@@ -62,11 +63,12 @@ class Statement
     @votes.each do |vote|
       zone = "catcher_#{format_value(vote.result)}_zone_#{catcher_zone}_score"
       delta = Store::Setting.defaults[zone.to_sym]
+      # FIXME:  ищем плееров с ид в текущей игре.
       player = Player.find(vote.player)
       player.score.catcher_apply_delta(delta)
     end
   end
-  
+
   # TODO: what options?
   def conclusion(options={})
     return 'no_votes' if @votes.size.zero?
