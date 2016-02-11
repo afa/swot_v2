@@ -99,8 +99,14 @@ class Game
     end
   end
 
-  def start_stage
+  def start_stage #whats?
     info 'TODO start stage'
+  end
+
+  def stage_timeout
+  end
+
+  def pitch_timeoutA params = {}
   end
 
   def push_event event, params = {}

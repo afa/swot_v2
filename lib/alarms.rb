@@ -33,6 +33,7 @@ class Alarms
     instance_variable_get("@#{what}").cancel if instance_variable_defined?("@#{what}") && instance_variable_get("@#{what}")
     if time
       if instance_variable_defined?("@#{what}") && instance_variable_get("#{what}")
+        instance_variable_set("@#{what}_at", Time.now + time.to_i)
         instance_variable_get("@#{what}").reset
       else
         instance_variable_set("@#{what}_at", Time.now + time.to_i)
@@ -66,34 +67,56 @@ class Alarms
 
   def send_first_pitch
     info 'first pitch send'
-    send_pitch
+    set_out :first_pitch, nil
+    send_pitch first: true
+    info 'first pitch timeout fired'
   end
 
-  def send_pitch
+  def send_pitch params = {}
     info 'pitch send'
+    set_out :pitch, nil
+    gm = Actor[:"game_#{@game_id}"]
+    gm.async.pitch_timeout params
+    info 'pitch timeout fired'
   end
 
   def send_voting_quorum
     info 'voting_quorum send'
+    set_out :voting_quorum, nil
+    gm = Actor[:"game_#{@game_id}"]
+    gm.async.voting_quorum_timeout
+    info 'voting_quorum timeout fired'
   end
 
   def send_voting_tail
     info 'voting tail send'
+    set_out :voting_tail, nil
+    gm = Actor[:"game_#{@game_id}"]
+    gm.async.voting_tail_timeout
+    info 'voting_tail timeout fired'
   end
 
   def send_results
     info 'results send'
+    set_out :results, nil
+    gm = Actor[:"game_#{@game_id}"]
+    gm.async.results_timeout
+    info 'results timeout fired'
   end
 
   def send_between_stages
+    set_out :between_stages, nil
+    gm = Actor[:"game_#{@game_id}"]
+    gm.async.between_stages_timeout
+    info 'between_stages timeout fired'
   end
 
-  def send_between_stages_timeout
-  end
-
-  def pitch
-    @pitch
-  end
+  # def send_between_stages_timeout
+  #   set_out :pitch, nil
+  #   gm = Actor[:"game_#{@game_id}"]
+  #   gm.async.pitch_timeout
+  #   info 'stage timeout fired'
+  # end
 
   def run
     info "timers run #{group.wait_interval}"
