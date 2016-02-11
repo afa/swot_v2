@@ -6,7 +6,7 @@ class Game
   finalizer :finalizer
   def_delegators :int_state, :stage, :step, :total_steps, :step_status, :statements, :setting
 
-  attr_accessor :name, :setting
+  attr_accessor :name
   def self.create params = {}
     uuid = UUID.new.generate
     p uuid
@@ -19,12 +19,6 @@ class Game
 
   def initialize params = {}
     @uuid = params[:uuid]
-    sett = Store::Setting.find(game_uuid: @uuid)
-    unless sett
-      sett = Store::Setting.new(game_uuid: @uuid)
-      sett.save
-    end
-    @setting = sett
     info "#{@uuid} created"
     # @redis = ::Redis.new(driver: :celluloid)
     Center.current.to_supervise as: :"state_#{@uuid}", type: State, args: [{game_uuid: @uuid}]
@@ -84,16 +78,9 @@ class Game
     players.async.build_queue # TODO move to create
     if %w(waiting started).map(&:to_sym).include? state.state
       state.state = :started
+      start_stage
       # push_event(:started, value: 's')
       # players.push_event(:started)
-      async.publish(type: 'event', subtype: 'start_stage', value: stage)
-      # async.push_event(:start_stage, value: stage)
-      players.async.push_start_stage
-      timers.async.set_out(:stage, setting[:stage_timeout])
-      async.publish(type: 'event', subtype: 'start_step')
-      # async.push_event(:start_step)
-      players.async.push_start_step
-      timers.async.set_out(step == 1 ? :first_pitch : :pitch, setting[step == 1 ? :first_pitch_timeout : :pitch_timeout])
       # async.push_state
       # players.async.push_state
     end
@@ -101,16 +88,52 @@ class Game
 
   def start_stage #whats?
     info 'TODO start stage'
+    state = Actor[:"state_#{@uuid}"]
+    players = Actor[:"players_#{@uuid}"]
+    timers = Actor[:"timers_#{@uuid}"]
+    queue = Actor[:"queue_#{@uuid}"]
+      timers.set_out(:stage, state.setting[:stage_timeout]) #TODO check for 
+      async.publish(type: 'event', subtype: 'start_stage', value: stage)
+      # async.push_event(:start_stage, value: stage)
+      players.async.push_start_stage
+      start_step
+  end
+
+  def start_step
+    info 'TODO start step'
+    state = Actor[:"state_#{@uuid}"]
+    players = Actor[:"players_#{@uuid}"]
+    timers = Actor[:"timers_#{@uuid}"]
+    queue = Actor[:"queue_#{@uuid}"]
+      timers.set_out(step == 1 ? :first_pitch : :pitch, state.setting[step == 1 ? :first_pitch_timeout : :pitch_timeout])
+      async.publish(type: 'event', subtype: 'start_step')
+      # async.push_event(:start_step)
+      players.async.push_start_step
   end
 
   def stage_timeout
+    state = Actor[:"state_#{@uuid}"]
+    players = Actor[:"players_#{@uuid}"]
+    timers = Actor[:"timers_#{@uuid}"]
+    queue = Actor[:"queue_#{@uuid}"]
+    info "stage timeout: #{state.stage}"
+    state.stage = state.next_enum(State::STAGES, state.stage)
+    msg = {type: 'event', subtype: 'end_stage', value: state.stage}
+    set_out
+    async.publish msg
   end
 
-  def pitch_timeoutA params = {}
+  def pitch_timeout params = {}
+    state = Actor[:"state_#{@uuid}"]
+    players = Actor[:"players_#{@uuid}"]
+    timers = Actor[:"timers_#{@uuid}"]
+    queue = Actor[:"queue_#{@uuid}"]
+    #calc rank results
+    msg = {type: 'event', subtype: 'end_step', result: {status: 'timeouted', score: 0, delta: 0}}
   end
 
   def push_event event, params = {}
-    {type: 'event', subtype: event}
+    publish {type: 'event', subtype: event}
   end
 
   def push_state params = {}
