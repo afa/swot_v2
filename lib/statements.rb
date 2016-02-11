@@ -1,5 +1,6 @@
 class Statements
   include Celluloid
+  include Celluloid::IO
   include Celluloid::Internals::Logger
 
   attr_accessor :statements, :current, :game_uuid

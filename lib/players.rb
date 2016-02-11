@@ -6,6 +6,7 @@ class Players
   include Hashing
   # extend Forwardable
   include Celluloid
+  include Celluloid::IO
   include Celluloid::Internals::Logger
 
   attr :players
@@ -68,6 +69,22 @@ class Players
       info "send start step to #{pl.uuid}"
       pl.send_start_step
       # push_event(:start_step, turn_in: queue.ids.index(@uuid), pitcher_name: current_pitcher.uglify_name(game.stage), step: {current: game.step, total: game.total_steps, status: 'pitch'})
+    end
+  end
+
+  def push_end_step params = {}
+    game = Actor[:"game_#{@game_uuid}"]
+    players.each do |pl|
+      info "send end step to #{pl.uuid}"
+      pl.send_end_step params
+    end
+  end
+
+  def push_end_stage
+    game = Actor[:"game_#{@game_uuid}"]
+    players.each do |pl|
+      info "send start stage to #{pl.uuid}"
+      pl.send_end_stage
     end
   end
 

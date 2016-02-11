@@ -1,5 +1,6 @@
 class Queue
   include Celluloid
+  include Celluloid::IO
   include Celluloid::Internals::Logger
 
   def initialize params = {}

@@ -3,6 +3,7 @@ require 'ostruct'
 class State
   include Hashing
   include Celluloid
+  include Celluloid::IO
   include Celluloid::Internals::Logger
   attr_accessor :state, :step, :total_steps, :step_status, :stage
   attr_accessor :game_uuid, :game, :players, :player_channels, :setting
@@ -33,8 +34,10 @@ class State
   end
 
   def next_enum(hash, e)
+    return nil unless e
     ord = hash[e][:order]
-    idx = hash.values.map{|v| i[:order] }.select{|o| o > ord }.min
+    idx = hash.values.map{|v| v[:order] }.select{|o| o > ord }.min
+    return nil unless idx
     hash.select{|k, v| v[:order] == idx }.keys.first
   end
 
@@ -73,7 +76,7 @@ class State
   end
 
   def load_default_settings
-    @setting = Store::Setting.find(game_uuid: @game_uuid) || Store::Setting.create(game_uuid: @game_uuid)
+    @setting = Store::Setting.find(game_uuid: @game_uuid) || Store::Setting.create(game_uuid: @game_uuid, data: Store::Setting.defaults)
   end
 
   def stage

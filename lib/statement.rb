@@ -15,7 +15,7 @@ class Statement
 
   def initialize params = {}
     @value = params[:value]
-    @author = patams[:author]
+    @author = params[:author]
     @replaces = params[:replaces]
     @uuid = params[:uuid]
     @position = params[:position] if params[:position]

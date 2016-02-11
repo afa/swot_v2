@@ -84,7 +84,6 @@ class Control
       p meta.routing_key, msg
       parse_msg meta.routing_key, msg
     end
-    info "state #{state.inspect}"
   end
 
   def clear_game(id)
