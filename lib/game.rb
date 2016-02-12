@@ -42,7 +42,8 @@ class Game
       end
     end
     info 'timers'
-    timers = Center.current.async.to_supervise as: :"timers_#{@uuid}", type: Alarms, args: [{uuid: @uuid}.merge(time_params)]
+    timers = Center.current.async.to_supervise as: :"timers_#{@uuid}", type: Timers, args: [{game_uuid: @uuid}.merge(time_params)]
+    # timers = Center.current.async.to_supervise as: :"alarms_#{@uuid}", type: Alarms, args: [{uuid: @uuid}.merge(time_params)]
     p 'game', @uuid, 'created'
     state.state = timers.start_at && timers.start_at > Time.now.to_i ? :started : :waiting
     cntrl = Control.current.publish_control( (params.has_key?(:players) ? {players: players.players.map{|p| {name: p.name, uuid: p.uuid, email: p.email}}} : {}).merge(type: 'status', uuid: @uuid, replly_to: 'create'))
@@ -72,7 +73,7 @@ class Game
     #
     state = Actor[:"state_#{@uuid}"]
     players = Actor[:"players_#{@uuid}"]
-    timers = Actor[:"timers_#{@uuid}"]
+    timers = Actor[:"alarms_#{@uuid}"]
     queue = Actor[:"queue_#{@uuid}"]
     players.async.build_queue # TODO move to create
     if %w(waiting started).map(&:to_sym).include? state.state
@@ -89,7 +90,7 @@ class Game
     info 'TODO start stage'
     state = Actor[:"state_#{@uuid}"]
     players = Actor[:"players_#{@uuid}"]
-    timers = Actor[:"timers_#{@uuid}"]
+    timers = Actor[:"alarms_#{@uuid}"]
     queue = Actor[:"queue_#{@uuid}"]
       timers.async.set_out(:stage, state.setting[:stage_timeout]) #TODO check for 
       async.publish(type: 'event', subtype: 'start_stage', value: stage)
@@ -102,7 +103,7 @@ class Game
     info 'TODO start step'
     state = Actor[:"state_#{@uuid}"]
     players = Actor[:"players_#{@uuid}"]
-    timers = Actor[:"timers_#{@uuid}"]
+    timers = Actor[:"alarms_#{@uuid}"]
     queue = Actor[:"queue_#{@uuid}"]
     info "start step step = #{state.step}"
     timers.async.set_out(state.step == 1 ? :first_pitch : :pitch, state.step == 1 ? 120 : 20)
@@ -115,7 +116,7 @@ class Game
   def stage_timeout
     state = Actor[:"state_#{@uuid}"]
     players = Actor[:"players_#{@uuid}"]
-    timers = Actor[:"timers_#{@uuid}"]
+    timers = Actor[:"alarms_#{@uuid}"]
     queue = Actor[:"queue_#{@uuid}"]
     info "stage timeout: #{state.stage}"
     state.stage = state.next_enum(State::STAGES, state.stage)
@@ -128,7 +129,7 @@ class Game
   def pitch params = {}
     state = Actor[:"state_#{@uuid}"]
     players = Actor[:"players_#{@uuid}"]
-    timers = Actor[:"timers_#{@uuid}"]
+    timers = Actor[:"alarms_#{@uuid}"]
     queue = Actor[:"queue_#{@uuid}"]
     statements = Actor[:"statements_#{@uuid}"]
     tm = Time.now.to_i + (state.setting[:voting_quorum_timeout] || 60)
@@ -145,7 +146,7 @@ class Game
   def pitch_timeout params = {}
     state = Actor[:"state_#{@uuid}"]
     players = Actor[:"players_#{@uuid}"]
-    timers = Actor[:"timers_#{@uuid}"]
+    timers = Actor[:"alarms_#{@uuid}"]
     queue = Actor[:"queue_#{@uuid}"]
     #calc rank results
 
@@ -157,7 +158,7 @@ class Game
     info "PASS!"
     state = Actor[:"state_#{@uuid}"]
     players = Actor[:"players_#{@uuid}"]
-    timers = Actor[:"timers_#{@uuid}"]
+    timers = Actor[:"alarms_#{@uuid}"]
     queue = Actor[:"queue_#{@uuid}"]
     statements = Actor[:"statements_#{@uuid}"]
     end_step(status: 'passed')
@@ -170,7 +171,7 @@ class Game
   def end_step params = {}
     state = Actor[:"state_#{@uuid}"]
     players = Actor[:"players_#{@uuid}"]
-    timers = Actor[:"timers_#{@uuid}"]
+    timers = Actor[:"alarms_#{@uuid}"]
     queue = Actor[:"queue_#{@uuid}"]
     statements = Actor[:"statements_#{@uuid}"]
     info "end step cf"
@@ -207,7 +208,7 @@ class Game
   def push_state params = {}
     state = int_state
     players = Actor[:"players_#{@uuid}"]
-    alarm = Actor[:"timers_#{@uuid}"]
+    alarm = Actor[:"alarms_#{@uuid}"]
     msg = params.merge status: state.state, stage: state.stage, timeout_at: Time.now.to_i + 15, started_at: alarm.start_at, players: players.players.map(&:uuid), step: {total: total_steps, current: step, status: step_status}
     # msg = params.merge status: state.state, stage: state.stage, timeout_at: alarm.next_time, started_at: alarm.start_at, players: players.players.map(&:uuid), step: {total: total_steps, current: step, status: step_status}
     publish msg
@@ -225,7 +226,7 @@ class Game
   end
 
   def finalizer
-    # Center.current.delete(:"timers_#{@uuid}")
+    # Center.current.delete(:"alarms_#{@uuid}")
     # Center.current.delete(:"game_#{@uuid}")
     # @timers.terminate
     # Celluloid::Actor[:channel].terminate

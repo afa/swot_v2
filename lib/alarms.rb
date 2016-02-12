@@ -58,68 +58,68 @@ class Alarms
     async.run if next_time.try(:>, 0)
   end
 
-  def send_start
-    if @game_id
-      gm = Actor[:"game_#{@game_id}"]
-      state = Actor[:"state_#{@game_id}"]
-      gm.async.start
-      info "game #{@game_id} send start"
-    end
-  end
+  # def send_start
+  #   if @game_id
+  #     gm = Actor[:"game_#{@game_id}"]
+  #     state = Actor[:"state_#{@game_id}"]
+  #     gm.async.start
+  #     info "game #{@game_id} send start"
+  #   end
+  # end
   
-  def send_stage
-    info 'stage timeout'
-    async.set_out :stage, nil
-    gm = Actor[:"game_#{@game_id}"]
-    gm.async.stage_timeout
-    info 'stage timeout fired'
-  end
+  # def send_stage
+  #   info 'stage timeout'
+  #   async.set_out :stage, nil
+  #   gm = Actor[:"game_#{@game_id}"]
+  #   gm.async.stage_timeout
+  #   info 'stage timeout fired'
+  # end
 
-  def send_first_pitch
-    info 'first pitch send'
-    async.set_out :first_pitch, nil
-    send_pitch first: true
-    info 'first pitch timeout fired'
-  end
+  # def send_first_pitch
+  #   info 'first pitch send'
+  #   async.set_out :first_pitch, nil
+  #   send_pitch first: true
+  #   info 'first pitch timeout fired'
+  # end
 
-  def send_pitch params = {}
-    info 'pitch send'
-    async.set_out :pitch, nil
-    gm = Actor[:"game_#{@game_id}"]
-    gm.async.pitch_timeout params
-    info 'pitch timeout fired'
-  end
+  # def send_pitch params = {}
+  #   info 'pitch send'
+  #   async.set_out :pitch, nil
+  #   gm = Actor[:"game_#{@game_id}"]
+  #   gm.async.pitch_timeout params
+  #   info 'pitch timeout fired'
+  # end
 
-  def send_voting_quorum
-    info 'voting_quorum send'
-    async.set_out :voting_quorum, nil
-    gm = Actor[:"game_#{@game_id}"]
-    gm.async.voting_quorum_timeout
-    info 'voting_quorum timeout fired'
-  end
+  # def send_voting_quorum
+  #   info 'voting_quorum send'
+  #   async.set_out :voting_quorum, nil
+  #   gm = Actor[:"game_#{@game_id}"]
+  #   gm.async.voting_quorum_timeout
+  #   info 'voting_quorum timeout fired'
+  # end
 
-  def send_voting_tail
-    info 'voting tail send'
-    async.set_out :voting_tail, nil
-    gm = Actor[:"game_#{@game_id}"]
-    gm.async.voting_tail_timeout
-    info 'voting_tail timeout fired'
-  end
+  # def send_voting_tail
+  #   info 'voting tail send'
+  #   async.set_out :voting_tail, nil
+  #   gm = Actor[:"game_#{@game_id}"]
+  #   gm.async.voting_tail_timeout
+  #   info 'voting_tail timeout fired'
+  # end
 
-  def send_results
-    info 'results send'
-    async.set_out :results, nil
-    gm = Actor[:"game_#{@game_id}"]
-    gm.async.results_timeout
-    info 'results timeout fired'
-  end
+  # def send_results
+  #   info 'results send'
+  #   async.set_out :results, nil
+  #   gm = Actor[:"game_#{@game_id}"]
+  #   gm.async.results_timeout
+  #   info 'results timeout fired'
+  # end
 
-  def send_between_stages
-    async.set_out :between_stages, nil
-    gm = Actor[:"game_#{@game_id}"]
-    gm.async.between_stages_timeout
-    info 'between_stages timeout fired'
-  end
+  # def send_between_stages
+  #   async.set_out :between_stages, nil
+  #   gm = Actor[:"game_#{@game_id}"]
+  #   gm.async.between_stages_timeout
+  #   info 'between_stages timeout fired'
+  # end
 
   # def send_between_stages_timeout
   #   set_out :pitch, nil

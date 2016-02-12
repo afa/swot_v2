@@ -33,7 +33,7 @@ class Player
   # end
 
   def pitch params = {}
-    timers = Actor[:"timers_#{@game_uuid}"]
+    timers = Actor[:"alarms_#{@game_uuid}"]
     timers.async.set_out :pitch, nil
     players = Actor[:"players_#{@game_uuid}"]
     game = Actor[:"game_#{@game_uuid}"]
@@ -45,7 +45,7 @@ class Player
   def pass params = {}
     info 'start player.pass'
     game = Actor[:"game_#{@game_uuid}"]
-    timers = Actor[:"timers_#{@game_uuid}"]
+    timers = Actor[:"alarms_#{@game_uuid}"]
     timers.async.set_out :pitch, nil
     players = Actor[:"players_#{@game_uuid}"]
     info "pass to end step"
@@ -80,7 +80,7 @@ class Player
 
   def send_ready params = {}
     state = Actor[:"state_#{@game_uuid}"]
-    timers = Actor[:"timers_#{@game_uuid}"]
+    timers = Actor[:"alarms_#{@game_uuid}"]
     players = Actor[:"players_#{@game_uuid}"]
     msg = {type: 'event', subtype: 'ready', start_at: timers.start_at.to_i, pitcher: (players.queue.index(@uuid) == 0 ? 1 : nil)}
     ch = state.player_channels[:"player.#{@uuid}"]
@@ -140,7 +140,7 @@ class Player
 
   def send_end_step params = {}
     state = Actor[:"state_#{@game_uuid}"]
-    timers = Actor[:"timers_#{@game_uuid}"]
+    timers = Actor[:"alarms_#{@game_uuid}"]
     msg = {type: 'event', subtype: 'end_step'}
     msg = {type: 'event', subtype: 'end_step', result: {status: params[:status], score: 0, delta: 0}, timer: Time.now.to_i + 20}
     ch = state.player_channels[:"player.#{@uuid}"]
@@ -173,7 +173,7 @@ class Player
   def state params = {}
     game = Actor[:"game_#{@game_uuid}"]
     players = Actor[:"players_#{@game_uuid}"]
-    timers = Actor[:"timers_#{@game_uuid}"]
+    timers = Actor[:"alarms_#{@game_uuid}"]
     statements = Actor[:"statements_#{@game_uuid}"]
     msg = {
       type: 'status',
