@@ -58,6 +58,10 @@ class Player
   end
 
   def vote params = {}
+    players = Actor[:"players_#{@game_uuid}"]
+    game = Actor[:"game_#{@game_uuid}"]
+    state = Actor[:"state_#{@game_uuid}"]
+    game.vote(result: params[:result], player: @uuid) #TODO params for game on pitch done (move code to game.pitch)
   end
 
   def online!

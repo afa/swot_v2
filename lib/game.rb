@@ -183,6 +183,11 @@ class Game
     # alarms = Actor[:"alarms_#{@uuid}"]
     queue = Actor[:"queue_#{@uuid}"]
     statements = Actor[:"statements_#{@uuid}"]
+    statements.voting.vote(player: params[:player], result: params[:result])
+    if statements.voting.voted_count == players.players.size - 1
+      Timings::VotingQuorum.instance(@uuid).cancel
+      end_step(status: statements.voting.result)
+    end
   end
 
   def end_step params = {}
@@ -208,7 +213,7 @@ class Game
     #calc rank results
 
     Timings::VotingQuorum.instance(@uuid).cancel
-    end_step(status: statements.voted.conclusion)
+    end_step(status: statements.voting.conclusion)
   end
 
   def voting_tail_timeout params = {}

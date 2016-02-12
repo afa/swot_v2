@@ -33,6 +33,9 @@ class Statement
     @votes << Vote.new(player: params[:player], result: params[:result], active: true)
   end
 
+  def voted_count
+    @votes.map(&:player).uniq.size
+  end
 
   def set_contribution
     replaces_amount = @replaces.size
@@ -74,6 +77,13 @@ class Statement
     end
   end
 
+  def result
+    p = @votes.map(&:result).select{|v| v == 'accept' }.size
+    return 'accept' if p == @votes.size
+    return 'decline' if p ==0
+    p.to_f / @votes.size.to_f >= 0.5 ? 'accept' : 'decline'
+  end
+
   # TODO: what options?
   def conclusion(options={})
     return 'no_votes' if @votes.size.zero?
@@ -83,7 +93,7 @@ class Statement
     contra = grouped_hash[:false]
     return 'accept' if pro && !contra
     return 'decline' if contra && !pro
-    result = grouped_hash[:true].size.to_f / grouped_hash[:false].size.to_f
+    result = grouped_hash[:true].size.to_f / (grouped_hash[:false] + grouped_hash[:true]).size.to_f
     result >= 0.5 ? 'accept' : 'decline'
   end
 
