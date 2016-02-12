@@ -29,6 +29,11 @@ class Statement
     @importances = []
   end
 
+  def vote params = {}
+    @votes << Vote.new(player: params[:player], result: params[:result], active: true)
+  end
+
+
   def set_contribution
     replaces_amount = @replaces.size
     raise ArgumentError, 'to much replaces (> 2)' unless (0..2).include?(replaces_amount)

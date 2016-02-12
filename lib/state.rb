@@ -24,7 +24,7 @@ class State
 
   STEP_STATUSES = {
     pitch: {active: true, name: 'pitch', order: 1},
-    catch: {active: true, name: 'catch', order: 2},
+    vote: {active: true, name: 'vote', order: 2},
     end: {active: false, name: 'end', order: 3}
   }
 

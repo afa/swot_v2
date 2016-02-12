@@ -4,14 +4,21 @@ class Statements
   include Celluloid::Internals::Logger
 
   attr_accessor :statements, :current, :game_uuid
+  attr :voting
   def initialize params = {}
     @game_uuid = params[:game_uuid]
     @statements = []
     @current = []
+    @voting = nil
   end
 
   def find(uuid)
     @statements.detect{|s| s.uuid == uuid }
+  end
+
+  def voting
+    return nil unless @voting
+    find(@voting)
   end
 
   def add params = {}
@@ -28,6 +35,7 @@ class Statements
     @statements << statement
     @current << uuid
     @current.each_with_index{|s, i| find(s).position = i + 1 }
+    @voting = uuid
   end
 
   def all

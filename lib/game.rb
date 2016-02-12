@@ -178,7 +178,11 @@ class Game
   end
 
   def vote params = {}
-    info "VOTE!"
+    state = Actor[:"state_#{@uuid}"]
+    players = Actor[:"players_#{@uuid}"]
+    # alarms = Actor[:"alarms_#{@uuid}"]
+    queue = Actor[:"queue_#{@uuid}"]
+    statements = Actor[:"statements_#{@uuid}"]
   end
 
   def end_step params = {}
@@ -194,9 +198,17 @@ class Game
     msg = {type: 'event', subtype: 'end_step', result: {status: params[:status], score: 0, delta: 0}, timer: Timings.instance(@uuid).next_interval}
     async.publish msg
     players.async.push_end_step params
-
   end
+
   def voting_quorum_timeout params = {}
+    state = Actor[:"state_#{@uuid}"]
+    players = Actor[:"players_#{@uuid}"]
+    queue = Actor[:"queue_#{@uuid}"]
+    statements = Actor[:"statements_#{@uuid}"]
+    #calc rank results
+
+    Timings::VotingQuorum.instance(@uuid).cancel
+    end_step(status: statements.voted.conclusion)
   end
 
   def voting_tail_timeout params = {}
