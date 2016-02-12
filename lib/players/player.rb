@@ -196,7 +196,7 @@ class Player
         },
 
         started_at: Timings::Start.instance(@game_uuid).at,
-        timeout_at: Timings.next_interval
+        timeout_at: Timings.instance(@game_uuid).next_interval
       },
     }
   end

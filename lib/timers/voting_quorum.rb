@@ -1,10 +1,10 @@
-class Timings::Stage < Timings::Base
+class Timings::VotingQuorum < Timings::Base
   include Celluloid
   include Celluloid::IO
   include Celluloid::Internals::Logger
 
   def self.reg_name
-    'stage'
+    'voting_quorum'
   end
 
   def initialize params = {}
