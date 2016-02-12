@@ -1,5 +1,5 @@
-class Timers::VotingTail < Timers::Base
-  include Cellulod
+class Timings::VotingTail < Timings::Base
+  include Celluloid
   include Celluloid::IO
   include Celluloid::Internals::Logger
 

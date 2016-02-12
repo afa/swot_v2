@@ -1,5 +1,5 @@
-class Timers::Results < Timers::Base
-  include Cellulod
+class Timings::Results < Timings::Base
+  include Celluloid
   include Celluloid::IO
   include Celluloid::Internals::Logger
 

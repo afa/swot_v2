@@ -1,9 +1,10 @@
-class Timers
+class Timings
   include Celluloid
   include Celluloid::IO
   include Celluloid::Internals::Logger
   attr_reader :stage, :voting_quorum, :voting_tail, :results, :between_stages, :first_pitching, :pitching, :ranging, :terminate
   DEFAULTS = {
+    start_timeout: 0,
       stage_timeout: 1500,
       voting_quorum_timeout: 60,
       voting_tail_timeout: 15,
@@ -17,13 +18,13 @@ class Timers
       terminate_timeout: 10
   }
 
-  def subtimers
-    self.class.constants(false).map{|s| const_get(s) } - [Timers::Base]
+  def self.subtimers
+    constants(false).map{|s| const_get(s) }.select{|c| c.is_a?(Class) }.tap{|x| p x } - [Timings::Base]
   end
 
   def initialize params = {}
     @guid = params.delete(:game_uuid)
-    list = subtimers
+    list = self.class.subtimers
     list.map do |cl|
       Center.current.to_supervise as: :"timer_#{cl.reg_name}_#{@guid}", type: cl, args: [{game_uuid: @guid}.merge(DEFAULTS).merge(params)]
     end
@@ -41,8 +42,12 @@ class Timers
   def reset
   end
 
+  def self.instance(id)
+    Celluloid::Actor[:"timers_#{id}"]
+  end
+
   def next_interval
-    subtimers.map{|cl| cl.instance(@guid) }.map(&:next_time).compact.min
+    self.class.subtimers.map{|cl| cl.instance(@guid) }.map(&:next_time).compact.min
   end
 
 end

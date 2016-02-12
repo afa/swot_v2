@@ -1,4 +1,4 @@
-class Timers::Base
+class Timings::Base
 
   attr :guid, :timer, :at, :paused_at, :interval
 
@@ -7,7 +7,7 @@ class Timers::Base
   end
 
   def self.instance(id)
-    Actor[:"timer_#{reg_name}_#{id}"]
+    Celluloid::Actor[:"timer_#{reg_name}_#{id}"]
   end
 
   def next_time
@@ -16,6 +16,10 @@ class Timers::Base
     tm = Time.now.to_i
     return nil if @at <= tm
     @at - tm
+  end
+
+  def at
+    @at
   end
 
   def next_stamp
@@ -62,7 +66,7 @@ class Timers::Base
   end
 
   def process
-    info "run timeout on #{reg_name} at #{Time.at(@at)}"
+    info "run timeout on #{self.class.reg_name} at #{Time.at(@at)}"
     @timer.cancel
   end
 end

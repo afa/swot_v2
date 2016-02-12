@@ -1,5 +1,5 @@
-class Timers::BetweenStages < Timers::Base
-  include Cellulod
+class Timings::BetweenStages < Timings::Base
+  include Celluloid
   include Celluloid::IO
   include Celluloid::Internals::Logger
 

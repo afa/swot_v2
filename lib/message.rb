@@ -10,9 +10,7 @@ module Message
   # module As; class B; end; AB = 1; constants(false).each{|s| p const_get(s) if const_get(s).is_a? Class }; end
   def parse ch, str
     subclasses.detect do |cl|
-      p "subclass", cl
       dat = cl.try_load(ch, str)
-      p dat
       dat
     end
   end
@@ -20,7 +18,6 @@ module Message
   def subclasses
     cs = constants(false).map{|c| const_get(c) }.select{|c| c.is_a? Class } - [Message::Base]
     cs += (constants(false).map{|c| const_get(c) }.select{|c| not c.is_a? Class }).map(&:subclasses).flatten
-    p cs
     cs
   end
 

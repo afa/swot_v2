@@ -1,10 +1,10 @@
-class Timers::Pitch < Timers::Base
-  include Cellulod
+class Timings::Pitch < Timings::Base
+  include Celluloid
   include Celluloid::IO
   include Celluloid::Internals::Logger
 
   def self.reg_name
-    'pitch'
+    'pitching'
   end
 
   def initialize params = {}

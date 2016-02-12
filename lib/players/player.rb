@@ -33,8 +33,10 @@ class Player
   # end
 
   def pitch params = {}
-    timers = Actor[:"alarms_#{@game_uuid}"]
-    timers.async.set_out :pitch, nil
+    # timers = Actor[:"alarms_#{@game_uuid}"]
+    # timers.async.set_out :pitch, nil
+    Timings::Pitch.instance(@game_uuid).cancel
+    Timings::FirstPitch.instance(@game_uuid).cancel
     players = Actor[:"players_#{@game_uuid}"]
     game = Actor[:"game_#{@game_uuid}"]
     state = Actor[:"state_#{@game_uuid}"]
@@ -45,8 +47,10 @@ class Player
   def pass params = {}
     info 'start player.pass'
     game = Actor[:"game_#{@game_uuid}"]
-    timers = Actor[:"alarms_#{@game_uuid}"]
-    timers.async.set_out :pitch, nil
+    # timers = Actor[:"alarms_#{@game_uuid}"]
+    Timings::Pitch.instance(@game_uuid).cancel
+    Timings::FirstPitch.instance(@game_uuid).cancel
+    # timers.async.set_out :pitch, nil
     players = Actor[:"players_#{@game_uuid}"]
     info "pass to end step"
     game.async.end_step({status: 'passed'})
@@ -80,9 +84,9 @@ class Player
 
   def send_ready params = {}
     state = Actor[:"state_#{@game_uuid}"]
-    timers = Actor[:"alarms_#{@game_uuid}"]
+    # timers = Actor[:"alarms_#{@game_uuid}"]
     players = Actor[:"players_#{@game_uuid}"]
-    msg = {type: 'event', subtype: 'ready', start_at: timers.start_at.to_i, pitcher: (players.queue.index(@uuid) == 0 ? 1 : nil)}
+    msg = {type: 'event', subtype: 'ready', start_at: Timings::Start.instance(@game_uuid).at, pitcher: (players.queue.index(@uuid) == 0 ? 1 : nil)}
     ch = state.player_channels[:"player.#{@uuid}"]
     p msg
     ch[:x].publish msg.to_json, routing_key: "player.#{@uuid}"
@@ -140,8 +144,7 @@ class Player
 
   def send_end_step params = {}
     state = Actor[:"state_#{@game_uuid}"]
-    timers = Actor[:"alarms_#{@game_uuid}"]
-    msg = {type: 'event', subtype: 'end_step'}
+    # timers = Actor[:"alarms_#{@game_uuid}"]
     msg = {type: 'event', subtype: 'end_step', result: {status: params[:status], score: 0, delta: 0}, timer: Time.now.to_i + 20}
     ch = state.player_channels[:"player.#{@uuid}"]
     ch[:x].publish msg.to_json, routing_key: "player.#{@uuid}"
@@ -160,8 +163,8 @@ class Player
 
   def send_end_stage
     state = Actor[:"state_#{@game_uuid}"]
-    msg = {type: 'event', subtype: 'end_stage'}
     ch = state.player_channels[:"player.#{@uuid}"]
+    msg = {type: 'event', subtype: 'end_stage', value: state.stage, timer: Timings.instance(@uuid).next_interval}
     ch[:x].publish msg.to_json, routing_key: "player.#{@uuid}"
     ch[:x].publish msg.to_json, routing_key: "player.#{@uuid}"
   end
@@ -173,7 +176,7 @@ class Player
   def state params = {}
     game = Actor[:"game_#{@game_uuid}"]
     players = Actor[:"players_#{@game_uuid}"]
-    timers = Actor[:"alarms_#{@game_uuid}"]
+    # timers = Actor[:"alarms_#{@game_uuid}"]
     statements = Actor[:"statements_#{@game_uuid}"]
     msg = {
       type: 'status',
@@ -192,9 +195,8 @@ class Player
           turn_in: (players.queue.index(@uuid) || 3)
         },
 
-        started_at: timers.start_at.to_i,
-        timeout_at: 10
-        # timeout_at: timers.next_time
+        started_at: Timings::Start.instance(@game_uuid).at,
+        timeout_at: Timings.next_interval
       },
     }
   end
