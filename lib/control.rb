@@ -29,7 +29,7 @@ class Control
 
   def publish_control params
     info "publish_control #{params.inspect}"
-    @fan.publish(params.to_json, routing_key: 'swot.control')
+    @fan.publish(params.to_json, routing_key: 'swot.control.client')
   end
 
   def add_game(id)

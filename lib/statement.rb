@@ -16,7 +16,7 @@ class Statement
   def initialize params = {}
     @value = params[:value]
     @author = params[:author]
-    @replaces = params[:replaces]
+    @replaces = params[:replaces] || []
     @uuid = params[:uuid]
     @position = params[:position] if params[:position]
     @game_uuid = params[:game_uuid]
@@ -24,7 +24,7 @@ class Statement
     @step = params[:step]
     # {player: 'id', share: 'float'}
     @contribution = {}
-    # [{ player: 'id', result: 'accept | decline' }, ...]
+    # [{ player: 'id', result: 'accepted | declined' }, ...]
     @votes = []
     @importances = []
   end
@@ -78,31 +78,31 @@ class Statement
   end
 
   def result
-    p = @votes.map(&:result).select{|v| v == 'accept' }.size
-    return 'accept' if p == @votes.size
-    return 'decline' if p ==0
-    p.to_f / @votes.size.to_f >= 0.5 ? 'accept' : 'decline'
+    p = @votes.map(&:result).select{|v| v == 'accepted' }.size
+    return 'declined' if p ==0
+    return 'accepted' if p == @votes.size
+    p.to_f / @votes.size.to_f >= 0.5 ? 'accepted' : 'declined'
   end
 
   # TODO: what options?
   def conclusion(options={})
     return 'no_votes' if @votes.size.zero?
     # grouped_hash[:key] - nil if no objects meet condition
-    grouped_hash = @votes.group_by { |vote| vote.result == 'accept'}
+    grouped_hash = @votes.group_by { |vote| vote.result == 'accepted'}
     pro = grouped_hash[:true]
     contra = grouped_hash[:false]
-    return 'accept' if pro && !contra
-    return 'decline' if contra && !pro
+    return 'accepted' if pro && !contra
+    return 'declined' if contra && !pro
     result = grouped_hash[:true].size.to_f / (grouped_hash[:false] + grouped_hash[:true]).size.to_f
-    result >= 0.5 ? 'accept' : 'decline'
+    result >= 0.5 ? 'accepted' : 'declined'
   end
 
   private
 
   def format_value(str)
-    return 'pro' if str == 'accept'
-    return 'contra' if str == 'decline'
-    raise ArgumentError, "expect 'accept' or 'decline', got: #{str}"
+    return 'pro' if str == 'accepted'
+    return 'contra' if str == 'declined'
+    raise ArgumentError, "expect 'accepted' or 'declined', got: #{str}"
   end
 end
 
