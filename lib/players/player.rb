@@ -180,11 +180,12 @@ class Player
   def state params = {}
     game = Actor[:"game_#{@game_uuid}"]
     players = Actor[:"players_#{@game_uuid}"]
+    state = Actor[:"state_#{state.state}"]
     # timers = Actor[:"alarms_#{@game_uuid}"]
     statements = Actor[:"statements_#{@game_uuid}"]
     msg = {
       type: 'status',
-      state: 'started',
+      state: state.state,
       game: {
         step: {
           current: game.step,
@@ -193,7 +194,7 @@ class Player
         },
         current_stage: game.stage, # one of stages
         conclusion: {},
-          replaces: [],
+        replaces: [],
         statements: statements.all,
         player: {
           turn_in: (players.queue.index(@uuid) || 3)

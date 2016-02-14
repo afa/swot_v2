@@ -119,6 +119,9 @@ class Game
     async.publish(type: 'event', subtype: 'start_step')
     # async.push_event(:start_step)
     players.async.push_start_step
+    async.push_state
+    players.async.push_state
+
   end
 
   def stage_timeout
