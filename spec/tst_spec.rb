@@ -14,6 +14,26 @@ describe 'votes' do
   before do
     @stat = Statement.new author: '1', value: 'st', game_uuid: 'gm'
   end
+  describe 'conclusion' do
+    it 'should calc conclusion on empty' do
+      expect(@stat.conclusion).to eq('no_votes')
+    end
+    it 'should calc conclusion for 1 accepted' do
+      @stat.vote({player: '2', result: 'accepted'})
+      expect(@stat.conclusion).to eq('accepted')
+    end
+    it 'should calc conclusion for 1 accepted and 1 declined' do
+      @stat.vote({player: '2', result: 'accepted'})
+      @stat.vote({player: '3', result: 'declined'})
+      expect(@stat.conclusion).to eq('accepted')
+    end
+    it 'should calc conclusion for 1 accepted and 2 declined' do
+      @stat.vote({player: '2', result: 'accepted'})
+      @stat.vote({player: '3', result: 'declined'})
+      @stat.vote({player: '4', result: 'declined'})
+      expect(@stat.conclusion).to eq('declined')
+    end
+  end
   it 'should decline nonvoted' do
     expect(@stat.result).to eq('declined')
   end

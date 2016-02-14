@@ -72,7 +72,7 @@ class Statement
       zone = "catcher_#{format_value(vote.result)}_zone_#{catcher_zone}_score"
       delta = Store::Setting.defaults[zone.to_sym]
       # FIXME:  ищем плееров с ид в текущей игре.
-      player = Player.find(vote.player)
+      player = Celluloid::Actor[:"player_#{vote.player}"]
       player.score.catcher_apply_delta(delta)
     end
   end
@@ -80,7 +80,7 @@ class Statement
   def result
     p = @votes.map(&:result).select{|v| v == 'accepted' }.size
     return 'declined' if p ==0
-    return 'accepted' if p == @votes.size
+    return 'accepted' if p == voted_count
     p.to_f / @votes.size.to_f >= 0.5 ? 'accepted' : 'declined'
   end
 
@@ -89,11 +89,11 @@ class Statement
     return 'no_votes' if @votes.size.zero?
     # grouped_hash[:key] - nil if no objects meet condition
     grouped_hash = @votes.group_by { |vote| vote.result == 'accepted'}
-    pro = grouped_hash[:true]
-    contra = grouped_hash[:false]
+    pro = grouped_hash[true] || []
+    contra = grouped_hash[false] || []
     return 'accepted' if pro && !contra
     return 'declined' if contra && !pro
-    result = grouped_hash[:true].size.to_f / (grouped_hash[:false] + grouped_hash[:true]).size.to_f
+    result = pro.size.to_f / (contra + pro).size.to_f
     result >= 0.5 ? 'accepted' : 'declined'
   end
 
