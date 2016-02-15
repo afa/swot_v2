@@ -44,8 +44,7 @@ class Game
     timers = Center.current.to_supervise as: :"timers_#{@uuid}", type: Timings, args: [{game_uuid: @uuid}.merge(time_params)]
     # alarms = Center.current.async.to_supervise as: :"alarms_#{@uuid}", type: Alarms, args: [{uuid: @uuid}.merge(time_params)]
     p 'game', @uuid, 'created'
-    p Timings::Start
-    p Timings::Start.instance(@uuid)
+    p Timings::Start.instance(@uuid).set_time params[:start][:time]
     state.state = Timings::Start.instance(@uuid).next_time ? :waiting : Timings::Start.instance(@uuid).at ? :started : :waiting
     # state.state = alarms.start_at && alarms.start_at > Time.now.to_i ? :started : :waiting
     cntrl = Control.current.publish_control( (params.has_key?(:players) ? {players: players.players.map{|p| {name: p.name, uuid: p.uuid, email: p.email}}} : {}).merge(type: 'status', uuid: @uuid, replly_to: 'create'))
@@ -270,7 +269,7 @@ class Game
     state = int_state
     players = Actor[:"players_#{@uuid}"]
     # alarms = Actor[:"alarms_#{@uuid}"]
-    msg = params.merge status: state.state, stage: state.stage, timeout_at: Time.now.to_i + 15, started_at: alarm.start_at, players: players.players.map(&:uuid), step: {total: total_steps, current: step, status: step_status}
+    msg = params.merge status: state.state, stage: state.stage, timeout_at: Time.now.to_i + 15, started_at: Timings::Start.instance(@uuid).at, players: players.players.map(&:uuid), step: {total: total_steps, current: step, status: step_status}
     # msg = params.merge status: state.state, stage: state.stage, timeout_at: alarm.next_time, started_at: alarm.start_at, players: players.players.map(&:uuid), step: {total: total_steps, current: step, status: step_status}
     publish msg
   end

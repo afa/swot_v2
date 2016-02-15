@@ -10,7 +10,7 @@ class Timings
       voting_tail_timeout: 15,
       results_timeout: 5,
       between_stages_timeout: 10,
-      max_steps: 60,
+      max_steps: 10,
       first_pitching_timeout: 120,
       pitching_timeout: 20,
       ranging_timeout: 30,

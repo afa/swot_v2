@@ -67,7 +67,8 @@ class Players
     queue = Actor[:"queue_#{@game_uuid}"]
     players.each do |pl|
       info "send start step to #{pl.uuid}"
-      pl.send_start_step
+      pl.async.send_start_step
+      pl.async.send_state
       # push_event(:start_step, turn_in: queue.ids.index(@uuid), pitcher_name: current_pitcher.uglify_name(game.stage), step: {current: game.step, total: game.total_steps, status: 'pitch'})
     end
   end

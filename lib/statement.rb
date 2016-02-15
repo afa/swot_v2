@@ -30,8 +30,9 @@ class Statement
   end
 
   def as_json
+    p @author
     author = Celluloid::Actor[:"player_#{@author}"]
-    { index: @position, body: @value, score: author.score, author: author.name}
+    { index: @position, body: @value, score: 0.0, author: @author}
   end
 
   def vote params = {}

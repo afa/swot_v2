@@ -39,6 +39,7 @@ class Control
     @game_queue = @ch.queue("swot.game.#{id}", exclusive: false, auto_delete: true).bind(@fan_game, routing_key: "swot.game.#{id}")
     state.game = {queue: @game_queue, fan: @fan_game}
     @game_queue.subscribe do |meta, msg|
+      # @ch.ack meta.delivery_tag
       p meta.routing_key, msg
       parse_msg meta.routing_key, msg
       # game_id = /swot\.game\.(.+)/.match(meta.routing_key).try(:[], 1)
@@ -81,6 +82,7 @@ class Control
     player_queue = @ch.queue("player.#{id}", exclusive: false, auto_delete: true).bind(fan_player, routing_key: "player.#{id}")
     state.player_channels[:"player.#{id}"] = {q: player_queue, x: fan_player}
     player_queue.subscribe do |meta, msg|
+      # @ch.ack meta.delivery_tag
       p meta.routing_key, msg
       parse_msg meta.routing_key, msg
     end
@@ -120,23 +122,10 @@ class Control
     info 'rn'
     
     @control_queue.subscribe do |meta, msg|
+      # @ch.ack meta.delivery_tag
       p meta.routing_key, msg
       parse_msg meta.routing_key, msg
     end
-    # @redis.subscribe(@channel_name, '/game/*', '/player/*') do |on|
-    # @sub.psubscribe('/*/*') do |on|
-    #   on.pmessage do |pat, ch, msg|
-    #   end
-    #   on.psubscribe do |ch, subs|
-    #     # self.control_channel = on
-    #     info "sub #{ch.inspect} -- #{subs.inspect}"
-    #     info on.inspect
-    #   end
-    #   on.punsubscribe do
-    #     info 'un'
-    #     async.stop
-    #   end
-    # end
   end
 
   def stop
