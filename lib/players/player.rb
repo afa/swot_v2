@@ -5,7 +5,7 @@ class Player
 
   finalizer :finalizer
 
-  attr_accessor :name, :email, :channel, :game_uuid, :uuid, :redis, :order
+  attr_accessor :name, :email, :channel, :game_uuid, :uuid, :redis, :order, :score
 
   def initialize params = {}
     # @redis ||= ::Redis.new(driver: :celluloid)
@@ -14,12 +14,13 @@ class Player
       store = Store::Player.find(uuid: params[:uuid]).first
       unless store
         info "player #{params.inspect} started"
-        store = Store::Player.create(name: params[:name], email: params[:email], state: params[:state], uuid: params[:uuid], game_uuid: params[:game_uuid])
+        store = Store::Player.create(name: params[:name], email: params[:email], state: params[:state], uuid: params[:uuid], game_uuid: params[:game_uuid], score: params[:score] || 0.0)
       end
       @uuid = store.uuid
       @game_uuid = store.game_uuid
       @name = store.name
       @email = store.email
+      @score = store.score
     end
     queue = Actor[:"queue_#{@game_uuid}"]
     queue.add @uuid

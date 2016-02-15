@@ -235,7 +235,6 @@ class Game
     msg = {type: 'event', subtype: 'end_stage', value: state.stage, timer: Timings.instance(@uuid).next_interval}
     async.publish msg
     players.async.push_end_step params
-
   end
 
   def results_timeout params = {}
@@ -250,6 +249,15 @@ class Game
   end
 
   def between_stages_timeout params = {}
+    state = Actor[:"state_#{@uuid}"]
+    players = Actor[:"players_#{@uuid}"]
+    state.stage = state.next_enum(State::STAGES, state.stage)
+    state.step = 1
+    state.step_status = state.first_enum(State::STEP_STATUSES)
+
+    start_stage
+
+
     p "!!!!between!!!!!!"
   end
 

@@ -39,7 +39,7 @@ class Statements
   end
 
   def all
-    @current.map{|s| find s }
+    @current.map{|s| find s }.map(&:as_json)
   end
 
   def by(sym, val)

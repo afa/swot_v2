@@ -29,6 +29,11 @@ class Statement
     @importances = []
   end
 
+  def as_json
+    author = Celluloid::Actor[:"player_#{@author}"]
+    { index: @position, body: @value, score: author.score, author: author.name}
+  end
+
   def vote params = {}
     @votes << Vote.new(player: params[:player], result: params[:result], active: true)
   end
