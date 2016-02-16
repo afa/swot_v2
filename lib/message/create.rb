@@ -4,7 +4,8 @@ module Message
     include Celluloid::Internals::Logger
     def self.try_load(ch, hsh)
       return nil unless hsh[:type] == 'create'
-      return nil unless ch == Control::CONTROL_CHANNEL
+      return nil unless ch == '/swot/control'
+      # return nil unless ch == Control::CONTROL_CHANNEL
       Celluloid::Internals::Logger.info "create #{ch.inspect} #{hsh.inspect}"
       super
     end

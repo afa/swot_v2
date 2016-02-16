@@ -11,6 +11,8 @@ gem 'celluloid-io'
 # gem 'celluloid-zmq'
 # gem 'amq-protocol', '= 1.9.2'
 gem 'march_hare' #, '= 1.7.1'
+gem 'reel'
+gem 'websocket-driver'
 
 gem 'rspec'
 gem 'uuid'

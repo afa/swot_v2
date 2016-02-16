@@ -15,7 +15,7 @@ module Message
 
       def initialize ch, hash = {}
         info "init vote"
-        @uuid = (/\Aplayer\.(?<id>[0-9a-fA-F-]+)\z/.match(ch)||{})[:id]
+        @uuid = (/\A\/player\/(?<id>[0-9a-fA-F-]+)\z/.match(ch)||{})[:id]
         @data = hash
         super
       end

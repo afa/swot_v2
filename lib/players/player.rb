@@ -83,10 +83,9 @@ class Player
   def send_result params = {}
     state = Actor[:"state_#{@game_uuid}"]
     msg = {type: 'event', subtype: 'result'}
-    ch = state.player_channels[:"player.#{@uuid}"]
+    ch = Actor[:"chnl_#{@uuid}"]
     p msg
-    ch[:x].publish msg.to_json, routing_key: "player.#{@uuid}"
-    ch[:x].publish msg.to_json, routing_key: "player.#{@uuid}"
+    ch.publish msg.to_json
   end
 
   def send_ready params = {}
@@ -94,10 +93,9 @@ class Player
     # timers = Actor[:"alarms_#{@game_uuid}"]
     players = Actor[:"players_#{@game_uuid}"]
     msg = {type: 'event', subtype: 'ready', start_at: Timings::Start.instance(@game_uuid).at, pitcher: (players.queue.index(@uuid) == 0 ? 1 : nil)}
-    ch = state.player_channels[:"player.#{@uuid}"]
+    ch = Actor[:"chnl_#{@uuid}"]
     p msg
-    ch[:x].publish msg.to_json, routing_key: "player.#{@uuid}"
-    ch[:x].publish msg.to_json, routing_key: "player.#{@uuid}"
+    ch.publish msg.to_json
   end
 
   def send_event ev, params = {}
@@ -106,34 +104,30 @@ class Player
       type: 'event', subtype: ev
     }.merge params
     p @uuid, state.player_channels.keys
-    ch = state.player_channels[:"player.#{@uuid}"]
-    ch[:x].publish msg.to_json, routing_key: "player.#{@uuid}"
-    ch[:x].publish msg.to_json, routing_key: "player.#{@uuid}"
+    ch = Actor[:"chnl_#{@uuid}"]
+    ch.publish msg.to_json
   end
 
   def send_pitch params = {}
     state = Actor[:"state_#{@game_uuid}"]
     queue = Actor[:"queue_#{@game_uuid}"]
     msg = {type: 'event', subtype: 'pitched', value: params[:value], to_replace: params[:to_replace], author: queue.pitcher.uglify_name(state.stage.to_s), timer: Time.now.to_i + 60, step: {status: state.step_status} }
-    ch = state.player_channels[:"player.#{@uuid}"]
-    ch[:x].publish msg.to_json, routing_key: "player.#{@uuid}"
-    ch[:x].publish msg.to_json, routing_key: "player.#{@uuid}"
+    ch = Actor[:"chnl_#{@uuid}"]
+    ch.publish msg.to_json
   end
 
   def send_pass
     state = Actor[:"state_#{@game_uuid}"]
     msg = {type: 'event', subtype: 'passed'}
-    ch = state.player_channels[:"player.#{@uuid}"]
-    ch[:x].publish msg.to_json, routing_key: "player.#{@uuid}"
-    ch[:x].publish msg.to_json, routing_key: "player.#{@uuid}"
+    ch = Actor[:"chnl_#{@uuid}"]
+    ch.publish msg.to_json
   end
 
   def send_vote params = {}
     state = Actor[:"state_#{@game_uuid}"]
     msg = {type: 'event', subtype: 'voted'}.merge(params)
-    ch = state.player_channels[:"player.#{@uuid}"]
-    ch[:x].publish msg.to_json, routing_key: "player.#{@uuid}"
-    ch[:x].publish msg.to_json, routing_key: "player.#{@uuid}"
+    ch = Actor[:"chnl_#{@uuid}"]
+    ch.publish msg.to_json
   end
 
   def send_start_step
@@ -144,18 +138,16 @@ class Player
     info "::::::ids #{ queue.ids.index(@uuid)}"
     
     msg = {type: 'event', subtype: 'start_step', turn_in: queue.ids.index(@uuid), pitcher_name: queue.pitcher.uglify_name(state.stage), step: {current: state.step, total: state.total_steps, status: state.step_status}}
-    ch = state.player_channels[:"player.#{@uuid}"]
-    ch[:x].publish msg.to_json, routing_key: "player.#{@uuid}"
-    ch[:x].publish msg.to_json, routing_key: "player.#{@uuid}"
+    ch = Actor[:"chnl_#{@uuid}"]
+    ch.publish msg.to_json
   end
 
   def send_end_step params = {}
     state = Actor[:"state_#{@game_uuid}"]
     # timers = Actor[:"alarms_#{@game_uuid}"]
     msg = {type: 'event', subtype: 'end_step', result: {status: params[:status], score: 0, delta: 0}, timer: Time.now.to_i + 20}
-    ch = state.player_channels[:"player.#{@uuid}"]
-    ch[:x].publish msg.to_json, routing_key: "player.#{@uuid}"
-    ch[:x].publish msg.to_json, routing_key: "player.#{@uuid}"
+    ch = Actor[:"chnl_#{@uuid}"]
+    ch.publish msg.to_json
   end
 
   def send_start_stage
@@ -163,17 +155,15 @@ class Player
     state = Actor[:"state_#{@game_uuid}"]
     game = Actor[:"game_#{@game_uuid}"]
     msg = {type: 'event', subtype: 'start_stage', value: game.stage, turn_in: (players.queue.index(@uuid) || 3)}
-    ch = state.player_channels[:"player.#{@uuid}"]
-    ch[:x].publish msg.to_json, routing_key: "player.#{@uuid}"
-    ch[:x].publish msg.to_json, routing_key: "player.#{@uuid}"
+    ch = Actor[:"chnl_#{@uuid}"]
+    ch.publish msg.to_json
   end
 
   def send_end_stage
     state = Actor[:"state_#{@game_uuid}"]
-    ch = state.player_channels[:"player.#{@uuid}"]
+    ch = Actor[:"chnl_#{@uuid}"]
     msg = {type: 'event', subtype: 'end_stage', value: state.stage, timer: Timings.instance(@uuid).next_interval}
-    ch[:x].publish msg.to_json, routing_key: "player.#{@uuid}"
-    ch[:x].publish msg.to_json, routing_key: "player.#{@uuid}"
+    ch.publish msg.to_json
   end
 
   def uglify_name(stage)
@@ -212,9 +202,9 @@ class Player
   def send_state params = {}
     info "send_state #{@uuid}"
     state = Actor[:"state_#{@game_uuid}"]
-    ch = state.player_channels[:"player.#{@uuid}"]
+    ch = Actor[:"chnl_#{@uuid}"]
     info state(params).to_json
-    ch[:x].publish state(params).to_json, routing_key: "player.#{@uuid}"
+    ch.publish state(params).to_json
     info state(params).to_json
   end
 

@@ -7,7 +7,7 @@ module Message
         p 'try load pitch', hsh
         return nil unless hsh[:type] == 'pitch'
         p 'try load pitch', ch
-        return nil unless ch =~ /\Aplayer\./
+        return nil unless ch =~ /\A\/player\//
         # Celluloid::Internals::Logger.info "pitch #{ch.inspect} #{hsh.inspect}"
         p 'try super'
         new ch, hsh
@@ -16,7 +16,7 @@ module Message
 
       def initialize ch, hash = {}
         info "init pitch"
-        @uuid = (/\Aplayer\.(?<id>[0-9a-fA-F-]+)\z/.match(ch)||{})[:id]
+        @uuid = (/\A\/player\/(?<id>[0-9a-fA-F-]+)\z/.match(ch)||{})[:id]
         @data = hash
         super
       end

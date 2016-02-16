@@ -10,6 +10,7 @@ require 'store'
 require 'state'
 require 'statements'
 require 'statement'
+require 'player_connect'
 class Center # < Celluloid::Supervision::Container
   include Celluloid
   include Celluloid::IO
@@ -38,7 +39,11 @@ class Center # < Celluloid::Supervision::Container
   def build_config
     @config = Celluloid::Supervision::Configuration.new
     @config.define type: Control, as: :control, args: [{channel: '/swot/control'}]
+    @config.define type: Web, as: :web, args: []
     @config.deploy
+    # @config = Celluloid::Supervision::Configuration.new
+    # @config.define type: Control, as: :control, args: [{channel: '/swot/control'}]
+    # @config.deploy
   end
 
   def to_supervise hash

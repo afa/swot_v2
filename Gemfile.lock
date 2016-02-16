@@ -1,6 +1,7 @@
 GEM
   remote: https://rubygems.org/
   specs:
+    addressable (2.4.0)
     celluloid (0.17.3)
       celluloid-essentials
       celluloid-extras
@@ -26,9 +27,20 @@ GEM
     celluloid-supervision (0.20.5)
       timers (>= 4.1.1)
     diff-lcs (1.2.5)
+    domain_name (0.5.20160128)
+      unf (>= 0.0.5, < 1.0.0)
     gson (0.6.1-java)
     hiredis (0.6.1-java)
     hitimes (1.2.3-java)
+    http (1.0.2)
+      addressable (~> 2.3)
+      http-cookie (~> 1.0)
+      http-form_data (~> 1.0.1)
+      http_parser.rb (~> 0.6.0)
+    http-cookie (1.0.2)
+      domain_name (~> 0.5)
+    http-form_data (1.0.1)
+    http_parser.rb (0.6.0-java)
     macaddr (1.7.1)
       systemu (~> 2.6.2)
     march_hare (2.16.0-java)
@@ -43,9 +55,17 @@ GEM
       stal
     ohm-contrib (2.2.0)
       ohm (~> 2.2)
+    rack (1.6.4)
     redic (1.5.0)
       hiredis
     redis (3.2.2)
+    reel (0.6.0)
+      celluloid (>= 0.15.1)
+      celluloid-io (>= 0.15.0)
+      http (>= 0.6.0.pre)
+      http_parser.rb (>= 0.6.0)
+      rack
+      websocket-driver (>= 0.5.1)
     rspec (3.4.0)
       rspec-core (~> 3.4.0)
       rspec-expectations (~> 3.4.0)
@@ -64,8 +84,12 @@ GEM
     systemu (2.6.5)
     timers (4.1.1)
       hitimes
+    unf (0.1.4-java)
     uuid (2.3.8)
       macaddr (~> 1.0)
+    websocket-driver (0.6.3-java)
+      websocket-extensions (>= 0.1.0)
+    websocket-extensions (0.1.2)
 
 PLATFORMS
   java
@@ -83,8 +107,10 @@ DEPENDENCIES
   ohm-contrib
   oj
   redis
+  reel
   rspec
   uuid
+  websocket-driver
 
 BUNDLED WITH
    1.11.2
