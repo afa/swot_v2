@@ -43,6 +43,10 @@ class Statement
     @votes.map(&:player).uniq.size
   end
 
+  def score_for(player_id)
+
+  end
+
   def set_contribution
     replaces_amount = @replaces.size
     raise ArgumentError, 'to much replaces (> 2)' unless (0..2).include?(replaces_amount)
@@ -53,7 +57,7 @@ class Statement
             end
     contributors_hash = { @author => share }
     unless replaces_amount.zero?
-      others_share_part = ( 1 - share ) / replaces_amount
+      others_share_part = ( 1 - share ).to_f / replaces_amount
       # FIXME: найти утвержения с текущим стеджом в текущей игре с ид в массиве @replaces
       replaced = Statement.find(@replaces)
 

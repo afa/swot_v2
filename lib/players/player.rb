@@ -181,6 +181,7 @@ class Player
     state = Actor[:"state_#{@game_uuid}"]
     # timers = Actor[:"alarms_#{@game_uuid}"]
     statements = Actor[:"statements_#{@game_uuid}"]
+    info "current statements #{statements.all.map(&:as_json)}"
     msg = {
       type: 'status',
       state: state.state,
