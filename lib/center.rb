@@ -39,7 +39,8 @@ class Center # < Celluloid::Supervision::Container
   def build_config
     @config = Celluloid::Supervision::Configuration.new
     @config.define type: Control, as: :control, args: [{channel: '/swot/control'}]
-    @config.define type: Web, as: :web, args: ['127.0.0.1', 3010]
+    @config.define type: Web, as: :web, args: []
+    # @config.define type: Web, as: :web, args: ['127.0.0.1', 3010]
     @config.deploy
     # @config = Celluloid::Supervision::Configuration.new
     # @config.define type: Control, as: :control, args: [{channel: '/swot/control'}]
