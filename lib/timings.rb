@@ -5,17 +5,20 @@ class Timings
   attr_reader :stage, :voting_quorum, :voting_tail, :results, :between_stages, :first_pitching, :pitching, :ranging, :terminate
   DEFAULTS = {
     start_timeout: 0,
-      stage_timeout: 1500,
-      voting_quorum_timeout: 60,
-      voting_tail_timeout: 15,
-      results_timeout: 5,
-      between_stages_timeout: 10,
-      max_steps: 10,
-      first_pitching_timeout: 120,
-      pitching_timeout: 20,
-      ranging_timeout: 30,
-      # disconnect_timeout:
-      terminate_timeout: 10
+    stage_timeout: 1500,
+    voting_quorum_timeout: 15,
+    # voting_quorum_timeout: 60,
+    voting_tail_timeout: 15,
+    results_timeout: 5,
+    between_stages_timeout: 10,
+    max_steps: 10,
+    first_pitching_timeout: 15,
+    # first_pitching_timeout: 120,
+    pitching_timeout: 15,
+    # pitching_timeout: 20,
+    ranging_timeout: 30,
+    # disconnect_timeout:
+    terminate_timeout: 10
   }
 
   def self.subtimers

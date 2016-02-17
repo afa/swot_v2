@@ -86,12 +86,13 @@ class Player
   def publish msg
     if @online
       ch = Actor[:"chnl_#{@uuid}"]
-      if ch
+      if ch && ch.alive?
         p 'chnl ok'
+        ch.publish msg.to_json
       else
-
+        p 'chnl down'
+        offline!
       end
-      ch.publish msg.to_json
     else
       info "player #{@uuid} offline"
     end
@@ -175,13 +176,14 @@ class Player
     %w(s t).include?(stage) ? "Player #{order}" : name
   end
 
-  def state params = {}
+  def gen_state params = {}
     game = Actor[:"game_#{@game_uuid}"]
     players = Actor[:"players_#{@game_uuid}"]
     state = Actor[:"state_#{@game_uuid}"]
     # timers = Actor[:"alarms_#{@game_uuid}"]
     statements = Actor[:"statements_#{@game_uuid}"]
-    info "current statements #{statements.all.map(&:as_json)}"
+    
+    info "current statements #{statements.all}"
     msg = {
       type: 'status',
       state: state.state,
@@ -194,7 +196,7 @@ class Player
         current_stage: game.stage, # one of stages
         conclusion: {},
         replaces: [],
-        statements: statements.all.map(&:as_json),
+        statements: statements.all,
         player: {
           turn_in: (players.queue.index(@uuid) || 3)
         },
@@ -207,7 +209,7 @@ class Player
 
   def send_state params = {}
     info "send_state #{@uuid}"
-    publish state(params)
+    publish gen_state(params)
   end
 
   def finalizer

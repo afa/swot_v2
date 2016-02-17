@@ -93,12 +93,14 @@ class Game
     players = Actor[:"players_#{@uuid}"]
     # alarms = Actor[:"alarms_#{@uuid}"]
     queue = Actor[:"queue_#{@uuid}"]
+    statements = Actor[:"statements_#{@uuid}"]
     Timings::Stage.instance(@uuid).start
-      # alarms.async.set_out(:stage, state.setting[:stage_timeout]) #TODO check for 
-      async.publish(type: 'event', subtype: 'start_stage', value: stage)
-      # async.push_event(:start_stage, value: stage)
-      players.async.push_start_stage
-      start_step
+    statements.clean_current
+    # alarms.async.set_out(:stage, state.setting[:stage_timeout]) #TODO check for 
+    async.publish(type: 'event', subtype: 'start_stage', value: stage)
+    # async.push_event(:start_stage, value: stage)
+    players.async.push_start_stage
+    start_step
   end
 
   def start_step
@@ -116,7 +118,6 @@ class Game
     # alarms.async.set_out(state.step == 1 ? :first_pitch : :pitch, state.step == 1 ? 120 : 20)
     state.step_status = state.first_enum(State::STEP_STATUSES)
     async.publish(type: 'event', subtype: 'start_step')
-    # async.push_event(:start_step)
     players.async.push_start_step
     async.push_state
     players.async.push_state
@@ -202,6 +203,7 @@ class Game
     state.step_status = state.next_enum(State::STEP_STATUSES, state.step_status)
     state.step_status = state.next_enum(State::STEP_STATUSES, state.step_status) unless state.step_status == :end
     Timings::Results.instance(@uuid).start
+    queue.next!
     msg = {type: 'event', subtype: 'end_step', result: {status: params[:status], score: 0, delta: 0}, timer: Timings.instance(@uuid).next_interval}
     async.publish msg
     players.async.push_end_step params
@@ -230,7 +232,6 @@ class Game
     info "end step cf"
     state.stage = state.next_enum(State::STAGES, state.stage)
     Timings::BetweenStages.instance(@uuid).start
-    queue.next!
     msg = {type: 'event', subtype: 'end_stage', value: state.stage, timer: Timings.instance(@uuid).next_interval}
     async.publish msg
     players.async.push_end_step params

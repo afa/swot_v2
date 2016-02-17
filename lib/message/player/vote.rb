@@ -4,10 +4,8 @@ module Message
     class Vote < ::Message::Base
       include Celluloid::Internals::Logger
       def self.try_load(ch, hsh)
-        p 'try load vote', hsh
         return nil unless hsh[:type] == 'vote'
-        p 'try load vote', ch
-        return nil unless ch =~ /\Aplayer\./
+        return nil unless ch =~ /\A\/player\//
         # Celluloid::Internals::Logger.info "pitch #{ch.inspect} #{hsh.inspect}"
         new ch, hsh
         # super.tap{|x| p x }

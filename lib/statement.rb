@@ -94,9 +94,15 @@ class Statement
     p.to_f / @votes.size.to_f >= 0.5 ? 'accepted' : 'declined'
   end
 
+  def accept!
+  end
+
+  def decline!
+  end
+
   # TODO: what options?
   def conclusion(options={})
-    return 'no_votes' if @votes.size.zero?
+    return 'declined' if @votes.size.zero?
     # grouped_hash[:key] - nil if no objects meet condition
     grouped_hash = @votes.group_by { |vote| vote.result == 'accepted'}
     pro = grouped_hash[true] || []

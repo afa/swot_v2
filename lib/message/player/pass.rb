@@ -5,14 +5,14 @@ module Message
       include Celluloid::Internals::Logger
       def self.try_load(ch, hsh)
         return nil unless hsh[:type] == 'pass'
-        return nil unless ch =~ /\Aplayer\./
+        return nil unless ch =~ /\A\/player\//
         # Celluloid::Internals::Logger.info "pitch #{ch.inspect} #{hsh.inspect}"
         new ch, hsh
         # super.tap{|x| p x }
       end
 
       def initialize ch, hash = {}
-        @uuid = (/\Aplayer\.(?<id>[0-9a-fA-F-]+)\z/.match(ch)||{})[:id]
+        @uuid = (/\A\/player\/(?<id>[0-9a-fA-F-]+)\z/.match(ch)||{})[:id]
         @data = hash
         super
       end

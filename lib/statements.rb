@@ -31,15 +31,20 @@ class Statements
       replace.each{|s| @current.delete(s) }
     end
 
-    statement = Statement.new value: params[:value], author: queue.pitcher, replaces: replace, uuid: uuid, game_uuid: @game_uuid, stage: state.stage, step: state.step
+    statement = Statement.new value: params[:value], author: queue.pitcher.uuid, replaces: replace, uuid: uuid, game_uuid: @game_uuid, stage: state.stage, step: state.step
     @statements << statement
     @current << uuid
     @current.each_with_index{|s, i| find(s).position = i + 1 }
     @voting = uuid
   end
 
+  def active
+    @current.map{|s| find s }.select{|s|  }
+    
+  end
+
   def all
-    @current.map{|s| find s }.map(&:as_json)
+    @current.map{|s| find s }.map(&:as_json).tap{|x| p 'statements.all', x }
   end
 
   def by(sym, val)
