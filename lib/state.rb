@@ -68,7 +68,7 @@ class State
     end
     statements = Actor[:"statements_#{@game_uuid}"]
     @step = 1
-    @total_steps = @setting[:max_steps] || 60
+    @total_steps = @setting[:max_steps] || 12
     @step_status = first_enum(STEP_STATUSES)
     statements.clean_current
 

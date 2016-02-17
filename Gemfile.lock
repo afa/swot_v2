@@ -43,7 +43,6 @@ GEM
     http_parser.rb (0.6.0-java)
     macaddr (1.7.1)
       systemu (~> 2.6.2)
-    march_hare (2.16.0-java)
     msgpack (0.5.12-java)
     multi_json (1.11.2)
     nido (1.0.0)
@@ -100,7 +99,6 @@ DEPENDENCIES
   celluloid-redis
   gson
   hiredis
-  march_hare
   multi_json
   nio4r
   ohm

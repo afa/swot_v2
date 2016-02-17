@@ -4,6 +4,7 @@ class PlayerConnect
   include Celluloid::Internals::Logger
   def self.create sock, ch
     uuid = (/\A\/player\/(?<id>[0-9a-fA-F-]+)\z/.match(ch)||{})[:id]
+    Celluloid::Internals::Logger.info "WebSocket add for #{uuid}"
     Center.current.to_supervise as: :"chnl_#{uuid}", type: PlayerConnect, args: [sock, ch]
   end
 
@@ -11,35 +12,51 @@ class PlayerConnect
     @ch = ch
     @sock = sock
     @uuid = (/\A\/player\/(?<id>[0-9a-fA-F-]+)\z/.match(ch)||{})[:id]
-    p 'tttttt'
-     p @uuid
-     p self
-    # sock.on_message{|m| p m }
-    # p sock
-    # @driver = sock.driver
-    # @driver = WebSocket::Driver.server(sock)
-    # @driver.on(:message) do |meta|
-    #   p 'aaa'
-    #   info "meta #{meta.inspect}"
-    # end
-    # @driver.on(:close){ p 'close' }
-    async.run
+    on
+    info "websocket for #{@uuid} ready"
+    async.run if @ok
   end
 
   def publish msg
+    if @ok
     @sock.write msg
     p msg
+    end
   end
 
   def run
-    msg = @sock.read
+    begin
+      msg = @sock.read
+      p 'receive', @uuid, msg
+    rescue EOFError => e
+      off
+    rescue IOError => e
+      off
+    rescue Exception => e
+      p e.class, e.message
+      raise
+    end
+    if @ok
     parse_msg @ch, msg
     async.run
-    # p @sock.read
-    # p 'aaa1'
-    # @driver.start
-    # p 'aaa2'
-    # @driver.on(:open){|e| d.start }
+    end
+  end
+
+  def on
+    a = Actor[:"player_#{@uuid}"]
+    if a && a.alive?
+      a.online!
+    end
+    @ok = true
+  end
+
+  def off
+      @ok = false
+      a = Actor[:"player_#{@uuid}"]
+      if a && a.alive?
+        a.offline!
+        Center.current.delete_supervision :"chnl_#{@uuid}"
+      end
   end
 
   def parse_msg ch, msg

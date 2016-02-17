@@ -281,8 +281,8 @@ class Game
   def publish hash
     state = int_state
     info "publish game #{hash.inspect}"
-    fan = state.game[:fan]
-    fan.publish hash.to_json, routing_key: "game.#{@uuid}"
+    # fan = state.game[:fan]
+    # fan.publish hash.to_json, routing_key: "game.#{@uuid}"
   end
 
   def finalizer

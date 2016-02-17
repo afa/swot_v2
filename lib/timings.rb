@@ -19,7 +19,7 @@ class Timings
   }
 
   def self.subtimers
-    constants(false).map{|s| const_get(s) }.select{|c| c.is_a?(Class) }.tap{|x| p x } - [Timings::Base]
+    constants(false).map{|s| const_get(s) }.select{|c| c.is_a?(Class) } - [Timings::Base]
   end
 
   def initialize params = {}

@@ -5,9 +5,10 @@ class Player
 
   finalizer :finalizer
 
-  attr_accessor :name, :email, :channel, :game_uuid, :uuid, :redis, :order, :score
+  attr_accessor :name, :email, :channel, :game_uuid, :uuid, :redis, :order, :score, :online
 
   def initialize params = {}
+    @online = false
     # @redis ||= ::Redis.new(driver: :celluloid)
     @game_uuid = params[:game_uuid]
     if params[:uuid]
@@ -68,24 +69,39 @@ class Player
   end
 
   def online!
+    @online = true
+    info "#{@uuid} online"
     state = Actor[:"state_#{@game_uuid}"]
-    p state.state
-    send_ready reply_to: 'connect' if state.state.to_s == 'waiting'
-    send_state reply_to: 'connect' if state.state.to_s == 'started'
-    send_result reply_to: 'connect' unless %w(waiting started).include?(state.state.to_s)
+    async.send_ready reply_to: 'connect' if state.state.to_s == 'waiting'
+    async.send_state reply_to: 'connect' if state.state.to_s == 'started'
+    async.send_result reply_to: 'connect' unless %w(waiting started).include?(state.state.to_s)
     info 'online'
   end
 
   def offline!
-    info 'offline'
+    @online = false
+    info "#{@uuid} offline"
+  end
+
+  def publish msg
+    if @online
+      ch = Actor[:"chnl_#{@uuid}"]
+      if ch
+        p 'chnl ok'
+      else
+
+      end
+      ch.publish msg.to_json
+    else
+      info "player #{@uuid} offline"
+    end
+    info msg.inspect
   end
 
   def send_result params = {}
     state = Actor[:"state_#{@game_uuid}"]
     msg = {type: 'event', subtype: 'result'}
-    ch = Actor[:"chnl_#{@uuid}"]
-    p msg
-    ch.publish msg.to_json
+    publish msg
   end
 
   def send_ready params = {}
@@ -93,9 +109,7 @@ class Player
     # timers = Actor[:"alarms_#{@game_uuid}"]
     players = Actor[:"players_#{@game_uuid}"]
     msg = {type: 'event', subtype: 'ready', start_at: Timings::Start.instance(@game_uuid).at, pitcher: (players.queue.index(@uuid) == 0 ? 1 : nil)}
-    ch = Actor[:"chnl_#{@uuid}"]
-    p msg
-    ch.publish msg.to_json
+    publish msg
   end
 
   def send_event ev, params = {}
@@ -104,30 +118,26 @@ class Player
       type: 'event', subtype: ev
     }.merge params
     p @uuid, state.player_channels.keys
-    ch = Actor[:"chnl_#{@uuid}"]
-    ch.publish msg.to_json
+    publish msg
   end
 
   def send_pitch params = {}
     state = Actor[:"state_#{@game_uuid}"]
     queue = Actor[:"queue_#{@game_uuid}"]
     msg = {type: 'event', subtype: 'pitched', value: params[:value], to_replace: params[:to_replace], author: queue.pitcher.uglify_name(state.stage.to_s), timer: Time.now.to_i + 60, step: {status: state.step_status} }
-    ch = Actor[:"chnl_#{@uuid}"]
-    ch.publish msg.to_json
+    publish msg
   end
 
   def send_pass
     state = Actor[:"state_#{@game_uuid}"]
     msg = {type: 'event', subtype: 'passed'}
-    ch = Actor[:"chnl_#{@uuid}"]
-    ch.publish msg.to_json
+    publish msg
   end
 
   def send_vote params = {}
     state = Actor[:"state_#{@game_uuid}"]
     msg = {type: 'event', subtype: 'voted'}.merge(params)
-    ch = Actor[:"chnl_#{@uuid}"]
-    ch.publish msg.to_json
+    publish msg
   end
 
   def send_start_step
@@ -136,18 +146,15 @@ class Player
     queue = Actor[:"queue_#{@game_uuid}"]
     players = Actor[:"players_#{@game_uuid}"]
     info "::::::ids #{ queue.ids.index(@uuid)}"
-    
     msg = {type: 'event', subtype: 'start_step', turn_in: queue.ids.index(@uuid), pitcher_name: queue.pitcher.uglify_name(state.stage), step: {current: state.step, total: state.total_steps, status: state.step_status}}
-    ch = Actor[:"chnl_#{@uuid}"]
-    ch.publish msg.to_json
+    publish msg
   end
 
   def send_end_step params = {}
     state = Actor[:"state_#{@game_uuid}"]
     # timers = Actor[:"alarms_#{@game_uuid}"]
     msg = {type: 'event', subtype: 'end_step', result: {status: params[:status], score: 0, delta: 0}, timer: Time.now.to_i + 20}
-    ch = Actor[:"chnl_#{@uuid}"]
-    ch.publish msg.to_json
+    publish msg
   end
 
   def send_start_stage
@@ -155,15 +162,13 @@ class Player
     state = Actor[:"state_#{@game_uuid}"]
     game = Actor[:"game_#{@game_uuid}"]
     msg = {type: 'event', subtype: 'start_stage', value: game.stage, turn_in: (players.queue.index(@uuid) || 3)}
-    ch = Actor[:"chnl_#{@uuid}"]
-    ch.publish msg.to_json
+    publish msg
   end
 
   def send_end_stage
     state = Actor[:"state_#{@game_uuid}"]
-    ch = Actor[:"chnl_#{@uuid}"]
     msg = {type: 'event', subtype: 'end_stage', value: state.stage, timer: Timings.instance(@uuid).next_interval}
-    ch.publish msg.to_json
+    publish msg
   end
 
   def uglify_name(stage)
@@ -201,11 +206,7 @@ class Player
 
   def send_state params = {}
     info "send_state #{@uuid}"
-    state = Actor[:"state_#{@game_uuid}"]
-    ch = Actor[:"chnl_#{@uuid}"]
-    info state(params).to_json
-    ch.publish state(params).to_json
-    info state(params).to_json
+    publish state(params)
   end
 
   def finalizer

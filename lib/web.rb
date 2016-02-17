@@ -50,7 +50,7 @@ class Web < Reel::Server::HTTP
     if socket.url =~ /\/player\//
       # socket.on_message{ p 'ffffffffff' }
       # socket.write('aaaaaaaaa')
-      PlayerConnect.new(socket, socket.url)
+      PlayerConnect.create(socket, socket.url)
     elsif socket.url == '/swot/control'
       p 'control channel TODO'
       # ClientConnect(socket)
