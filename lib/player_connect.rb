@@ -32,6 +32,8 @@ class PlayerConnect
       off
     rescue IOError => e
       off
+    rescue Errno::ECONNRESET => e
+      off
     rescue Exception => e
       p e.class, e.message
       raise
