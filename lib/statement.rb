@@ -4,6 +4,7 @@ class Statement
   attr_accessor :value,
                 :author,
                 :replaces,
+                :replaced,
                 :uuid,
                 :position,
                 :game_uuid,
@@ -22,11 +23,20 @@ class Statement
     @game_uuid = params[:game_uuid]
     @stage = params[:stage]
     @step = params[:step]
+    @replaced = false
     # {player: 'id', share: 'float'}
     @contribution = {}
     # [{ player: 'id', result: 'accepted | declined' }, ...]
     @votes = []
     @importances = []
+  end
+
+  def replaced_by! uuid
+    if uuid.is_a? Statement
+      self.replaced = uuid.uuid
+    else
+      self.replaced = uuid
+    end
   end
 
   def as_json
@@ -38,9 +48,12 @@ class Statement
   def visible?
     return false if @votes.empty?
     state = Celluloid::Actor[:"state_#{@game_uuid}"]
-    if params[:stage] && state && state.alive?
-      return false unless state.stage.to_swot == @stage
+    if state && state.alive?
+      return false unless state.to_swot(state.stage) == @stage
     end
+    return false if replaced
+    return false unless result == 'accepted'
+    statements = Celluloid::Actor[:"statements_#{@game_uuid}"]
     true
   end
 

@@ -145,7 +145,7 @@ class Game
     queue = Actor[:"queue_#{@uuid}"]
     statements = Actor[:"statements_#{@uuid}"]
     tm = Time.now.to_i + (state.setting[:voting_quorum_timeout] || 60)
-    statement = {value: params[:value], replaces: params[:to_replace], author: queue.pitcher.uuid, stage: state.stage, step: state.step, game_uuid: @uuid}
+    statement = {value: params[:value], to_replace: params[:to_replace], author: queue.pitcher.uuid, stage: state.stage, step: state.step, game_uuid: @uuid}
     # TODO validate statement for duplication
     statements.add statement
     state.step_status = state.next_enum(State::STEP_STATUSES, state.step_status)

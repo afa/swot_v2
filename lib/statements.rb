@@ -29,6 +29,7 @@ class Statements
     if params[:to_replace]
       params[:to_replace].each{|idx| replace << @current[idx.to_i - 1] }
       replace.each{|s| @current.delete(s) }
+      info "replacing #{params[:to_replace].size}: params #{params[:to_replace].inspect} replace #{replace.inspect}"
     end
 
     statement = Statement.new value: params[:value], author: queue.pitcher.uuid, replaces: replace, uuid: uuid, game_uuid: @game_uuid, stage: state.stage, step: state.step
