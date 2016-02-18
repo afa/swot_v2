@@ -39,8 +39,7 @@ class Statements
   end
 
   def active
-    @current.map{|s| find s }.select{|s|  }
-    
+    @current.map{|s| find s }.select(&:visible?).map(&:as_json)
   end
 
   def all

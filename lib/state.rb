@@ -8,18 +8,18 @@ class State
   attr_accessor :state, :step, :total_steps, :step_status, :stage
   attr_accessor :game_uuid, :game, :players, :player_channels, :setting
   STAGES = {
-    s: {beetwen: false, order: 1, name: 'Strengths'},
-    sw: {beetwen: true, order: 2},
-    w: {beetwen: false, order: 3, name: 'Weaknesses'},
-    wo: {beetwen: true, order: 4},
-    o: {beetwen: false, order: 5, name: 'Opportunities'},
-    ot: {beetwen: true, order: 6},
-    t: {beetwen: false, order: 7, name: 'Threats'},
-    tr: {beetwen: true, order: 8},
-    rs: {beetwen: false, order: 9},
-    ro: {beetwen: false, order: 10},
-    rw: {beetwen: false, order: 11},
-    rt: {beetwen: false, order: 12}
+    s: {beetwen: false, order: 1, name: 'Strengths', swot: :s},
+    sw: {beetwen: true, order: 2, swot: :s},
+    w: {beetwen: false, order: 3, name: 'Weaknesses', swot: :w},
+    wo: {beetwen: true, order: 4, swot: :w},
+    o: {beetwen: false, order: 5, name: 'Opportunities', swot: :o},
+    ot: {beetwen: true, order: 6, swot: :o},
+    t: {beetwen: false, order: 7, name: 'Threats', swot: :t},
+    tr: {beetwen: true, order: 8, swot: :t},
+    rs: {beetwen: false, order: 9, swot: :s},
+    rw: {beetwen: false, order: 10, swot: :w},
+    ro: {beetwen: false, order: 11, swot: :o},
+    rt: {beetwen: false, order: 12, swot: :t}
   }
 
   STEP_STATUSES = {
@@ -27,6 +27,10 @@ class State
     vote: {active: true, name: 'vote', order: 2},
     end: {active: false, name: 'end', order: 3}
   }
+
+  def to_swot(stg)
+    STAGES[stg][:swot]
+  end
 
   def first_enum(hash)
     frst = hash.values.map{|i| i[:order] }.min

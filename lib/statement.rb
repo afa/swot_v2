@@ -35,6 +35,15 @@ class Statement
     { index: @position, body: @value, score: 0.0, author: @author}
   end
 
+  def visible?
+    return false if @votes.empty?
+    state = Celluloid::Actor[:"state_#{@game_uuid}"]
+    if params[:stage] && state && state.alive?
+      return false unless state.stage.to_swot == @stage
+    end
+    true
+  end
+
   def vote params = {}
     @votes << Vote.new(player: params[:player], result: params[:result], active: true)
   end
