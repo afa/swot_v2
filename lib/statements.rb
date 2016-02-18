@@ -1,6 +1,7 @@
 class Statements
   include Celluloid
   include Celluloid::IO
+  include Celluloid::Notifications
   include Celluloid::Internals::Logger
 
   attr_accessor :statements, :current, :game_uuid
@@ -28,19 +29,22 @@ class Statements
     replace = []
     if params[:to_replace]
       params[:to_replace].each{|idx| replace << @current[idx.to_i - 1] }
-      replace.each{|s| @current.delete(s) }
-      info "replacing #{params[:to_replace].size}: params #{params[:to_replace].inspect} replace #{replace.inspect}"
     end
 
     statement = Statement.new value: params[:value], author: queue.pitcher.uuid, replaces: replace, uuid: uuid, game_uuid: @game_uuid, stage: state.stage, step: state.step
     @statements << statement
     @current << uuid
-    @current.each_with_index{|s, i| find(s).position = i + 1 }
+    replace.each{|s| find(s).replaced_by! uuid }
+    active.each_with_index{|s, i| s.position = i + 1 }
     @voting = uuid
   end
 
-  def active
+  def active_js
     @current.map{|s| find s }.select(&:visible?).map(&:as_json)
+  end
+
+  def active
+    @current.map{|s| find s }.select(&:visible?)
   end
 
   def all

@@ -196,7 +196,7 @@ class Player
         current_stage: game.stage, # one of stages
         conclusion: {},
         replaces: [],
-        statements: statements.active,
+        statements: statements.active_js,
         player: {
           turn_in: (players.queue.index(@uuid) || 3)
         },
