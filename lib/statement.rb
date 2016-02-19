@@ -105,7 +105,7 @@ class Statement
       delta = Store::Setting.defaults[zone.to_sym]
       # FIXME:  ищем плееров с ид в текущей игре.
       player = Celluloid::Actor[:"player_#{vote.player}"]
-      player.score.catcher_apply_delta(delta)
+      player.catcher_apply_delta(delta)
     end
   end
 

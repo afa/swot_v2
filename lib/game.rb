@@ -21,6 +21,7 @@ class Game
     @uuid = params[:uuid]
     info "#{@uuid} created"
     # @redis = ::Redis.new(driver: :celluloid)
+    Center.current.to_supervise as: :"admin_logger_#{@uuid}", type: AdminLogger, args: [{game_uuid: @uuid}]
     Center.current.to_supervise as: :"state_#{@uuid}", type: State, args: [{game_uuid: @uuid}]
     time_params = {}
     if params[:start]

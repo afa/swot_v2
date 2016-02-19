@@ -23,8 +23,24 @@ class PlayerConnect
 
   def publish msg
     if @ok
-    @sock.write msg
-    p msg
+      begin
+        @sock.write msg
+        p msg
+      rescue EOFError => e
+        off
+        @sock.close
+      rescue IOError => e
+        off
+        # @sock.close
+      rescue Errno::ECONNRESET => e
+        off
+        @sock.close
+      rescue Exception => e
+        p e.class, e.message
+        off
+        @sock.close
+        raise
+      end
     end
   end
 

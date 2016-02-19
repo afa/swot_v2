@@ -10,6 +10,7 @@ require 'store'
 require 'state'
 require 'statements'
 require 'statement'
+require 'admin_logger'
 require 'player_connect'
 class Center # < Celluloid::Supervision::Container
   include Celluloid
@@ -49,7 +50,7 @@ class Center # < Celluloid::Supervision::Container
 
   def to_supervise hash
     info 'supervise'
-    info hash.inspect
+    info hash.reject{|k, v| k == :args }.inspect
     @config.add(hash)
   end
 

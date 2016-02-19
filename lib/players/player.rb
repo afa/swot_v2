@@ -1,11 +1,13 @@
 class Player
   include Celluloid
   include Celluloid::IO
+  include Celluloid::Notifications
   include Celluloid::Internals::Logger
 
   finalizer :finalizer
 
   attr_accessor :name, :email, :channel, :game_uuid, :uuid, :redis, :order, :score, :online
+  attr :pitcher_rank, :catcher_score, :delta
 
   def initialize params = {}
     @online = false
@@ -22,6 +24,9 @@ class Player
       @name = store.name
       @email = store.email
       @score = store.score
+      @pitcher_rank = 1.0
+      @catcher_score = 0.0
+      @delta = 0.0
     end
     queue = Actor[:"queue_#{@game_uuid}"]
     queue.add @uuid
@@ -29,6 +34,10 @@ class Player
     info "q first #{queue.first}"
     
     info store.inspect
+  end
+
+  def current_stamp
+    Time.now.to_f.round(3)
   end
 
   # def run
@@ -76,19 +85,21 @@ class Player
     async.send_state reply_to: 'connect' if state.state.to_s == 'started'
     async.send_result reply_to: 'connect' unless %w(waiting started).include?(state.state.to_s)
     info 'online'
+    async.publish :player_online, {uuid: @uuid}
   end
 
   def offline!
     @online = false
     info "#{@uuid} offline"
+    async.publish :player_offline, {uuid: @uuid}
   end
 
-  def publish msg
+  def publish_msg msg
     if @online
       ch = Actor[:"chnl_#{@uuid}"]
       if ch && ch.alive?
         p 'chnl ok'
-        ch.publish msg.to_json
+        ch.publish msg.merge(time: current_stamp).to_json
       else
         p 'chnl down'
         offline!
@@ -102,7 +113,7 @@ class Player
   def send_result params = {}
     state = Actor[:"state_#{@game_uuid}"]
     msg = {type: 'event', subtype: 'result'}
-    publish msg
+    publish_msg msg
   end
 
   def send_ready params = {}
@@ -110,7 +121,7 @@ class Player
     # timers = Actor[:"alarms_#{@game_uuid}"]
     players = Actor[:"players_#{@game_uuid}"]
     msg = {type: 'event', subtype: 'ready', start_at: Timings::Start.instance(@game_uuid).at, pitcher: (players.queue.index(@uuid) == 0 ? 1 : nil)}
-    publish msg
+    publish_msg msg
   end
 
   def send_event ev, params = {}
@@ -119,26 +130,26 @@ class Player
       type: 'event', subtype: ev
     }.merge params
     p @uuid, state.player_channels.keys
-    publish msg
+    publish_msg msg
   end
 
   def send_pitch params = {}
     state = Actor[:"state_#{@game_uuid}"]
     queue = Actor[:"queue_#{@game_uuid}"]
-    msg = {type: 'event', subtype: 'pitched', value: params[:value], to_replace: params[:to_replace], author: queue.pitcher.uglify_name(state.stage.to_s), timer: Time.now.to_i + 60, step: {status: state.step_status} }
-    publish msg
+    msg = {type: 'event', subtype: 'pitched', value: params[:value], to_replace: params[:to_replace], author: queue.pitcher.uglify_name(state.stage.to_s), timer: Timings.instance(@game_uuid).next_stamp, step: {status: state.step_status} }
+    publish_msg msg
   end
 
   def send_pass
     state = Actor[:"state_#{@game_uuid}"]
     msg = {type: 'event', subtype: 'passed'}
-    publish msg
+    publish_msg msg
   end
 
   def send_vote params = {}
     state = Actor[:"state_#{@game_uuid}"]
     msg = {type: 'event', subtype: 'voted'}.merge(params)
-    publish msg
+    publish_msg msg
   end
 
   def send_start_step
@@ -147,15 +158,15 @@ class Player
     queue = Actor[:"queue_#{@game_uuid}"]
     players = Actor[:"players_#{@game_uuid}"]
     info "::::::ids #{ queue.ids.index(@uuid)}"
-    msg = {type: 'event', subtype: 'start_step', turn_in: queue.ids.index(@uuid), pitcher_name: queue.pitcher.uglify_name(state.stage), step: {current: state.step, total: state.total_steps, status: state.step_status}}
-    publish msg
+    msg = {type: 'event', subtype: 'start_step', turn_in: queue.ids.index(@uuid), pitcher_name: queue.pitcher.uglify_name(state.stage), timer: Timings.instance(@game_uuid).next_stamp, step: {current: state.step, total: state.total_steps, status: state.step_status}}
+    publish_msg msg
   end
 
   def send_end_step params = {}
     state = Actor[:"state_#{@game_uuid}"]
     # timers = Actor[:"alarms_#{@game_uuid}"]
-    msg = {type: 'event', subtype: 'end_step', result: {status: params[:status], score: 0, delta: 0}, timer: Time.now.to_i + 20}
-    publish msg
+    msg = {type: 'event', subtype: 'end_step', result: {status: params[:status], score: 0, delta: 0}, timer: Timings.instance(@game_uuid).next_stamp}
+    publish_msg msg
   end
 
   def send_start_stage
@@ -163,24 +174,23 @@ class Player
     state = Actor[:"state_#{@game_uuid}"]
     game = Actor[:"game_#{@game_uuid}"]
     msg = {type: 'event', subtype: 'start_stage', value: game.stage, turn_in: (players.queue.index(@uuid) || 3)}
-    publish msg
+    publish_msg msg
   end
 
   def send_end_stage
     state = Actor[:"state_#{@game_uuid}"]
-    msg = {type: 'event', subtype: 'end_stage', value: state.stage, timer: Timings.instance(@uuid).next_interval}
-    publish msg
+    msg = {type: 'event', subtype: 'end_stage', value: state.stage, timer: Timings.instance(@game_uuid).next_stage}
+    publish_msg msg
   end
 
   def uglify_name(stage)
-    %w(s t).include?(stage) ? "Player #{order}" : name
+    %w(s t).map(&:to_sym).include?(stage) ? "Player #{order}" : name
   end
 
   def gen_state params = {}
     game = Actor[:"game_#{@game_uuid}"]
     players = Actor[:"players_#{@game_uuid}"]
     state = Actor[:"state_#{@game_uuid}"]
-    # timers = Actor[:"alarms_#{@game_uuid}"]
     statements = Actor[:"statements_#{@game_uuid}"]
     
     info "current statements #{statements.all}"
@@ -188,6 +198,7 @@ class Player
       type: 'status',
       state: state.state,
       game: {
+        time: current_stamp,
         step: {
           current: game.step,
           total: game.total_steps,
@@ -202,14 +213,28 @@ class Player
         },
 
         started_at: Timings::Start.instance(@game_uuid).at,
-        timeout_at: Timings.instance(@game_uuid).next_interval
+        timeout_at: Timings.instance(@game_uuid).next_stamp
       },
     }
   end
 
   def send_state params = {}
     info "send_state #{@uuid}"
-    publish gen_state(params)
+    publish_msg gen_state(params)
+  end
+
+  # conclusion = [accepted, declined, pass, disconnected]
+  def pitcher_update(conclusion)
+    mult = Store::Setting.defaults["pitcher_rank_multiplier_#{conclusion}".to_sym]
+    min = Store::Setting.defaults[:pitcher_minimum_rank]
+    raise "pitcher_rank_multiplier_#{conclusion} not in Settings" unless (mult && min)
+    temp = @pitcher_rank * mult
+    @pitcher_rank = [temp, min].max
+  end
+
+  def catcher_apply_delta(delta)
+    @catcher_score += delta
+    @catcher_delta = delta
   end
 
   def finalizer
