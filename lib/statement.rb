@@ -13,6 +13,7 @@ class Statement
                 :votes,
                 :importances,
                 :status,
+                :result,
                 :contribution
 
   def initialize params = {}
@@ -29,6 +30,7 @@ class Statement
     @contribution = {}
     # [{ player: 'id', result: 'accepted | declined' }, ...]
     @votes = []
+    @result = 0.0
     @importances = []
   end
 
@@ -53,8 +55,8 @@ class Statement
       return false unless state.to_swot(state.stage) == @stage
     end
     return false if replaced
-    return false unless result == 'accepted'
-    statements = Celluloid::Actor[:"statements_#{@game_uuid}"]
+    return false unless @status == 'accepted'
+    # statements = Celluloid::Actor[:"statements_#{@game_uuid}"]
     true
   end
 
@@ -68,6 +70,22 @@ class Statement
 
   def score_for(player_id)
 
+  end
+
+  def calc_result
+    return 'no_quorum' if @votes.empty?
+    p = @votes.map(&:result).select{|v| v == 'accepted' }.size
+    return 'declined' if p ==0
+    return 'accepted' if p == voted_count
+    p.to_f / @votes.size.to_f >= 0.5 ? 'accepted' : 'declined'
+  end
+
+  def accept!
+    @status = 'accepted'
+  end
+
+  def decline!
+    @status = 'declined'
   end
 
   def set_contribution
@@ -97,10 +115,10 @@ class Statement
   end
 
   def count_catchers_score
-    result = conclusion
-    catcher_zone =  if   result < Store::Setting.defaults[:catcher_low_border]  ; 1
-                    elsif result <  0.5                                         ; 2
-                    elsif result < Store::Setting.defaults[:catcher_high_border]; 3
+    rslt = conclusion
+    catcher_zone =  if   @result < Store::Setting.defaults[:catcher_low_border]  ; 1
+                    elsif @result <  0.5                                         ; 2
+                    elsif @result < Store::Setting.defaults[:catcher_high_border]; 3
                     else                                                        ; 4
                     end
     @votes.each do |vote|
@@ -112,42 +130,26 @@ class Statement
     end
   end
 
-  def calc_result
-    return 'no_quorum' if @votes.empty?
-    p = @votes.map(&:result).select{|v| v == 'accepted' }.size
-    return 'declined' if p ==0
-    return 'accepted' if p == voted_count
-    p.to_f / @votes.size.to_f >= 0.5 ? 'accepted' : 'declined'
-  end
-
-  def accept!
-    @status = 'accepted'
-  end
-
-  def decline!
-    @status = 'declined'
-  end
-
   # TODO: what options?
   def conclusion(options={})
-    return 'no_quorum' if @votes.empty?
+    return 'no_quorum' if @votes.empty? # minimal quorum size TODO
     # grouped_hash[:key] - nil if no objects meet condition
     grouped_hash = @votes.group_by { |vote| vote.result == 'accepted'}
     pro = grouped_hash[true] || []
     contra = grouped_hash[false] || []
-    return 'accepted' if pro && !contra
-    return 'declined' if contra && !pro
-    result = pro.size.to_f / (contra + pro).size.to_f
-    result >= 0.5 ? 'accepted' : 'declined'
+    # return 'accepted' if pro && !contra
+    # return 'declined' if contra && !pro
+    @result = pro.size.to_f / (contra + pro).size.to_f
+    @result >= 0.5 ? 'accepted' : 'declined'
   end
 
   def vote_results! options={}
     if @status == 'no_quorum'
-      @concl_result = 0.0
+      @result = 0.0
       decline!
     else
-      @concl_result = @votes.inject(0){|r, v| r += v.result == 'accept' ? 1 : 0 }.to_f / @votes.size.to_f
-      @concl_result >= 0.5 ? accept! : decline!
+      @result = @votes.inject(0){|r, v| r += v.result == 'accepted' ? 1 : 0 }.to_f / @votes.size.to_f
+      @result >= 0.5 ? accept! : decline!
       count_catchers_score
       # game.count_pitchers_score
     end

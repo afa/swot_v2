@@ -165,7 +165,9 @@ class Player
   def send_end_step params = {}
     state = Actor[:"state_#{@game_uuid}"]
     # timers = Actor[:"alarms_#{@game_uuid}"]
-    msg = {type: 'event', subtype: 'end_step', result: {status: params[:status], score: 0, delta: 0}, timer: Timings.instance(@game_uuid).next_stamp}
+    statements = Actor[:"statements_#{@game_uuid}"]
+    stat = statements.voting
+    msg = {type: 'event', subtype: 'end_step', result: {status: params[:status], score: stat.author == @uuid ? @pitcher_rank : @catcher_score, delta: stat.author == @uuid ? 0 : @delta}, timer: Timings.instance(@game_uuid).next_stamp}
     publish_msg msg
   end
 
