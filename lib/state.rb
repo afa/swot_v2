@@ -6,7 +6,7 @@ class State
   include Celluloid::IO
   include Celluloid::Internals::Logger
   attr_accessor :state, :step, :total_steps, :step_status, :stage
-  attr_accessor :game_uuid, :game, :players, :player_channels, :setting
+  attr_accessor :game_uuid, :game, :players, :player_channels, :setting, :prev_pitcher
   STAGES = {
     s: {beetwen: false, order: 1, name: 'Strengths', swot: :s},
     sw: {beetwen: true, order: 2, swot: :s},

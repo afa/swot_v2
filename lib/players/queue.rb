@@ -42,7 +42,9 @@ class Queue
   end
 
   def skip!
-    @current.shift
+    prev = @current.shift
+    state = Actor[:"state_#{@game_uuid}"]
+    state.prev_pitcher = prev
     fill_current
   end
 

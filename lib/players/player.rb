@@ -120,7 +120,7 @@ class Player
     state = Actor[:"state_#{@game_uuid}"]
     # timers = Actor[:"alarms_#{@game_uuid}"]
     players = Actor[:"players_#{@game_uuid}"]
-    msg = {type: 'event', subtype: 'ready', start_at: Timings::Start.instance(@game_uuid).at, pitcher: (players.queue.index(@uuid) == 0 ? 1 : nil)}
+    msg = {type: 'event', subtype: 'ready', start_at: Timings::Start.instance(@game_uuid).at, pitcher: (players.queue.index(@uuid) == 0)}
     publish_msg msg
   end
 
@@ -164,10 +164,14 @@ class Player
 
   def send_end_step params = {}
     state = Actor[:"state_#{@game_uuid}"]
-    # timers = Actor[:"alarms_#{@game_uuid}"]
+    # queue = Actor[:"queue_#{@game_uuid}"]
     statements = Actor[:"statements_#{@game_uuid}"]
     stat = statements.voting
-    msg = {type: 'event', subtype: 'end_step', result: {status: params[:status], score: stat.author == @uuid ? @pitcher_rank : @catcher_score, delta: stat.author == @uuid ? 0 : @delta}, timer: Timings.instance(@game_uuid).next_stamp}
+    if stat
+      msg = {type: 'event', subtype: 'end_step', result: {status: params[:status], score: stat.author == @uuid ? @pitcher_rank : @catcher_score, delta: stat.author == @uuid ? 0 : @delta}, timer: Timings.instance(@game_uuid).next_stamp}
+    else
+      msg = {type: 'event', subtype: 'end_step', result: {status: params[:status], score: state.prev_pitcher.uuid == @uuid ? @pitcher_rank : @catcher_score, delta: 0.0}, timer: Timings.instance(@game_uuid).next_stamp}
+    end
     publish_msg msg
   end
 
@@ -181,12 +185,33 @@ class Player
 
   def send_end_stage
     state = Actor[:"state_#{@game_uuid}"]
-    msg = {type: 'event', subtype: 'end_stage', value: state.stage, timer: Timings.instance(@game_uuid).next_stage}
+    msg = {type: 'event', subtype: 'end_stage', value: state.stage, timer: Timings.instance(@game_uuid).next_stamp}
     publish_msg msg
   end
 
   def uglify_name(stage)
     %w(s t).map(&:to_sym).include?(stage) ? "Player #{order}" : name
+  end
+
+  def gen_conclusion
+    statements = Actor[:"statements_#{@game_uuid}"]
+    queue = Actor[:"queue_#{@game_uuid}"]
+    state = Actor[:"state_#{@game_uuid}"]
+    players = Actor[:"players_#{@game_uuid}"]
+    pitcher = queue.pitcher.uglify_name(state.stage)
+    conclusion = {author: pitcher}
+    if statements.voting
+      vot = statements.voting
+      conclusion.merge!(
+        value: vot.value,
+        author: vot.author.uglify_name(state.stage),
+        to_replace: vot.replaces,
+        status: vot.status,
+        player_score: 0.0,
+        players_voted: (100.0 * vot.votes.voted_count.to_f / (players.players.size - 1).to_f).to_i
+      )
+    end
+    conclusion
   end
 
   def gen_state params = {}
@@ -195,7 +220,8 @@ class Player
     state = Actor[:"state_#{@game_uuid}"]
     statements = Actor[:"statements_#{@game_uuid}"]
     
-    info "current statements #{statements.all}"
+    info "current all statements #{statements.mapped_current}"
+    info "current statements #{statements.active_js}"
     msg = {
       type: 'status',
       state: state.state,
@@ -207,7 +233,7 @@ class Player
           status: game.step_status
         },
         current_stage: game.stage, # one of stages
-        conclusion: {},
+        conclusion: gen_conclusion,
         replaces: [],
         statements: statements.active_js,
         player: {

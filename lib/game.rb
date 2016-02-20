@@ -152,8 +152,8 @@ class Game
     state.step_status = state.next_enum(State::STEP_STATUSES, state.step_status)
     Timings::VotingQuorum.instance(@uuid).start
     # alarms.async.set_out :voting_quorum, state.setting[:voting_quorum_timeout] || 60
-    players.push_pitch(value: params[:value], to_replace: params[:to_replace] || [], author: queue.pitcher.uglify_name(state.stage.to_s), timer: Timings.instance(@uuid).next_interval)
-    publish({type: 'event', subtype: 'pitched', value: params[:value], to_replace: params[:to_replace], author: queue.pitcher.uglify_name(state.stage.to_s), timer: Timings.instance(@uuid).next_interval})
+    players.push_pitch(value: params[:value], to_replace: params[:to_replace] || [], author: queue.pitcher.uglify_name(state.stage.to_s), timer: Timings.instance(@uuid).next_stamp)
+    publish({type: 'event', subtype: 'pitched', value: params[:value], to_replace: params[:to_replace], author: queue.pitcher.uglify_name(state.stage.to_s), timer: Timings.instance(@uuid).next_stamp})
 
   end
 
@@ -201,11 +201,12 @@ class Game
     queue = Actor[:"queue_#{@uuid}"]
     statements = Actor[:"statements_#{@uuid}"]
     info "end step cf"
+    statements.voting.vote_results! if statements.voting
     state.step_status = state.next_enum(State::STEP_STATUSES, state.step_status)
     state.step_status = state.next_enum(State::STEP_STATUSES, state.step_status) unless state.step_status == :end
     Timings::Results.instance(@uuid).start
     queue.next!
-    msg = {type: 'event', subtype: 'end_step', result: {status: params[:status], score: 0, delta: 0}, timer: Timings.instance(@uuid).next_interval}
+    msg = {type: 'event', subtype: 'end_step', result: {status: params[:status], score: 0, delta: 0}, timer: Timings.instance(@uuid).next_stamp}
     async.publish msg
     players.async.push_end_step params
   end
@@ -233,7 +234,7 @@ class Game
     info "end step cf"
     state.stage = state.next_enum(State::STAGES, state.stage)
     Timings::BetweenStages.instance(@uuid).start
-    msg = {type: 'event', subtype: 'end_stage', value: state.stage, timer: Timings.instance(@uuid).next_interval}
+    msg = {type: 'event', subtype: 'end_stage', value: state.stage, timer: Timings.instance(@uuid).next_stamp}
     async.publish msg
     players.async.push_end_step params
   end

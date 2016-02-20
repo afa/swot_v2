@@ -32,6 +32,7 @@ class Statement
     @votes = []
     @result = 0.0
     @importances = []
+    @status = false
   end
 
   def replaced_by! uuid
@@ -42,7 +43,7 @@ class Statement
     end
   end
 
-  def as_json
+  def as_json player = nil
     p @author
     author = Celluloid::Actor[:"player_#{@author}"]
     { index: @position, body: @value, score: 0.0, author: @author}
@@ -52,6 +53,7 @@ class Statement
     return false if @votes.empty?
     state = Celluloid::Actor[:"state_#{@game_uuid}"]
     if state && state.alive?
+      p @stage
       return false unless state.to_swot(state.stage) == @stage
     end
     return false if replaced
@@ -102,7 +104,7 @@ class Statement
       state = Celluloid::Actor[:"state_#{@game_uuid}"]
       others_share_part = ( 1 - share ).to_f / replaces_amount
       # FIXME: найти утвержения с текущим стеджом в текущей игре с ид в массиве @replaces
-      replaced = @replaces.map{|r| s.find_for_stage(state.stage) }
+      replaced = @replaces.map{|r| statements.find(r) }.compact.select{|s| s.stage == state.to_swot(state.stage) }
 
       replaced.each do |statement|
         statement.contribution.each do |player, share|

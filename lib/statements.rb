@@ -50,6 +50,7 @@ class Statements
     @current << uuid
     replace.each{|s| find(s).replaced_by! uuid }
     active.each_with_index{|s, i| s.position = i + 1 }
+    statement.set_contribution
     @voting = uuid
   end
 
@@ -61,8 +62,8 @@ class Statements
     mapped_current.detect{|s| s.stage == st }
   end
 
-  def active_js
-    active.map(&:as_json)
+  def active_js(player = nil)
+    active.map{|s| s.as_json(player) }
   end
 
   def active
