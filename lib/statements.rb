@@ -22,6 +22,20 @@ class Statements
     find(@voting)
   end
 
+  def validate_statement params = {}
+    repl_count = params.has_key?(:to_replace) ? params[:to_replace].size : 0
+    if active.size - repl_count > 6
+      return { error: 'to_many' }
+    end
+    if @current.detect{|s| params[:value] == s[:value] }
+      return { error: 'duplicate' }
+    end
+    if params[:value].force_encoding('UTF-8').size > 75
+      return { error: 'too_long' }
+    end
+    {}
+  end
+
   def add params = {}
     uuid = UUID.new.generate
     state = Actor[:"state_#{@game_uuid}"]
@@ -39,16 +53,24 @@ class Statements
     @voting = uuid
   end
 
+  def mapped_current
+    @current.map{|s| find s }
+  end
+
+  def find_for_stage st
+    mapped_current.detect{|s| s.stage == st }
+  end
+
   def active_js
-    @current.map{|s| find s }.select(&:visible?).map(&:as_json)
+    active.map(&:as_json)
   end
 
   def active
-    @current.map{|s| find s }.select(&:visible?)
+    mapped_current.select(&:visible?)
   end
 
   def all
-    @current.map{|s| find s }.map(&:as_json).tap{|x| p 'statements.all', x }
+    mapped_current.map(&:as_json).tap{|x| p 'statements.all', x }
   end
 
   def by(sym, val)

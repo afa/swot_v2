@@ -16,7 +16,7 @@ describe 'votes' do
   end
   describe 'conclusion' do
     it 'should calc conclusion on empty' do
-      expect(@stat.conclusion).to eq('no_votes')
+      expect(@stat.conclusion).to eq('no_quorum')
     end
     it 'should calc conclusion for 1 accepted' do
       @stat.vote({player: '2', result: 'accepted'})
@@ -35,10 +35,11 @@ describe 'votes' do
     end
   end
   it 'should decline nonvoted' do
-    expect(@stat.result).to eq('declined')
+    expect(@stat.calc_result).to eq('no_quorum')
   end
   it 'should decline one declined vote' do
-    expect(@stat.result).to eq('declined')
+    @stat.vote({player: '3', result: 'declined'})
+    expect(@stat.calc_result).to eq('declined')
   end
 
   describe 'add votes' do
@@ -46,23 +47,23 @@ describe 'votes' do
       @stat.vote({player: '2', result: 'accepted'})
     end
     it 'should accept one accepted vote' do
-      expect(@stat.result).to eq('accepted')
+      expect(@stat.calc_result).to eq('accepted')
     end
 
     it 'should accept 2 accepted votes' do
       @stat.vote({player: '3', result: 'accepted'})
-      expect(@stat.result).to eq('accepted')
+      expect(@stat.calc_result).to eq('accepted')
     end
 
     it 'should accept 1 accepted and 1 declined votes' do
       @stat.vote({player: '3', result: 'declined'})
-      expect(@stat.result).to eq('accepted')
+      expect(@stat.calc_result).to eq('accepted')
     end
 
     it 'should decline 1 accepted and 2 declined votes' do
       @stat.vote({player: '3', result: 'declined'})
       @stat.vote({player: '4', result: 'declined'})
-      expect(@stat.result).to eq('declined')
+      expect(@stat.calc_result).to eq('declined')
     end
   end
 end

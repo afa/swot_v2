@@ -190,7 +190,7 @@ class Game
     statements.voting.vote(player: params[:player], result: params[:result])
     if statements.voting.voted_count == players.players.size - 1
       Timings::VotingQuorum.instance(@uuid).cancel
-      end_step(status: statements.voting.result)
+      end_step(status: statements.voting.calc_result)
     end
   end
 

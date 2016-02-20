@@ -12,6 +12,7 @@ class Statement
                 :step,
                 :votes,
                 :importances,
+                :status,
                 :contribution
 
   def initialize params = {}
@@ -79,9 +80,11 @@ class Statement
             end
     contributors_hash = { @author => share }
     unless replaces_amount.zero?
+      statements = Celluloid::Actor[:"statements_#{@game_uuid}"]
+      state = Celluloid::Actor[:"state_#{@game_uuid}"]
       others_share_part = ( 1 - share ).to_f / replaces_amount
       # FIXME: найти утвержения с текущим стеджом в текущей игре с ид в массиве @replaces
-      replaced = Statement.find(@replaces)
+      replaced = @replaces.map{|r| s.find_for_stage(state.stage) }
 
       replaced.each do |statement|
         statement.contribution.each do |player, share|
@@ -105,11 +108,12 @@ class Statement
       delta = Store::Setting.defaults[zone.to_sym]
       # FIXME:  ищем плееров с ид в текущей игре.
       player = Celluloid::Actor[:"player_#{vote.player}"]
-      player.catcher_apply_delta(delta)
+      player.async.catcher_apply_delta(delta)
     end
   end
 
-  def result
+  def calc_result
+    return 'no_quorum' if @votes.empty?
     p = @votes.map(&:result).select{|v| v == 'accepted' }.size
     return 'declined' if p ==0
     return 'accepted' if p == voted_count
@@ -117,14 +121,16 @@ class Statement
   end
 
   def accept!
+    @status = 'accepted'
   end
 
   def decline!
+    @status = 'declined'
   end
 
   # TODO: what options?
   def conclusion(options={})
-    return 'declined' if @votes.size.zero?
+    return 'no_quorum' if @votes.empty?
     # grouped_hash[:key] - nil if no objects meet condition
     grouped_hash = @votes.group_by { |vote| vote.result == 'accepted'}
     pro = grouped_hash[true] || []
@@ -135,6 +141,17 @@ class Statement
     result >= 0.5 ? 'accepted' : 'declined'
   end
 
+  def vote_results! options={}
+    if @status == 'no_quorum'
+      @concl_result = 0.0
+      decline!
+    else
+      @concl_result = @votes.inject(0){|r, v| r += v.result == 'accept' ? 1 : 0 }.to_f / @votes.size.to_f
+      @concl_result >= 0.5 ? accept! : decline!
+      count_catchers_score
+      # game.count_pitchers_score
+    end
+  end
   private
 
   def format_value(str)
@@ -144,6 +161,43 @@ class Statement
   end
 end
 
+  # def count_pitchers_score opts={}
+  #   all_contributions = accepted_statements.map &:contributors
+
+  #   players.each do |player|
+  #     player.score.pitcher_before_ranging = player.score.pitcher if opts[:save_before]
+  #     player.score.pitcher = all_contributions.sum {|x| x[player.id.to_s] || BigDecimal.new('0')}
+  #     player.save
+  #   end
+  # end
+
+  # def count_ranging
+
+  #   # nonranged_players = self.players.active.all.select(&:gaming?) - accepted_statements.map(&:importances).flatten.map(&:player_id).uniq.map{|x| Player.find(x) }
+  #   accepted_statements.each do |s|
+  #     nonranged_players = self.players.active.all.select(&:gaming?) - s.importances.map(&:player_id).uniq.map{|x| Player.find(x) }
+  #     nonranged_players.each do |p|
+  #       Rails.logger.info "---add importance for stat #{s.id.to_s} #{s.statement.to_s} player #{p.name}: #{p.id.to_s}"
+  #       v = s.importances.create player: p, value: Importance::MID_VALUE, auto: true
+  #       self.game_logger.write :importance_added, v
+  #     end
+  #   end
+  #   zero_imps = accepted_statements.map(&:importances).flatten.select{|i| i.value.nil? }
+  #   Rails.logger.info "---add imps for #{zero_imps.size}"
+  #   zero_imps.each do |i|
+  #     i.update_attributes value: Importance::MID_VALUE, auto: true
+  #       self.game_logger.write :importance_added, i
+  #   end
+  #   accepted_statements.map &:update_importance_score
+  #   scores_sum = accepted_statements.sum{|s| s.reload.importance_score_raw}
+
+  #   accepted_statements.each do |statement|
+  #     score = statement.importance_score_raw * 100.0 / scores_sum
+  #     statement.update_attribute :importance_score, score
+  #   end
+
+  #   count_pitchers_score save_before: true
+  # end
 
 # def count_catchers_score
 #   catcher_zone =  if    result < game.settings.send(:catcher_low_border)  ; 1
@@ -190,18 +244,3 @@ end
 # end
 
 
-# def vote_results options={}
-#   if options[:quorum_not_reached]
-#     self.result = 0
-#     # update_attributes :result, 0
-#     self.decline
-#   else
-#     self.result = votes.pro.count.to_f / votes.count.to_f
-#     # update_attribute :result, votes.pro.count.to_f / votes.count.to_f
-#     self.result >= 0.5 ? accept : decline
-#
-#     save
-#     count_catchers_score
-#     game.count_pitchers_score
-#   end
-# end
