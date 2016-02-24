@@ -142,13 +142,13 @@ class Player
 
   def send_pass
     state = Actor[:"state_#{@game_uuid}"]
-    msg = {type: 'event', subtype: 'passed'}
+    msg = {type: 'event', subtype: 'passed', timer: Timings.instance(@game_uuid).next_stamp}
     publish_msg msg
   end
 
   def send_vote params = {}
     state = Actor[:"state_#{@game_uuid}"]
-    msg = {type: 'event', subtype: 'voted'}.merge(params)
+    msg = {type: 'event', subtype: 'voted', timer: Timings.instance(@game_uuid).next_stamp}.merge(params)
     publish_msg msg
   end
 
@@ -185,6 +185,7 @@ class Player
 
   def send_end_stage
     state = Actor[:"state_#{@game_uuid}"]
+    info "sending end stage to pl #{@uuid}"
     msg = {type: 'event', subtype: 'end_stage', value: state.stage, timer: Timings.instance(@game_uuid).next_stamp}
     publish_msg msg
   end

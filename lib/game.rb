@@ -48,7 +48,7 @@ class Game
     p Timings::Start.instance(@uuid).set_time params[:start][:time]
     state.state = Timings::Start.instance(@uuid).next_time ? :waiting : Timings::Start.instance(@uuid).at ? :started : :waiting
     # state.state = alarms.start_at && alarms.start_at > Time.now.to_i ? :started : :waiting
-    cntrl = Control.current.publish_control( (params.has_key?(:players) ? {players: players.players.map{|p| {name: p.name, uuid: p.uuid, email: p.email}}} : {}).merge(type: 'status', uuid: @uuid, replly_to: 'create'))
+    cntrl = Control.current.publish_control( (params.has_key?(:players) ? {players: players.players.map{|p| {name: p.name, url: "http://192.168.112.220:3000/game/#{p.uuid}", uuid: p.uuid, email: p.email}}} : {}).merge(type: 'status', uuid: @uuid, replly_to: 'create'))
     Control.current.add_game(@uuid)
     state.add_game @uuid
     async.run
@@ -89,7 +89,6 @@ class Game
   end
 
   def start_stage #whats?
-    info 'TODO start stage'
     state = Actor[:"state_#{@uuid}"]
     players = Actor[:"players_#{@uuid}"]
     # alarms = Actor[:"alarms_#{@uuid}"]
@@ -133,6 +132,8 @@ class Game
     info "stage timeout: #{state.stage}"
     state.stage = state.next_enum(State::STAGES, state.stage)
     msg = {type: 'event', subtype: 'end_stage', value: state.stage}
+    Timings::Pitch.instance(@uuid).cancel
+    Timings::FirstPitch.instance(@uuid).cancel
     Timings::BetweenStages.instance(@uuid).start
     # alarms.async.set_out :between_stages, 10
     async.publish msg
@@ -150,6 +151,8 @@ class Game
     # TODO validate statement for duplication
     statements.add statement
     state.step_status = state.next_enum(State::STEP_STATUSES, state.step_status)
+    Timings::Pitch.instance(@uuid).cancel
+    Timings::FirstPitch.instance(@uuid).cancel
     Timings::VotingQuorum.instance(@uuid).start
     # alarms.async.set_out :voting_quorum, state.setting[:voting_quorum_timeout] || 60
     players.push_pitch(value: params[:value], to_replace: params[:to_replace] || [], author: queue.pitcher.uglify_name(state.stage.to_s), timer: Timings.instance(@uuid).next_stamp)
@@ -229,14 +232,18 @@ class Game
     state = Actor[:"state_#{@uuid}"]
     players = Actor[:"players_#{@uuid}"]
     # alarms = Actor[:"alarms_#{@uuid}"]
-    queue = Actor[:"queue_#{@uuid}"]
-    statements = Actor[:"statements_#{@uuid}"]
-    info "end step cf"
+    # queue = Actor[:"queue_#{@uuid}"]
+    # statements = Actor[:"statements_#{@uuid}"]
+    info "end stage cf"
     state.stage = state.next_enum(State::STAGES, state.stage)
     Timings::BetweenStages.instance(@uuid).start
+    info 'end stage ccf'
     msg = {type: 'event', subtype: 'end_stage', value: state.stage, timer: Timings.instance(@uuid).next_stamp}
     async.publish msg
-    players.async.push_end_step params
+    info 'end stage cdf'
+
+    players.async.push_end_stage
+    info 'end stage cef'
   end
 
   def results_timeout params = {}
@@ -258,9 +265,6 @@ class Game
     state.step_status = state.first_enum(State::STEP_STATUSES)
 
     start_stage
-
-
-    p "!!!!between!!!!!!"
   end
 
 

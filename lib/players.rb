@@ -77,15 +77,16 @@ class Players
     game = Actor[:"game_#{@game_uuid}"]
     players.each do |pl|
       info "send end step to #{pl.uuid}"
-      pl.send_end_step params
+      pl.async.send_end_step params
     end
   end
 
   def push_end_stage
-    game = Actor[:"game_#{@game_uuid}"]
+    # game = Actor[:"game_#{@game_uuid}"]
+    info "send end stage for #{players.map(&:uuid).inspect}"
     players.each do |pl|
-      info "send start stage to #{pl.uuid}"
-      pl.send_end_stage
+      info "send end stage to #{pl.uuid}"
+      pl.async.send_end_stage
     end
   end
 
