@@ -170,7 +170,7 @@ class Player
     if stat
       msg = {type: 'event', subtype: 'end_step', result: {status: params[:status], score: stat.author == @uuid ? @pitcher_rank : @catcher_score, delta: stat.author == @uuid ? 0 : @delta}, timer: Timings.instance(@game_uuid).next_stamp}
     else
-      msg = {type: 'event', subtype: 'end_step', result: {status: params[:status], score: state.prev_pitcher.uuid == @uuid ? @pitcher_rank : @catcher_score, delta: 0.0}, timer: Timings.instance(@game_uuid).next_stamp}
+      msg = {type: 'event', subtype: 'end_step', result: {status: params[:status], score: state.prev_pitcher == @uuid ? @pitcher_rank : @catcher_score, delta: 0.0}, timer: Timings.instance(@game_uuid).next_stamp}
     end
     publish_msg msg
   end
@@ -204,11 +204,11 @@ class Player
       vot = statements.voting
       conclusion.merge!(
         value: vot.value,
-        author: vot.author.uglify_name(state.stage),
+        author: Actor[:"player_#{vot.author}"].uglify_name(state.stage),
         to_replace: vot.replaces,
         status: vot.status,
         player_score: 0.0,
-        players_voted: (100.0 * vot.votes.voted_count.to_f / (players.players.size - 1).to_f).to_i
+        players_voted: (100.0 * vot.voted_count.to_f / (players.players.size - 1).to_f).to_i
       )
     end
     conclusion
