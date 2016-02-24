@@ -42,13 +42,14 @@ class Statements
     queue = Actor[:"queue_#{@game_uuid}"]
     replace = []
     if params[:to_replace]
-      params[:to_replace].each{|idx| replace << @current[idx.to_i - 1] }
+      info "to replace #{params[:to_replace].inspect}"
+      params[:to_replace].each{|idx| replace << @current.detect{|c| find(c).position == idx.to_i} }
     end
 
-    statement = Statement.new value: params[:value], author: queue.pitcher.uuid, replaces: replace, uuid: uuid, game_uuid: @game_uuid, stage: state.stage, step: state.step
+    statement = Statement.new value: params[:value], author: queue.pitcher.uuid, replaces: replace.compact, uuid: uuid, game_uuid: @game_uuid, stage: state.stage, step: state.step
     @statements << statement
     @current << uuid
-    replace.each{|s| find(s).replaced_by! uuid }
+    replace.map{|s| find s }.compact.each{|s| s.replaced_by! uuid }
     active.each_with_index{|s, i| s.position = i + 1 }
     statement.set_contribution
     @voting = uuid
@@ -71,7 +72,7 @@ class Statements
   end
 
   def all
-    mapped_current.map(&:as_json).tap{|x| p 'statements.all', x }
+    mapped_current.map(&:as_json)
   end
 
   def by(sym, val)

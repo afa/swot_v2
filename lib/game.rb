@@ -205,6 +205,7 @@ class Game
     statements = Actor[:"statements_#{@uuid}"]
     info "end step cf"
     statements.voting.vote_results! if statements.voting
+ statements.active.each_with_index{|s, i| s.position = i + 1 }
     state.step_status = state.next_enum(State::STEP_STATUSES, state.step_status)
     state.step_status = state.next_enum(State::STEP_STATUSES, state.step_status) unless state.step_status == :end
     Timings::Results.instance(@uuid).start
