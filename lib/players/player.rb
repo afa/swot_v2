@@ -168,8 +168,8 @@ class Player
     state = Actor[:"state_#{@game_uuid}"]
     queue = Actor[:"queue_#{@game_uuid}"]
     statements = Actor[:"statements_#{@game_uuid}"]
-    stat = statements.voting
-    p stat
+    stat = statements.last_stat
+    p 'send end step voting', stat
     if stat
       per = 100 * stat.result.to_f
       per = 100 - per unless stat.status == 'accepted'

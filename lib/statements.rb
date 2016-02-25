@@ -5,7 +5,7 @@ class Statements
   include Celluloid::Internals::Logger
 
   attr_accessor :statements, :current, :game_uuid
-  attr :voting
+  attr :voting, :last_stat
   def initialize params = {}
     @game_uuid = params[:game_uuid]
     @statements = []
@@ -21,6 +21,11 @@ class Statements
   def voting
     return nil unless @voting
     find(@voting)
+  end
+
+  def last_stat
+    return nil unless @last_stat
+    find(@last_stat)
   end
 
   def visible
@@ -73,12 +78,14 @@ class Statements
     s = find(@voting)
     unless s
       @voting = nil
+      @last_stat = nil
       return
     end
     if s.status == 'accepted'
       s.replaces.each{|s| @visible.delete s }
       @visible << s.uuid
     end
+    @last_stat = @voting
     @voting = nil
   end
 
@@ -110,6 +117,7 @@ class Statements
   def clean_current
     @current = []
     @visible = []
+    @last_stat = nil
     @voting = nil
   end
 
