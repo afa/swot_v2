@@ -1,8 +1,10 @@
+require 'scores'
 class Player
   include Celluloid
   include Celluloid::IO
   include Celluloid::Notifications
   include Celluloid::Internals::Logger
+  include Scores
 
   finalizer :finalizer
 
@@ -164,15 +166,16 @@ class Player
 
   def send_end_step params = {}
     state = Actor[:"state_#{@game_uuid}"]
-    # queue = Actor[:"queue_#{@game_uuid}"]
+    queue = Actor[:"queue_#{@game_uuid}"]
     statements = Actor[:"statements_#{@game_uuid}"]
     stat = statements.voting
+    p stat
     if stat
       per = 100 * stat.result.to_f
       per = 100 - per unless stat.status == 'accepted'
       msg = {type: 'event', subtype: 'end_step', result: {status: params[:status], score: stat.author == @uuid ? @pitcher_rank : @catcher_score, delta: stat.author == @uuid ? 0 : @delta, players_voted: per}, timer: Timings.instance(@game_uuid).next_stamp}
     else
-      msg = {type: 'event', subtype: 'end_step', result: {status: params[:status], score: state.prev_pitcher == @uuid ? @pitcher_rank : @catcher_score, delta: 0.0}, timer: Timings.instance(@game_uuid).next_stamp}
+      msg = {type: 'event', subtype: 'end_step', result: {status: params[:status], score: queue.prev_pitcher == @uuid ? @pitcher_rank : @catcher_score, delta: 0.0}, timer: Timings.instance(@game_uuid).next_stamp}
     end
     publish_msg msg
   end

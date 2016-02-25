@@ -35,6 +35,11 @@ class Queue
     Actor[:"player_#{@current.first}"]
   end
 
+  def prev_pitcher
+    return nil unless @prev_pitcher
+    Actor[:"player_#{@prev_pitcher}"]
+  end
+
   def next!
     skip!
     rebuild_tail
@@ -42,9 +47,7 @@ class Queue
   end
 
   def skip!
-    prev = @current.shift
-    state = Actor[:"state_#{@game_uuid}"]
-    state.prev_pitcher = prev
+    @prev_pither = @current.shift
     fill_current
   end
 
