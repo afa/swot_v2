@@ -2,7 +2,9 @@ require "rubygems"
 require "bundler/setup"
 
 require 'celluloid/current'
+require 'celluloid/io'
 require "celluloid/test"
+$LOAD_PATH.unshift('./models') unless $LOAD_PATH.include?('./models')
 # require "game"
 #
 

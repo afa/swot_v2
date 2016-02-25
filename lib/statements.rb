@@ -11,6 +11,7 @@ class Statements
     @statements = []
     @current = []
     @voting = nil
+    @visible = []
   end
 
   def find(uuid)
@@ -20,6 +21,12 @@ class Statements
   def voting
     return nil unless @voting
     find(@voting)
+  end
+
+  def visible
+    v = @visible.map{|s| find s }
+    v.each_with_index{|s, i| s.position = i + 1 }
+    v
   end
 
   def validate_statement params = {}
@@ -43,7 +50,7 @@ class Statements
     replace = []
     if params[:to_replace]
       info "to replace #{params[:to_replace].inspect}"
-      params[:to_replace].each{|idx| replace << @current.detect{|c| find(c).position == idx.to_i} }
+      params[:to_replace].each{|idx| replace << @visible[idx - 1] }
     end
 
     statement = Statement.new value: params[:value], author: queue.pitcher.uuid, replaces: replace.compact, uuid: uuid, game_uuid: @game_uuid, stage: state.stage, step: state.step
@@ -55,6 +62,15 @@ class Statements
     @voting = uuid
   end
 
+  def update_visible
+    s = find(@voting)
+    if s.status == 'accepted'
+      s.replaces.each{|s| @visible.delete s }
+      @visible << s.uuid
+    end
+    @voting = nil
+
+  end
   def mapped_current
     @current.map{|s| find s }
   end
@@ -68,7 +84,8 @@ class Statements
   end
 
   def active
-    mapped_current.select(&:visible?)
+    visible
+    # mapped_current.select(&:visible?)
   end
 
   def all
