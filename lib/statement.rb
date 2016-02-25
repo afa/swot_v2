@@ -49,18 +49,18 @@ class Statement
     { index: @position, body: @value, score: 0.0, author: @author}
   end
 
-  def visible?
-    return false if @votes.empty?
-    state = Celluloid::Actor[:"state_#{@game_uuid}"]
-    if state && state.alive?
-      return false unless state.to_swot(state.stage) == @stage
-    end
-    return false if self.replaced
-    return false unless calc_result == 'accepted'
-    # return false unless @status == 'accepted'
-    # statements = Celluloid::Actor[:"statements_#{@game_uuid}"]
-    true
-  end
+  # def visible?
+  #   return false if @votes.empty?
+  #   state = Celluloid::Actor[:"state_#{@game_uuid}"]
+  #   if state && state.alive?
+  #     return false unless state.to_swot(state.stage) == @stage
+  #   end
+  #   return false if self.replaced
+  #   return false unless calc_result == 'accepted'
+  #   # return false unless @status == 'accepted'
+  #   # statements = Celluloid::Actor[:"statements_#{@game_uuid}"]
+  #   true
+  # end
 
   def vote params = {}
     @votes << Vote.new(player: params[:player], result: params[:result], active: true)
@@ -129,6 +129,18 @@ class Statement
       # FIXME:  ищем плееров с ид в текущей игре.
       player = Celluloid::Actor[:"player_#{vote.player}"]
       player.async.catcher_apply_delta(delta)
+    end
+  end
+
+  def calc_votes
+    v_count = @votes.map(&:player).uniq.size
+    pro = @votes.select{|v| v.result == 'accepted' }.map(&:player).uniq.size
+    contra = v_count - pro
+    @result = pro.to_f / v_count.to_f
+    if pro >= contra
+      accept!
+    else
+      decline!
     end
   end
 

@@ -10,8 +10,8 @@ class Web < Reel::Server::HTTP
   include Celluloid::IO
   include Celluloid::Internals::Logger
 
-  # def initialize(host = "192.168.112.220", port = 3010)
-  def initialize(host = "127.0.0.1", port = 3010)
+  def initialize(host = "192.168.112.220", port = 3010)
+  # def initialize(host = "127.0.0.1", port = 3010)
     info "server starting on #{host}:#{port}"
     super(host, port, &method(:on_connection))
   end

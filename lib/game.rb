@@ -149,15 +149,17 @@ class Game
     tm = Time.now.to_i + (state.setting[:voting_quorum_timeout] || 60)
     statement = {value: params[:value], to_replace: params[:to_replace], author: queue.pitcher.uuid, stage: state.stage, step: state.step, game_uuid: @uuid}
     # TODO validate statement for duplication
-    statements.add statement
+    errors = statements.add statement
     state.step_status = state.next_enum(State::STEP_STATUSES, state.step_status)
     Timings::Pitch.instance(@uuid).cancel
     Timings::FirstPitch.instance(@uuid).cancel
     Timings::VotingQuorum.instance(@uuid).start
     # alarms.async.set_out :voting_quorum, state.setting[:voting_quorum_timeout] || 60
-    players.push_pitch(value: params[:value], to_replace: params[:to_replace] || [], author: queue.pitcher.uglify_name(state.stage.to_s), timer: Timings.instance(@uuid).next_stamp)
-    publish({type: 'event', subtype: 'pitched', value: params[:value], to_replace: params[:to_replace], author: queue.pitcher.uglify_name(state.stage.to_s), timer: Timings.instance(@uuid).next_stamp})
-
+    players.push_pitch(errors.merge(value: params[:value], to_replace: params[:to_replace] || [], author: queue.pitcher.uglify_name(state.stage.to_s), timer: Timings.instance(@uuid).next_stamp))
+    publish({type: 'event', subtype: 'pitched', value: params[:value], to_replace: params[:to_replace], author: queue.pitcher.uglify_name(state.stage.to_s), timer: Timings.instance(@uuid).next_stamp}.merge(errors))
+    unless errors.empty?
+      end_step(errors)
+    end
   end
 
   def pitch_timeout params = {}
@@ -204,8 +206,13 @@ class Game
     queue = Actor[:"queue_#{@uuid}"]
     statements = Actor[:"statements_#{@uuid}"]
     info "end step cf"
-    statements.voting.vote_results! if statements.voting
- statements.active.each_with_index{|s, i| s.position = i + 1 }
+    Timings::Pitch.instance(@uuid).cancel
+    Timings::FirstPitch.instance(@uuid).cancel
+    Timings::VotingQuorum.instance(@uuid).cancel
+    statements.voting.calc_votes if statements.voting
+    statements.update_visible
+    # statements.voting.vote_results! if statements.voting
+ # statements.active.each_with_index{|s, i| s.position = i + 1 }
     state.step_status = state.next_enum(State::STEP_STATUSES, state.step_status)
     state.step_status = state.next_enum(State::STEP_STATUSES, state.step_status) unless state.step_status == :end
     Timings::Results.instance(@uuid).start

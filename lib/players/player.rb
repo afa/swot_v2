@@ -112,7 +112,7 @@ class Player
 
   def send_result params = {}
     state = Actor[:"state_#{@game_uuid}"]
-    msg = {type: 'event', subtype: 'result'}
+    msg = {type: 'event', subtype: 'result',  timer: Timings.instance(@game_uuid).next_stamp}
     publish_msg msg
   end
 
@@ -120,14 +120,14 @@ class Player
     state = Actor[:"state_#{@game_uuid}"]
     # timers = Actor[:"alarms_#{@game_uuid}"]
     players = Actor[:"players_#{@game_uuid}"]
-    msg = {type: 'event', subtype: 'ready', start_at: Timings::Start.instance(@game_uuid).at, pitcher: (players.queue.index(@uuid) == 0)}
+    msg = {type: 'event', subtype: 'ready', start_at: Timings::Start.instance(@game_uuid).at, pitcher: (players.queue.index(@uuid) == 0),  timer: Timings.instance(@game_uuid).next_stamp}
     publish_msg msg
   end
 
   def send_event ev, params = {}
     state = Actor[:"state_#{@game_uuid}"]
     msg = {
-      type: 'event', subtype: ev
+      type: 'event', subtype: ev,  timer: Timings.instance(@game_uuid).next_stamp
     }.merge params
     p @uuid, state.player_channels.keys
     publish_msg msg
@@ -168,7 +168,9 @@ class Player
     statements = Actor[:"statements_#{@game_uuid}"]
     stat = statements.voting
     if stat
-      msg = {type: 'event', subtype: 'end_step', result: {status: params[:status], score: stat.author == @uuid ? @pitcher_rank : @catcher_score, delta: stat.author == @uuid ? 0 : @delta}, timer: Timings.instance(@game_uuid).next_stamp}
+      per = 100 * stat.result.to_f
+      per = 100 - per unless stat.status == 'accepted'
+      msg = {type: 'event', subtype: 'end_step', result: {status: params[:status], score: stat.author == @uuid ? @pitcher_rank : @catcher_score, delta: stat.author == @uuid ? 0 : @delta, players_voted: per}, timer: Timings.instance(@game_uuid).next_stamp}
     else
       msg = {type: 'event', subtype: 'end_step', result: {status: params[:status], score: state.prev_pitcher == @uuid ? @pitcher_rank : @catcher_score, delta: 0.0}, timer: Timings.instance(@game_uuid).next_stamp}
     end
@@ -203,13 +205,16 @@ class Player
     conclusion = {author: pitcher}
     if statements.voting
       vot = statements.voting
+      per = 100 * vot.result.to_f
+      per = 100 - per unless vot.status == 'accepted'
       conclusion.merge!(
         value: vot.value,
         author: Actor[:"player_#{vot.author}"].uglify_name(state.stage),
         to_replace: vot.replaces,
         status: vot.status,
         player_score: 0.0,
-        players_voted: (100.0 * vot.voted_count.to_f / (players.players.size - 1).to_f).to_i
+        players_voted: per.to_i
+        # players_voted: (100.0 * vot.voted_count.to_f / (players.players.size - 1).to_f).to_i
       )
     end
     conclusion
@@ -267,7 +272,6 @@ class Player
   end
 
   def finalizer
-    info "stopping pl #{@uuid}"
   end
 
 end

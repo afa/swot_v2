@@ -30,20 +30,25 @@ class Statements
   end
 
   def validate_statement params = {}
-    repl_count = params.has_key?(:to_replace) ? params[:to_replace].size : 0
-    if active.size - repl_count > 6
+    repl_count = params.has_key?(:to_replace) && params[:to_replace] ? params[:to_replace].size : 0
+    if @visible.size - repl_count > 6
       return { error: 'to_many' }
     end
-    if @current.detect{|s| params[:value] == s[:value] }
+    if @current.detect{|s| params[:value] == find(s).value }
       return { error: 'duplicate' }
     end
     if params[:value].force_encoding('UTF-8').size > 75
       return { error: 'too_long' }
     end
+    if params[:value].strip.size == 0
+      return { error: 'empty' }
+    end
     {}
   end
 
   def add params = {}
+    er = validate_statement params
+    return er unless er.empty?
     uuid = UUID.new.generate
     state = Actor[:"state_#{@game_uuid}"]
     queue = Actor[:"queue_#{@game_uuid}"]
@@ -60,17 +65,23 @@ class Statements
     active.each_with_index{|s, i| s.position = i + 1 }
     statement.set_contribution
     @voting = uuid
+    {}
   end
 
   def update_visible
+    return unless @voting
     s = find(@voting)
+    unless s
+      @voting = nil
+      return
+    end
     if s.status == 'accepted'
       s.replaces.each{|s| @visible.delete s }
       @visible << s.uuid
     end
     @voting = nil
-
   end
+
   def mapped_current
     @current.map{|s| find s }
   end
@@ -98,6 +109,8 @@ class Statements
 
   def clean_current
     @current = []
+    @visible = []
+    @voting = nil
   end
 
 end

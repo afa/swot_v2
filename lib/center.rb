@@ -10,6 +10,7 @@ require 'store'
 require 'state'
 require 'statements'
 require 'statement'
+require 'scores'
 require 'admin_logger'
 require 'player_connect'
 class Center # < Celluloid::Supervision::Container
