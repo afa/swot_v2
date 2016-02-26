@@ -122,7 +122,7 @@ class Player
     state = Actor[:"state_#{@game_uuid}"]
     # timers = Actor[:"alarms_#{@game_uuid}"]
     players = Actor[:"players_#{@game_uuid}"]
-    msg = {type: 'event', subtype: 'ready', start_at: Timings::Start.instance(@game_uuid).at, pitcher: (players.queue.index(@uuid) == 0),  timer: Timings.instance(@game_uuid).next_stamp}
+    msg = {type: 'event', subtype: 'ready', start_at: Timings::Start.instance(@game_uuid).at, pitcher: (players.queue.index(@uuid) == 0),  timer: Timings.instance(@game_uuid).next_stamp, version: VERSION}
     publish_msg msg
   end
 
@@ -233,6 +233,7 @@ class Player
     info "current statements #{statements.active_js}"
     msg = {
       type: 'status',
+      version: VERSION,
       state: state.state,
       game: {
         time: current_stamp,
