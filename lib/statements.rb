@@ -51,6 +51,9 @@ class Statements
     {}
   end
 
+  def check_triple_decline
+    !@statements[-3, 3].detect{|s| s.status != 'declined' }
+  end
   def add params = {}
     er = validate_statement params
     return er unless er.empty?

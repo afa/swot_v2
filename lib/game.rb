@@ -205,7 +205,6 @@ class Game
     # alarms = Actor[:"alarms_#{@uuid}"]
     queue = Actor[:"queue_#{@uuid}"]
     statements = Actor[:"statements_#{@uuid}"]
-    info "end step cf"
     Timings::Pitch.instance(@uuid).cancel
     Timings::FirstPitch.instance(@uuid).cancel
     Timings::VotingQuorum.instance(@uuid).cancel
@@ -256,12 +255,17 @@ class Game
 
   def results_timeout params = {}
     state = Actor[:"state_#{@uuid}"]
+    statements = Actor[:"statements_#{@uuid}"]
     Timings::Results.instance(@uuid).cancel
-    if state.step < state.total_steps
-      state.step += 1
-      async.start_step
-    else
+    if statements.check_triple_decline
       async.end_stage
+    else
+      if state.step < state.total_steps
+        state.step += 1
+        async.start_step
+      else
+        async.end_stage
+      end
     end
   end
 
@@ -272,7 +276,8 @@ class Game
     state.step = 1
     state.step_status = state.first_enum(State::STEP_STATUSES)
 
-    start_stage
+    # check for bugs
+    async.start_stage
   end
 
 
