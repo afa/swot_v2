@@ -2,6 +2,38 @@
   "development": {
     "redis_db": "redis://127.0.0.1:6379/1"
   },
+  "auto": {
+    "redis_db": "redis://127.0.0.1:6379/1",
+    "autostart": {
+      "type": "create",
+      "game": {
+        "name": "aa",
+        "description": "",
+        "company": "aa",
+        "country": "",
+        "industry": ""
+      },
+      "players":
+      [
+        {
+          "name": "aa",
+          "email": "aa@aa.aa",
+          "state": "not_invited",
+          "error": false
+        },
+        {
+          "name": "bb",
+          "email": "bb@bb.bb",
+          "state": "not_invited",
+          "error": false
+        }
+      ],
+      "start": {
+        "time": 90,
+        "time_zone": "+03:00"
+      }
+    }
+  },
   "test": {
     "redis_db": "redis://127.0.0.1:6379/9"
   }
