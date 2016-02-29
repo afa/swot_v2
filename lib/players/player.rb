@@ -101,7 +101,7 @@ class Player
       ch = Actor[:"chnl_#{@uuid}"]
       if ch && ch.alive?
         p 'chnl ok'
-        ch.publish msg.merge(time: current_stamp).to_json
+        ch.publish_msg msg.merge(time: current_stamp).to_json
       else
         p 'chnl down'
         offline!

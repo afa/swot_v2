@@ -21,7 +21,7 @@ class PlayerConnect
     async.run if @ok
   end
 
-  def publish msg
+  def publish_msg msg
     if @ok
       begin
         @sock.write msg

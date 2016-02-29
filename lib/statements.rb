@@ -52,8 +52,11 @@ class Statements
   end
 
   def check_triple_decline
-    !@statements[-3, 3].detect{|s| s.status != 'declined' }
+    state = Actor[:"state_#{@game_uuid}"]
+    dec_count = state.setting[:declined_in_row_statements].to_i
+    !@statements[-dec_count, dec_count].select{|s| s.stage == state.stage }.detect{|s| s.status != 'declined' }
   end
+
   def add params = {}
     er = validate_statement params
     return er unless er.empty?

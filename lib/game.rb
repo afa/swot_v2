@@ -97,7 +97,7 @@ class Game
     Timings::Stage.instance(@uuid).start
     statements.clean_current
     # alarms.async.set_out(:stage, state.setting[:stage_timeout]) #TODO check for 
-    async.publish(type: 'event', subtype: 'start_stage', value: stage)
+    async.publish_msg(type: 'event', subtype: 'start_stage', value: stage)
     # async.push_event(:start_stage, value: stage)
     players.async.push_start_stage
     start_step
@@ -117,7 +117,7 @@ class Game
     end
     # alarms.async.set_out(state.step == 1 ? :first_pitch : :pitch, state.step == 1 ? 120 : 20)
     state.step_status = state.first_enum(State::STEP_STATUSES)
-    async.publish(type: 'event', subtype: 'start_step')
+    async.publish_msg(type: 'event', subtype: 'start_step')
     players.async.push_start_step
     async.push_state
     players.async.push_state
@@ -136,7 +136,7 @@ class Game
     Timings::FirstPitch.instance(@uuid).cancel
     Timings::BetweenStages.instance(@uuid).start
     # alarms.async.set_out :between_stages, 10
-    async.publish msg
+    async.publish_msg msg
     players.async.push_end_stage
   end
 
@@ -156,7 +156,7 @@ class Game
     Timings::VotingQuorum.instance(@uuid).start
     # alarms.async.set_out :voting_quorum, state.setting[:voting_quorum_timeout] || 60
     players.push_pitch(errors.merge(value: params[:value], to_replace: params[:to_replace] || [], author: queue.pitcher.uglify_name(state.stage.to_s), timer: Timings.instance(@uuid).next_stamp))
-    publish({type: 'event', subtype: 'pitched', value: params[:value], to_replace: params[:to_replace], author: queue.pitcher.uglify_name(state.stage.to_s), timer: Timings.instance(@uuid).next_stamp}.merge(errors))
+    publish_msg({type: 'event', subtype: 'pitched', value: params[:value], to_replace: params[:to_replace], author: queue.pitcher.uglify_name(state.stage.to_s), timer: Timings.instance(@uuid).next_stamp}.merge(errors))
     unless errors.empty?
       end_step(errors)
     end
@@ -211,13 +211,13 @@ class Game
     statements.voting.calc_votes if statements.voting
     statements.update_visible
     # statements.voting.vote_results! if statements.voting
- # statements.active.each_with_index{|s, i| s.position = i + 1 }
+    # statements.active.each_with_index{|s, i| s.position = i + 1 }
     state.step_status = state.next_enum(State::STEP_STATUSES, state.step_status)
     state.step_status = state.next_enum(State::STEP_STATUSES, state.step_status) unless state.step_status == :end
     Timings::Results.instance(@uuid).start
     queue.next!
     msg = {type: 'event', subtype: 'end_step', result: {status: params[:status], score: 0, delta: 0}, timer: Timings.instance(@uuid).next_stamp}
-    async.publish msg
+    async.publish_msg msg
     players.async.push_end_step params
   end
 
@@ -246,7 +246,7 @@ class Game
     Timings::BetweenStages.instance(@uuid).start
     info 'end stage ccf'
     msg = {type: 'event', subtype: 'end_stage', value: state.stage, timer: Timings.instance(@uuid).next_stamp}
-    async.publish msg
+    async.publish_msg msg
     info 'end stage cdf'
 
     players.async.push_end_stage
@@ -282,7 +282,7 @@ class Game
 
 
   def push_event event, params = {}
-    publish({type: 'event', subtype: event})
+    publish_msg({type: 'event', subtype: event})
   end
 
   def push_state params = {}
@@ -291,14 +291,14 @@ class Game
     # alarms = Actor[:"alarms_#{@uuid}"]
     msg = params.merge status: state.state, stage: state.stage, timeout_at: Time.now.to_i + 15, started_at: Timings::Start.instance(@uuid).at, players: players.players.map(&:uuid), step: {total: total_steps, current: step, status: step_status}
     # msg = params.merge status: state.state, stage: state.stage, timeout_at: alarm.next_time, started_at: alarm.start_at, players: players.players.map(&:uuid), step: {total: total_steps, current: step, status: step_status}
-    publish msg
+    publish_msg msg
   end
 
   def stage_timeout
     info 'TODO stage timeout'
   end
 
-  def publish hash
+  def publish_msg hash
     state = int_state
     info "publish game #{hash.inspect}"
     # fan = state.game[:fan]
