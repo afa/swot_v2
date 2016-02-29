@@ -10,11 +10,13 @@ class AdminLogger
     subscribe :player_offline, :player_offline
   end
 
-  def player_online topic, params = {}
+  def player_online topic, game_id, params = {}
+    return unless @guid == game_id
     info "----------------------player #{params[:uuid]} (#{topic}) online----------------------------"
   end
 
-  def player_offline topic, params = {}
+  def player_offline topic, game_id, params = {}
+    return unless @guid == game_id
     info "----------------------player #{params[:uuid]} (#{topic}) offline----------------------------"
   end
 

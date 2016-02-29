@@ -83,17 +83,22 @@ class Player
     @online = true
     info "#{@uuid} online"
     state = Actor[:"state_#{@game_uuid}"]
+    players = Actor[:"players_#{@game_uuid}"]
+    players.check_min_players
     async.send_ready reply_to: 'connect' if state.state.to_s == 'waiting'
     async.send_state reply_to: 'connect' if state.state.to_s == 'started'
+    async.send_terminated if state.state.to_s == 'terminated'
     async.send_result reply_to: 'connect' unless %w(waiting started).include?(state.state.to_s)
     info 'online'
-    async.publish :player_online, {uuid: @uuid}
+    async.publish :player_online, @game_uuid, {uuid: @uuid}
   end
 
   def offline!
     @online = false
+    players = Actor[:"players_#{@game_uuid}"]
+    players.check_min_players
     info "#{@uuid} offline"
-    async.publish :player_offline, {uuid: @uuid}
+    async.publish :player_offline, @game_uuid, {uuid: @uuid}
   end
 
   def publish_msg msg
@@ -192,6 +197,12 @@ class Player
     state = Actor[:"state_#{@game_uuid}"]
     info "sending end stage to pl #{@uuid}"
     msg = {type: 'event', subtype: 'end_stage', value: state.stage, timer: Timings.instance(@game_uuid).next_stamp}
+    publish_msg msg
+  end
+
+  def send_terminated
+    publish_msg({type: 'event', subtype: 'terminated'})
+    msg = gen_state
     publish_msg msg
   end
 

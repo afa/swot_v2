@@ -79,7 +79,7 @@ class Store::Setting < Ohm::Model
   end
 
   def [] key
-    p data
+    p key, data
     Store::Setting.defaults.merge(data || {})[key]
   end
 

@@ -45,12 +45,19 @@ class Timings
   def reset
   end
 
+  def terminate
+  end
+
   def self.instance(id)
     Celluloid::Actor[:"timers_#{id}"]
   end
 
   def next_stamp
     self.class.subtimers.map{|cl| cl.instance(@guid) }.map(&:next_stamp).compact.min
+  end
+
+  def stop_timers
+    self.class.subtimers.map{|cl| cl.instance(@guid) }.each(&:cancel)
   end
 
   def next_interval
@@ -69,4 +76,4 @@ require 'timers/voting_tail'
 require 'timers/results'
 require 'timers/between_stages'
 require 'timers/ranging'
-# require 'timers/terminate'
+require 'timers/terminate'

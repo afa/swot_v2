@@ -1,9 +1,13 @@
 {
   "development": {
-    "redis_db": "redis://127.0.0.1:6379/1"
+    "host": "http://127.0.0.1",
+    "port": 3010,
+    "redis_db": "redis://127.0.0.1:6379/3"
   },
   "auto": {
-    "redis_db": "redis://127.0.0.1:6379/1",
+    "redis_db": "redis://127.0.0.1:6379/3",
+    "host": "http://127.0.0.1",
+    "port": 3010,
     "autostart": {
       "type": "create",
       "game": {
@@ -34,7 +38,19 @@
       }
     }
   },
+  "production": {
+    "host": "http://127.0.0.1",
+    "port": 3011,
+    "redis_db": "redis://127.0.0.1:6379/5"
+  },
+  "staging": {
+    "host": "http://127.0.0.1",
+    "port": 3010,
+    "redis_db": "redis://127.0.0.1:6379/4"
+  },
   "test": {
-    "redis_db": "redis://127.0.0.1:6379/9"
+    "redis_db": "redis://127.0.0.1:6379/9",
+    "host": "http://127.0.0.1",
+    "port": 3010
   }
 }

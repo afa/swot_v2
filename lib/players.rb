@@ -108,6 +108,30 @@ class Players
     end
   end
 
+  def push_terminated
+    players.each do |pl|
+      pl.send_terminated
+    end
+  end
+
+  def enough_players
+    state = Actor[:"state_#{@game_uuid}"]
+    cfg = Store::Setting.defaults
+    p cfg[:min_players]
+    players.select{|p| p.online }.size >= cfg[:min_players].to_i
+  end
+
+  def check_min_players
+    state = Actor[:"state_#{@game_uuid}"]
+    if state.state == :started && %w(s sw w wo o ot t).include?(state.stage.to_s)
+      if enough_players
+        Timings::Terminate.instance(@game_uuid).cancel if Timings::Terminate.instance(@game_uuid).next_time
+      else
+        Timings::Terminate.instance(@game_uuid).start unless Timings::Terminate.instance(@game_uuid).next_time
+      end
+    end
+  end
+
   def build_queue
     queue.rebuild_tail
     queue.fill_current

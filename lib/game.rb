@@ -68,23 +68,17 @@ class Game
   end
 
   def start
-    # receive start
-    # before start prepare queue
-    # on start timer for pitch, set state, send to players
-    # check players online
-    #
     state = Actor[:"state_#{@uuid}"]
     players = Actor[:"players_#{@uuid}"]
-    # alarms = Actor[:"alarms_#{@uuid}"]
-    # queue = Actor[:"queue_#{@uuid}"]
     players.async.build_queue # TODO move to create
     if %w(waiting started).map(&:to_sym).include? state.state
       state.state = :started
-      start_stage
-      # push_event(:started, value: 's')
-      # players.push_event(:started)
-      # async.push_state
-      # players.async.push_state
+      unless players.enough_players
+        state.state = :terminated
+        async.terminate_timeout
+      else
+        start_stage
+      end
     end
   end
 
@@ -289,13 +283,28 @@ class Game
     state = int_state
     players = Actor[:"players_#{@uuid}"]
     # alarms = Actor[:"alarms_#{@uuid}"]
-    msg = params.merge status: state.state, stage: state.stage, timeout_at: Time.now.to_i + 15, started_at: Timings::Start.instance(@uuid).at, players: players.players.map(&:uuid), step: {total: total_steps, current: step, status: step_status}
+    msg = params.merge status: state.state, stage: state.stage, timeout_at: Timings::Start.instance(@uuid).at + 1500, started_at: Timings::Start.instance(@uuid).at, players: players.players.map(&:uuid), step: {total: total_steps, current: step, status: step_status}
     # msg = params.merge status: state.state, stage: state.stage, timeout_at: alarm.next_time, started_at: alarm.start_at, players: players.players.map(&:uuid), step: {total: total_steps, current: step, status: step_status}
     publish_msg msg
   end
 
   def stage_timeout
     info 'TODO stage timeout'
+  end
+
+  def terminate_timeout
+    info 'terminate_timeout'
+    state = int_state
+    players = Actor[:"players_#{@uuid}"]
+    state.state = :terminated
+    publish_msg({type: 'event', subtype: 'terminated'})
+    players.async.push_terminated
+    async.stop_timers
+  end
+
+  def stop_timers
+    timings = Timings.instance(@uuid)
+    timings.async.stop_timers
   end
 
   def publish_msg hash
