@@ -30,7 +30,7 @@ class Center # < Celluloid::Supervision::Container
     @times = {start_at: params[:start]}.delete_if{|_k, v| v.nil? }
     info params.inspect
     info 'starting centre'
-    build_config
+    async.build_config
     # async.run
     info 'start centre'
   end
