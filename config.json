@@ -43,6 +43,52 @@
     "port": 3011,
     "redis_db": "redis://127.0.0.1:6379/5"
   },
+  "auto-rs": {
+    "host": "http://127.0.0.1",
+    "port": 3010,
+    "redis_db": "redis://127.0.0.1:6379/4",
+    "autostart": {
+      "type": "create",
+      "game": {
+        "name": "aa",
+        "description": "",
+        "company": "aa",
+        "country": "",
+        "industry": ""
+      },
+      "players":
+      [
+        {
+          "name": "aa",
+          "email": "aa@aa.aa",
+          "state": "not_invited",
+          "error": false
+        },
+        {
+          "name": "bb",
+          "email": "bb@bb.aa",
+          "state": "not_invited",
+          "error": false
+        },
+        {
+          "name": "cc",
+          "email": "cc@cc.aa",
+          "state": "not_invited",
+          "error": false
+        },
+        {
+          "name": "dd",
+          "email": "dd@dd.bb",
+          "state": "not_invited",
+          "error": false
+        }
+      ],
+      "start": {
+        "time": 300,
+        "time_zone": "+03:00"
+      }
+    }
+  },
   "staging": {
     "host": "http://127.0.0.1",
     "port": 3010,
