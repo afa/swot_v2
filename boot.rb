@@ -3,7 +3,7 @@ require 'bundler'
 Bundler.require(:default)
 $LOAD_PATH.unshift('./lib') unless $LOAD_PATH.include?('./lib')
 $LOAD_PATH.unshift('./models') unless $LOAD_PATH.include?('./models')
-SWOT_VERSION = File.open('./VERSION'){|f| f.read }
+SWOT_VERSION = File.open('./VERSION'){|f| f.read }.strip
 require 'web'
 require 'utils'
 require 'celluloid/redis'
