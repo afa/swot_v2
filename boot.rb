@@ -14,12 +14,14 @@ env = ENV.fetch('ENV', 'development').to_sym
 Ohm.redis = Redic.new(@config[:redis_db])
 require 'store'
 require 'center'
-Celluloid::Actor[:center] = Center.new(@config)
 if @config.has_key? :autostart
   msg = @config[:autostart]
   if msg && msg[:start] && msg[:start][:time]
     msg[:start][:time] = Time.now + msg[:start][:time].to_i
   end
+end
+Celluloid::Actor[:center] = Center.new(@config)
+if @config.has_key? :autostart
   Message::Create.new('/swot/control', msg).process if msg
   # Message::Create.new('/swot/control', {type:"create",game:{name:"aa",description:"",company:"aa",country:"",industry:""},players:[{name:"aa",email:"aa@aa.aa",state:"not_invited",error:false},{name:"bb",email:"bb@bb.bb",state:"not_invited",error:false}],start:{time:Time.now.to_i+90,time_zone:"+03:00"}}).process
   # Message::Create.new('/swot/control', {type:"create",game:{name:"aa",description:"",company:"aa",country:"",industry:""},players:[{name:"aa",email:"aa@aa.aa",state:"not_invited",error:false},{name:"bb",email:"bb@bb.bb",state:"not_invited",error:false},{name:"cc",email:"cc@cc.cc",state:"not_invited",error:false},{name:"dd",email:"dd@dd.dd",state:"not_invited",error:false}],start:{time:Time.now.to_i+300,time_zone:"+03:00"}}).process
