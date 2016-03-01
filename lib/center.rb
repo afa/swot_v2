@@ -33,16 +33,20 @@ class Center # < Celluloid::Supervision::Container
     build_config
     # async.run
     info 'start centre'
+    async.add_web
   end
 
   def run
     # @config.run
   end
 
+  def add_web
+    to_supervise type: Web, as: :web, args: []
+  end
+
   def build_config
     @config = Celluloid::Supervision::Configuration.new
     @config.define type: Control, as: :control, args: [{channel: '/swot/control'}]
-    @config.define type: Web, as: :web, args: []
     # @config.define type: Web, as: :web, args: ['127.0.0.1', 3010]
     @config.deploy
     # @config = Celluloid::Supervision::Configuration.new
