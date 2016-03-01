@@ -1,14 +1,14 @@
 {
   "development": {
     "url": "http://127.0.0.1:3000",
-    "host": "http://127.0.0.1",
+    "host": "127.0.0.1",
     "port": 3010,
     "redis_db": "redis://127.0.0.1:6379/3"
   },
   "auto": {
     "url": "http://127.0.0.1:3000",
     "redis_db": "redis://127.0.0.1:6379/3",
-    "host": "http://127.0.0.1",
+    "host": "127.0.0.1",
     "port": 3010,
     "autostart": {
       "type": "create",
@@ -42,13 +42,13 @@
   },
   "production": {
     "url": "http://swot-r.dev.techranch.ru",
-    "host": "http://127.0.0.1",
+    "host": "127.0.0.1",
     "port": 3011,
     "redis_db": "redis://127.0.0.1:6379/5"
   },
   "auto-rs": {
     "url": "http://swot-rs.dev.techranch.ru",
-    "host": "http://127.0.0.1",
+    "host": "127.0.0.1",
     "port": 3010,
     "redis_db": "redis://127.0.0.1:6379/4",
     "autostart": {
@@ -95,13 +95,13 @@
   },
   "staging": {
     "url": "http://swot-rs.dev.techranch.ru",
-    "host": "http://127.0.0.1",
+    "host": "127.0.0.1",
     "port": 3010,
     "redis_db": "redis://127.0.0.1:6379/4"
   },
   "test": {
     "redis_db": "redis://127.0.0.1:6379/9",
-    "host": "http://127.0.0.1",
+    "host": "127.0.0.1",
     "port": 3010
   }
 }
