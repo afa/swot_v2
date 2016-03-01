@@ -21,7 +21,7 @@ module Message
     def process
       info "process create"
       super
-      ::Game.create(name: @name, players: @players, start: @start, reply: 'create')
+      ::Game.create(name: @name, players: @players, start: @start, reply: 'create', server_setup: Center.current.server_config.dup)
     end
   end
 end

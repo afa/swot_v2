@@ -14,7 +14,7 @@ env = ENV.fetch('ENV', 'development').to_sym
 Ohm.redis = Redic.new(@config[:redis_db])
 require 'store'
 require 'center'
-Celluloid::Actor[:center] = Center.new
+Celluloid::Actor[:center] = Center.new(@config)
 if @config.has_key? :autostart
   msg = @config[:autostart]
   if msg && msg[:start] && msg[:start][:time]

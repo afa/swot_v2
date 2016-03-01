@@ -19,6 +19,7 @@ class Game
 
   def initialize params = {}
     @uuid = params[:uuid]
+    @server_setup = params[:server_setup]
     info "#{@uuid} created"
     # @redis = ::Redis.new(driver: :celluloid)
     Center.current.to_supervise as: :"admin_logger_#{@uuid}", type: AdminLogger, args: [{game_uuid: @uuid}]
@@ -48,7 +49,7 @@ class Game
     p Timings::Start.instance(@uuid).set_time params[:start][:time]
     state.state = Timings::Start.instance(@uuid).next_time ? :waiting : Timings::Start.instance(@uuid).at ? :started : :waiting
     # state.state = alarms.start_at && alarms.start_at > Time.now.to_i ? :started : :waiting
-    cntrl = Control.current.publish_control( (params.has_key?(:players) ? {players: players.players.map{|p| {name: p.name, url: "http://192.168.112.220:3000/game/#{p.uuid}", uuid: p.uuid, email: p.email}}} : {}).merge(type: 'status', uuid: @uuid, replly_to: 'create'))
+    cntrl = Control.current.publish_control( (params.has_key?(:players) ? {players: players.players.map{|p| {name: p.name, url: "#{@server_setup[:url]}/game/#{p.uuid}", uuid: p.uuid, email: p.email}}} : {}).merge(type: 'status', uuid: @uuid, replly_to: 'create'))
     Control.current.add_game(@uuid)
     state.add_game @uuid
     async.run

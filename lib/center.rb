@@ -17,7 +17,7 @@ class Center # < Celluloid::Supervision::Container
   include Celluloid
   include Celluloid::IO
   include Celluloid::Internals::Logger
-  attr_accessor :config, :players, :times
+  attr_accessor :config, :players, :times, :server_config
   finalizer :finalizer
 
   def self.current
@@ -25,6 +25,7 @@ class Center # < Celluloid::Supervision::Container
   end
 
   def initialize params = {}
+    @server_config = params
     @players = Players.new
     @times = {start_at: params[:start]}.delete_if{|_k, v| v.nil? }
     info params.inspect
