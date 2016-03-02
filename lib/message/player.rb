@@ -11,6 +11,6 @@ module Message
 end
 require 'message/player/base'
 require 'message/player/pitch'
+require 'message/player/ranging'
 require 'message/player/vote'
-# require 'message/player/importate'
 require 'message/player/pass'

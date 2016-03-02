@@ -20,6 +20,7 @@ class State
     rw: {beetwen: false, order: 10, swot: :w},
     ro: {beetwen: false, order: 11, swot: :o},
     rt: {beetwen: false, order: 12, swot: :t}
+    end: {beetwen: false, order: 13, swot: nil}
   }
 
   STEP_STATUSES = {

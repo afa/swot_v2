@@ -1,10 +1,5 @@
 require 'reel'
 require 'websocket/driver'
-# class Reel::MessageStream
-#     def initialize a, b
-#       p 'ms'
-#     end
-# end
 class Web < Reel::Server::HTTP
   include Celluloid
   include Celluloid::IO
@@ -51,56 +46,10 @@ class Web < Reel::Server::HTTP
 
   def route_websocket(socket)
     if socket.url =~ /\/player\//
-      # socket.on_message{ p 'ffffffffff' }
-      # socket.write('aaaaaaaaa')
       PlayerConnect.create(socket, socket.url)
     elsif socket.url == '/swot/control'
       p 'control channel TODO'
       # ClientConnect(socket)
     end
-    # d = WebSocket::Driver.server(socket)
-    # d.on(:open){|e| d.start; info 'open' }
-    # d.on(:message){|e| info "msg #{e.body.to_s}" }
-    # info "d  #{d.inspect}"
-
-  end
-
-  def render_index(connection)
-    info "200 OK: /"
-    connection.respond :ok, <<-HTML
-      <!doctype html>
-      <html lang="en">
-      <head>
-        <meta charset="utf-8">
-        <title>Reel WebSockets time server example</title>
-        <style>
-          body {
-            font-family: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
-            font-weight: 300;
-            text-align: center;
-          }
-          #content {
-            width: 800px;
-            margin: 0 auto;
-            background: #EEEEEE;
-            padding: 1em;
-          }
-        </style>
-      </head>
-      <script>
-        var SocketKlass = "MozWebSocket" in window ? MozWebSocket : WebSocket;
-        var ws = new SocketKlass('ws://' + window.location.host + '/timeinfo');
-        ws.onmessage = function(msg){
-          document.getElementById('current-time').innerHTML = msg.data;
-        }
-      </script>
-      <body>
-        <div id="content">
-          <h1>Time Server Example</h1>
-          <div>The time is now: <span id="current-time">...</span></div>
-        </div>
-      </body>
-      </html>
-    HTML
   end
 end

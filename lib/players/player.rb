@@ -65,18 +65,20 @@ class Player
     Timings::FirstPitch.instance(@game_uuid).cancel
     # timers.async.set_out :pitch, nil
     players = Actor[:"players_#{@game_uuid}"]
-    info "pass to end step"
     game.async.end_step({status: 'passed'})
-    info "endstepped"
   end
 
   def vote params = {}
-    
     players = Actor[:"players_#{@game_uuid}"]
     game = Actor[:"game_#{@game_uuid}"]
     state = Actor[:"state_#{@game_uuid}"]
     send_vote(value: params[:value])
-    game.vote(result: params[:value], player: @uuid) #TODO params for game on pitch done (move code to game.pitch)
+    game.async.vote(result: params[:value], player: @uuid) #TODO params for game on pitch done (move code to game.pitch)
+  end
+
+  def ranging params = {}
+    send_ranging(value: params[:value], index: params[:index])
+    game.async.ranging(value: params[:value], player: @uuid, index: params[:index])
   end
 
   def online!
@@ -156,6 +158,11 @@ class Player
   def send_vote params = {}
     state = Actor[:"state_#{@game_uuid}"]
     msg = {type: 'event', subtype: 'voted', timer: Timings.instance(@game_uuid).next_stamp}.merge(params)
+    publish_msg msg
+  end
+
+  def send_ranging params = {}
+    msg = {type: 'event', subtype: 'ranging', timer: Timings.instance(@game_uuid).next_stamp}.merge(params)
     publish_msg msg
   end
 

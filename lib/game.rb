@@ -21,7 +21,6 @@ class Game
     @uuid = params[:uuid]
     @server_setup = params[:server_setup]
     info "#{@uuid} created"
-    # @redis = ::Redis.new(driver: :celluloid)
     Center.current.to_supervise as: :"admin_logger_#{@uuid}", type: AdminLogger, args: [{game_uuid: @uuid}]
     Center.current.to_supervise as: :"state_#{@uuid}", type: State, args: [{game_uuid: @uuid}]
     time_params = {}
@@ -30,7 +29,6 @@ class Game
       @timezone = params[:start][:time_zone]
     end
       
-    # time_params = params.inject({}){|r, (k, v)| r.merge(%w(start).map(&:to_sym).include?(k) ? {k => v} : {}) }
     self.name = params[:name]
     state = Actor[:"state_#{@uuid}"]
 
@@ -74,11 +72,11 @@ class Game
     players.async.build_queue # TODO move to create
     if %w(waiting started).map(&:to_sym).include? state.state
       state.state = :started
-      unless players.enough_players
+      if players.enough_players
+        async.start_stage
+      else
         state.state = :terminated
         async.terminate_timeout
-      else
-        start_stage
       end
     end
   end
@@ -91,18 +89,15 @@ class Game
     statements = Actor[:"statements_#{@uuid}"]
     Timings::Stage.instance(@uuid).start
     statements.clean_current
-    # alarms.async.set_out(:stage, state.setting[:stage_timeout]) #TODO check for 
     async.publish_msg(type: 'event', subtype: 'start_stage', value: stage)
-    # async.push_event(:start_stage, value: stage)
     players.async.push_start_stage
-    start_step
+    async.start_step
   end
 
   def start_step
-    info 'TODO start step'
     state = Actor[:"state_#{@uuid}"]
     players = Actor[:"players_#{@uuid}"]
-    # alarms = Actor[:"alarms_#{@uuid}"]
+    if %w(s w o t).include? state.stage.to_s
     queue = Actor[:"queue_#{@uuid}"]
     info "start step step = #{state.step}"
     if state.step == 1
@@ -110,13 +105,14 @@ class Game
     else
       Timings::Pitch.instance(@uuid).start
     end
-    # alarms.async.set_out(state.step == 1 ? :first_pitch : :pitch, state.step == 1 ? 120 : 20)
     state.step_status = state.first_enum(State::STEP_STATUSES)
+    else
+      Timings::Ranging.instance(@uuid).start
+    end
     async.publish_msg(type: 'event', subtype: 'start_step')
     players.async.push_start_step
     async.push_state
     players.async.push_state
-
   end
 
   def stage_timeout
@@ -130,9 +126,17 @@ class Game
     Timings::Pitch.instance(@uuid).cancel
     Timings::FirstPitch.instance(@uuid).cancel
     Timings::BetweenStages.instance(@uuid).start
-    # alarms.async.set_out :between_stages, 10
     async.publish_msg msg
     players.async.push_end_stage
+  end
+
+  def ranging params = {}
+    # value index player
+    info 'TODO ranging'
+    state = Actor[:"state_#{@uuid}"]
+    players = Actor[:"players_#{@uuid}"]
+    statements = Actor[:"statements_#{@uuid}"]
+    statements.async.range_for(player: params[:player], value: params[:value], index: params[:index], stage: State::STAGES[state.stage][:swot])
   end
 
   def pitch params = {}
@@ -143,13 +147,11 @@ class Game
     statements = Actor[:"statements_#{@uuid}"]
     tm = Time.now.to_i + (state.setting[:voting_quorum_timeout] || 60)
     statement = {value: params[:value], to_replace: params[:to_replace], author: queue.pitcher.uuid, stage: state.stage, step: state.step, game_uuid: @uuid}
-    # TODO validate statement for duplication
     errors = statements.add statement
     state.step_status = state.next_enum(State::STEP_STATUSES, state.step_status)
     Timings::Pitch.instance(@uuid).cancel
     Timings::FirstPitch.instance(@uuid).cancel
     Timings::VotingQuorum.instance(@uuid).start
-    # alarms.async.set_out :voting_quorum, state.setting[:voting_quorum_timeout] || 60
     players.push_pitch(errors.merge(value: params[:value], to_replace: params[:to_replace] || [], author: queue.pitcher.uglify_name(state.stage.to_s), timer: Timings.instance(@uuid).next_stamp))
     publish_msg({type: 'event', subtype: 'pitched', value: params[:value], to_replace: params[:to_replace], author: queue.pitcher.uglify_name(state.stage.to_s), timer: Timings.instance(@uuid).next_stamp}.merge(errors))
     unless errors.empty?
@@ -158,11 +160,6 @@ class Game
   end
 
   def pitch_timeout params = {}
-    state = Actor[:"state_#{@uuid}"]
-    players = Actor[:"players_#{@uuid}"]
-    queue = Actor[:"queue_#{@uuid}"]
-    #calc rank results
-
     Timings::Pitch.instance(@uuid).cancel
     Timings::FirstPitch.instance(@uuid).cancel
     end_step(status: 'timeouted')
@@ -171,11 +168,6 @@ class Game
 
   def pass params = {}
     info "PASS!"
-    state = Actor[:"state_#{@uuid}"]
-    players = Actor[:"players_#{@uuid}"]
-    # alarms = Actor[:"alarms_#{@uuid}"]
-    queue = Actor[:"queue_#{@uuid}"]
-    statements = Actor[:"statements_#{@uuid}"]
     Timings::Pitch.instance(@uuid).cancel
     Timings::FirstPitch.instance(@uuid).cancel
     end_step(status: 'passed')
@@ -197,23 +189,29 @@ class Game
   def end_step params = {}
     state = Actor[:"state_#{@uuid}"]
     players = Actor[:"players_#{@uuid}"]
-    # alarms = Actor[:"alarms_#{@uuid}"]
-    queue = Actor[:"queue_#{@uuid}"]
-    statements = Actor[:"statements_#{@uuid}"]
-    Timings::Pitch.instance(@uuid).cancel
-    Timings::FirstPitch.instance(@uuid).cancel
-    Timings::VotingQuorum.instance(@uuid).cancel
-    statements.voting.calc_votes if statements.voting
-    statements.update_visible
-    # statements.voting.vote_results! if statements.voting
-    # statements.active.each_with_index{|s, i| s.position = i + 1 }
-    state.step_status = state.next_enum(State::STEP_STATUSES, state.step_status)
-    state.step_status = state.next_enum(State::STEP_STATUSES, state.step_status) unless state.step_status == :end
-    Timings::Results.instance(@uuid).start
-    queue.next!
-    msg = {type: 'event', subtype: 'end_step', result: {status: params[:status], score: 0, delta: 0}, timer: Timings.instance(@uuid).next_stamp}
-    async.publish_msg msg
-    players.async.push_end_step params
+    if %w(rs rw ro rt).include? state.stage.to_s
+      msg = {type: 'event', subtype: 'end_step', timer: Timings.instance(@uuid).next_stamp}
+      async.publish_msg msg
+      players.async.push_end_step params
+      async.end_stage
+    else
+      queue = Actor[:"queue_#{@uuid}"]
+      statements = Actor[:"statements_#{@uuid}"]
+      Timings::Pitch.instance(@uuid).cancel
+      Timings::FirstPitch.instance(@uuid).cancel
+      Timings::VotingQuorum.instance(@uuid).cancel
+      statements.voting.calc_votes if statements.voting
+      statements.update_visible
+      # statements.voting.vote_results! if statements.voting
+      # statements.active.each_with_index{|s, i| s.position = i + 1 }
+      state.step_status = state.next_enum(State::STEP_STATUSES, state.step_status)
+      state.step_status = state.next_enum(State::STEP_STATUSES, state.step_status) unless state.step_status == :end
+      Timings::Results.instance(@uuid).start
+      queue.next!
+      msg = {type: 'event', subtype: 'end_step', result: {status: params[:status], score: 0, delta: 0}, timer: Timings.instance(@uuid).next_stamp}
+      async.publish_msg msg
+      players.async.push_end_step params
+    end
   end
 
   def voting_quorum_timeout params = {}
@@ -236,16 +234,25 @@ class Game
     # alarms = Actor[:"alarms_#{@uuid}"]
     # queue = Actor[:"queue_#{@uuid}"]
     # statements = Actor[:"statements_#{@uuid}"]
-    info "end stage cf"
     state.stage = state.next_enum(State::STAGES, state.stage)
-    Timings::BetweenStages.instance(@uuid).start
-    info 'end stage ccf'
-    msg = {type: 'event', subtype: 'end_stage', value: state.stage, timer: Timings.instance(@uuid).next_stamp}
-    async.publish_msg msg
-    info 'end stage cdf'
+    Timings::Terminate.instance(@uuid).cancel if state.stage == :tr
+    if %w(sw wo ot tr).include? state.stage.to_s
+      Timings::BetweenStages.instance(@uuid).start
+      msg = {type: 'event', subtype: 'end_stage', value: state.stage, timer: Timings.instance(@uuid).next_stamp}
+      async.publish_msg msg
+      players.async.push_end_stage
+    elsif %w(rs rw ro rt).include? state.stage.to_s
+      msg = {type: 'event', subtype: 'end_stage', value: state.stage, timer: Time.now.to_i + 1}
+      async.publish_msg msg
+      players.async.push_end_stage
+      async.start_stage
+    elsif state.stage == :end
+      async.end_game
+    end
+  end
 
-    players.async.push_end_stage
-    info 'end stage cef'
+  def end_game params = {}
+    info 'TODO end game'
   end
 
   def results_timeout params = {}
@@ -291,6 +298,7 @@ class Game
 
   def stage_timeout
     info 'TODO stage timeout'
+    async.end_stage
   end
 
   def terminate_timeout
@@ -301,6 +309,7 @@ class Game
     publish_msg({type: 'event', subtype: 'terminated'})
     players.async.push_terminated
     async.stop_timers
+    async.end_game
   end
 
   def stop_timers

@@ -58,6 +58,10 @@ class Statements
     !@statements[-dec_count, dec_count].select{|s| s.stage == state.stage }.detect{|s| s.status != 'declined' }
   end
 
+  def range_for params = {}
+    #value, index, stage, player
+  end
+
   def add params = {}
     er = validate_statement params
     return er unless er.empty?
