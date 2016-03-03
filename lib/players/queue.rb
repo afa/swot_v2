@@ -49,6 +49,7 @@ class Queue
 
   def fill_current
     (3 - @current.size).times do
+      next if @current.size >= 3
       p = @tail.shift
       @current << p if p
     end
@@ -65,16 +66,29 @@ class Queue
   def rebuild_tail
     players = Actor[:"players_#{@game_uuid}"]
     list = players.players.sort_by(&:order)
+    p 'pl list before', list.map(&:uuid)
     @tail = []
+    last = Actor[:"player_#{@current.last}"]
     list.delete_if{|l| @current.include? l.uuid || l.order.to_i < 1 }
+    p 'pl list after', list.map(&:uuid)
+    idx = list.index{|l| l.order > last.order }
+    p 'pos for last order', last.order, idx
+    if idx
+      @tail += list[idx..-1].map(&:uuid)
+      list = list[0, idx]
+    end
+    p @tail
+    @tail += list[idx..-1].map(&:uuid)
+    p @tail, (@current + @tail).size
 
-    (@current + @tail).each{|i| list.delete_if{|s| s.uuid == i } }
-    mx = Actor[:"player_#{@tail.last}"].try(:order)
-    mx ||= Actor[:"player_#{@current.last}"].try(:order)
-    @tail += list.select{|l| l.order.to_i > mx.to_i }.map(&:uuid)
-    (@tail).each{|i| list.delete_if{|s| s.uuid == i } }
-    @tail += list.map(&:uuid)
-    info "size #{ids.size}"
+
+    # (@current + @tail).each{|i| list.delete_if{|s| s.uuid == i } }
+    # mx = Actor[:"player_#{@tail.last}"].try(:order)
+    # mx ||= Actor[:"player_#{@current.last}"].try(:order)
+    # @tail += list.select{|l| l.order.to_i > mx.to_i }.map(&:uuid)
+    # (@tail).each{|i| list.delete_if{|s| s.uuid == i } }
+    # @tail += list.map(&:uuid)
+    # info "size #{ids.size}"
   end
 
   def index(pl_id)
