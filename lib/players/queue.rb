@@ -82,7 +82,7 @@ class Queue
     else
       @tail = list.map(&:uuid)
     end
-    p @tail, (@current + @tail).size
+    p 'queues and size', @current, @tail, (@current + @tail).size
 
 
     # (@current + @tail).each{|i| list.delete_if{|s| s.uuid == i } }
