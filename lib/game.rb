@@ -20,8 +20,10 @@ class Game
     @uuid = params[:uuid]
     @server_setup = params[:server_setup]
     info "#{@uuid} created"
+    sett = {settings: params[:settings]} if params[:settings] && !params[:settings].empty?
+    sett ||= {}
     Center.current.to_supervise as: :"admin_logger_#{@uuid}", type: AdminLogger, args: [{game_uuid: @uuid}]
-    Center.current.to_supervise as: :"state_#{@uuid}", type: State, args: [{game_uuid: @uuid}]
+    Center.current.to_supervise as: :"state_#{@uuid}", type: State, args: [{game_uuid: @uuid}.merge(sett)]
     time_params = {}
     if params[:start]
       time_params.merge!(start: params[:start][:time].to_i) if params[:start][:time]
@@ -41,10 +43,8 @@ class Game
       end
     end
     timers = Center.current.to_supervise as: :"timers_#{@uuid}", type: Timings, args: [{game_uuid: @uuid}.merge(time_params)]
-    # alarms = Center.current.async.to_supervise as: :"alarms_#{@uuid}", type: Alarms, args: [{uuid: @uuid}.merge(time_params)]
     p Timings::Start.instance(@uuid).set_time params[:start][:time]
     state.state = Timings::Start.instance(@uuid).next_time ? :waiting : Timings::Start.instance(@uuid).at ? :started : :waiting
-    # state.state = alarms.start_at && alarms.start_at > Time.now.to_i ? :started : :waiting
     cntrl = Control.current.publish_control( (params.has_key?(:players) ? {players: players.players.map{|p| {name: p.name, url: "#{@server_setup[:url]}/game/#{p.uuid}", uuid: p.uuid, email: p.email}}} : {}).merge(type: 'status', uuid: @uuid, replly_to: 'create'))
     Control.current.add_game(@uuid)
     state.add_game @uuid

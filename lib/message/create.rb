@@ -16,12 +16,13 @@ module Message
       @name = hash[:name] if hash[:name]
       @players = hash[:players] if hash[:players] && hash[:players].is_a?(Array)
       @start = hash[:start]
+      @set = hash[:settings]
     end
 
     def process
       info "process create"
       super
-      ::Game.create(name: @name, players: @players, start: @start, reply: 'create', server_setup: Center.current.server_config.dup)
+      ::Game.create(name: @name, players: @players, start: @start, reply: 'create', server_setup: Center.current.server_config.dup, settings: @set)
     end
   end
 end

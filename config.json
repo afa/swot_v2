@@ -53,6 +53,9 @@
     "redis_db": "redis://127.0.0.1:6379/4",
     "autostart": {
       "type": "create",
+      "settings": {
+        "max_steps": 4
+      },
       "game": {
         "name": "aa",
         "description": "",
