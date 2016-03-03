@@ -12,12 +12,6 @@ class Queue
     if game.try(:alive?)
       rebuild_tail
       fill_current
-      # list = players.players.sort_by(&:order)
-      # 3.times do
-      #   p = list.shift
-      #   @current << p.uuid if p
-      # end
-      # @tail += list
     else
       info "no queue rebuild, game died"
     end
@@ -32,7 +26,9 @@ class Queue
   end
 
   def pitcher
-    Actor[:"player_#{@current.first}"]
+    p = @current.first
+    return nil unless p
+    Actor[:"player_#{p}"]
   end
 
   def prev_pitcher
@@ -63,13 +59,15 @@ class Queue
   end
 
   def first
-    @current.first || @tail.first
+    @current.first # || @tail.first
   end
 
   def rebuild_tail
-    info "rebuild"
     players = Actor[:"players_#{@game_uuid}"]
     list = players.players.sort_by(&:order)
+    @tail = []
+    list.delete_if{|l| @current.include? l.uuid || l.order.to_i < 1 }
+
     (@current + @tail).each{|i| list.delete_if{|s| s.uuid == i } }
     mx = Actor[:"player_#{@tail.last}"].try(:order)
     mx ||= Actor[:"player_#{@current.last}"].try(:order)

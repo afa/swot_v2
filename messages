@@ -1,0 +1,2 @@
+player_online game_uuid, player_uuid (AdminLog) todo game && player
+player_offline game_uuid, player_uuid (AdminLog) todo game && player
