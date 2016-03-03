@@ -22,6 +22,7 @@ class Game
     info "#{@uuid} created"
     sett = {settings: params[:settings]} if params[:settings] && !params[:settings].empty?
     sett ||= {}
+    p 'settings', sett
     Center.current.to_supervise as: :"admin_logger_#{@uuid}", type: AdminLogger, args: [{game_uuid: @uuid}]
     Center.current.to_supervise as: :"state_#{@uuid}", type: State, args: [{game_uuid: @uuid}.merge(sett)]
     time_params = {}
