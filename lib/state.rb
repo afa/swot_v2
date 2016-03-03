@@ -59,7 +59,7 @@ class State
     end
     p params
     @setting.data.merge!(params[:settings]) if params[:settings]
-    p @settings.data
+    p @setting.data
 
 
   end
