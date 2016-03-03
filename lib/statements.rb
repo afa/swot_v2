@@ -60,6 +60,13 @@ class Statements
     stats[-dec_count, dec_count].all?{|s| s.status == 'declined' }
   end
 
+  def rebuild_visible_for(stage)
+    vis = []
+    @statements.select{|s| s.stage == stage && s. }.sort_by{|s| s.step }
+
+
+  end
+
   def range_for params = {}
     #value, index, stage, player
   end

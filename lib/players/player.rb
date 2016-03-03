@@ -245,6 +245,7 @@ class Player
     game = Actor[:"game_#{@game_uuid}"]
     players = Actor[:"players_#{@game_uuid}"]
     state = Actor[:"state_#{@game_uuid}"]
+    stage_swot = State::STAGES[state.stage][:swot]
     statements = Actor[:"statements_#{@game_uuid}"]
     
     info "current all statements #{statements.mapped_current}"
@@ -263,7 +264,7 @@ class Player
         current_stage: game.stage, # one of stages
         conclusion: gen_conclusion,
         replaces: [],
-        statements: statements.active_js,
+        statements: statements.active_js(stage_swot),
         player: {
           turn_in: (players.queue.index(@uuid) || 3)
         },
