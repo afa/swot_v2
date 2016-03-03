@@ -57,6 +57,7 @@ class State
       load_default_settings
       init
     end
+    p params
     @setting.data.merge!(params[:settings]) if params[:settings]
 
 
