@@ -67,7 +67,7 @@ class Game
     if %w(waiting started).map(&:to_sym).include? state.state
       state.state = :started
       if players.enough_players
-        async.start_stage
+        start_stage
       else
         state.state = :terminated
         async.terminate_timeout

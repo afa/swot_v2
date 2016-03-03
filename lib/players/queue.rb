@@ -68,17 +68,20 @@ class Queue
     list = players.players.sort_by(&:order)
     p 'pl list before', list.map(&:uuid)
     @tail = []
-    last = Actor[:"player_#{@current.last}"]
+    last_order = Actor[:"player_#{@current.last}"].try(:order)
+    last_order ||= 0
     list.delete_if{|l| @current.include? l.uuid || l.order.to_i < 1 }
     p 'pl list after', list.map(&:uuid)
-    idx = list.index{|l| l.order > last.order }
-    p 'pos for last order', last.order, idx
+    idx = list.index{|l| l.order > last_order }
+    p 'pos for last order', last_order, idx
     if idx
       @tail += list[idx..-1].map(&:uuid)
       list = list[0, idx]
+      p @tail
+      @tail += list[idx..-1].map(&:uuid)
+    else
+      @tail = list.map(&:uuid)
     end
-    p @tail
-    @tail += list[idx..-1].map(&:uuid)
     p @tail, (@current + @tail).size
 
 
