@@ -55,12 +55,10 @@ class State
     @player_channels = {}
     unless try_recover
       load_default_settings
+      if params[:settings]
+        @setting.data = @setting.data.merge(params[:settings])
+      end
       init
-    end
-    p params
-    if params[:settings]
-      @setting.data = @setting.data.merge(params[:settings])
-      p @setting.data
     end
 
 
