@@ -9,7 +9,6 @@ class Game
   attr_accessor :name
   def self.create params = {}
     uuid = UUID.new.generate
-    p uuid
     Center.current.async.to_supervise as: :"game_#{uuid}", type: Game, args: [{uuid: uuid}.merge(params)]
   end
 
@@ -43,7 +42,6 @@ class Game
     end
     timers = Center.current.to_supervise as: :"timers_#{@uuid}", type: Timings, args: [{game_uuid: @uuid}.merge(time_params)]
     # alarms = Center.current.async.to_supervise as: :"alarms_#{@uuid}", type: Alarms, args: [{uuid: @uuid}.merge(time_params)]
-    p 'game', @uuid, 'created'
     p Timings::Start.instance(@uuid).set_time params[:start][:time]
     state.state = Timings::Start.instance(@uuid).next_time ? :waiting : Timings::Start.instance(@uuid).at ? :started : :waiting
     # state.state = alarms.start_at && alarms.start_at > Time.now.to_i ? :started : :waiting
@@ -60,10 +58,6 @@ class Game
   def run
     p @uuid
     puts 'ok'
-
-    # @timers.async.run
-    # @pubsub.async.run
-    # @redis.publish('tst', 'tt')
   end
 
   def start

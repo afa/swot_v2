@@ -91,17 +91,18 @@ class Statement
   end
 
   def set_contribution
+    state = Celluloid::Actor[:"state_#{@game_uuid}"]
+    cfg = state.setting
     replaces_amount = @replaces.size
     raise ArgumentError, 'to much replaces (> 2)' unless (0..2).include?(replaces_amount)
     share = case replaces_amount
-            when 0 then Store::Setting.defaults[:pitcher_no_replace_score]
-            when 1 then Store::Setting.defaults[:pitcher_single_replace_score]
-            when 2 then Store::Setting.defaults[:pitcher_double_replace_score]
+            when 0 then cfg[:pitcher_no_replace_score]
+            when 1 then cfg[:pitcher_single_replace_score]
+            when 2 then cfg[:pitcher_double_replace_score]
             end
     contributors_hash = { @author => share }
     unless replaces_amount.zero?
       statements = Celluloid::Actor[:"statements_#{@game_uuid}"]
-      state = Celluloid::Actor[:"state_#{@game_uuid}"]
       others_share_part = ( 1 - share ).to_f / replaces_amount
       # FIXME: найти утвержения с текущим стеджом в текущей игре с ид в массиве @replaces
       replaced = @replaces.map{|r| statements.find(r) }.compact.select{|s| s.stage == state.to_swot(state.stage) }
@@ -117,15 +118,17 @@ class Statement
   end
 
   def count_catchers_score
+    state = Celluloid::Actor[:"state_#{@game_uuid}"]
+    cfg = state.setting
     rslt = conclusion
-    catcher_zone =  if   @result < Store::Setting.defaults[:catcher_low_border]  ; 1
-                    elsif @result <  0.5                                         ; 2
-                    elsif @result < Store::Setting.defaults[:catcher_high_border]; 3
-                    else                                                        ; 4
+    catcher_zone =  if   @result < cfg[:catcher_low_border]  ; 1
+                    elsif @result <  0.5                     ; 2
+                    elsif @result < cfg[:catcher_high_border]; 3
+                    else                                     ; 4
                     end
     @votes.each do |vote|
       zone = "catcher_#{format_value(vote.result)}_zone_#{catcher_zone}_score"
-      delta = Store::Setting.defaults[zone.to_sym]
+      delta = cfg[zone.to_sym]
       # FIXME:  ищем плееров с ид в текущей игре.
       player = Celluloid::Actor[:"player_#{vote.player}"]
       player.async.catcher_apply_delta(delta)

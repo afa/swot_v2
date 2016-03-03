@@ -19,7 +19,7 @@ class State
     rs: {beetwen: false, order: 9, swot: :s},
     rw: {beetwen: false, order: 10, swot: :w},
     ro: {beetwen: false, order: 11, swot: :o},
-    rt: {beetwen: false, order: 12, swot: :t}
+    rt: {beetwen: false, order: 12, swot: :t},
     end: {beetwen: false, order: 13, swot: nil}
   }
 
@@ -81,7 +81,7 @@ class State
   end
 
   def load_default_settings
-    @setting = Store::Setting.find(game_uuid: @game_uuid) || Store::Setting.create(game_uuid: @game_uuid, data: Store::Setting.defaults)
+    @setting = Store::Setting.for_game(@game_uuid)
   end
 
   def stage

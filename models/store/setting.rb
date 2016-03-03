@@ -5,11 +5,24 @@ require 'ostruct'
 # require 'store/setting/decimal'
 class Store::Setting < Ohm::Model
   include Ohm::DataTypes
+  include Ohm::Callbacks
   attr_accessor :current
 
   attribute :data, Type::Hash
   attribute :game_uuid
   index :game_uuid
+
+  def self.for_game(guid)
+    st = find(game_uuid: guid).first
+    unless st
+      df = find(game_uuid: nil).first
+      unless df
+        df = create(game_uuid: nil, data: defaults)
+      end
+      st = create(game_uuid: guid, data: df.data)
+    end
+    st
+  end
 
   def self.defaults
     {
@@ -79,13 +92,12 @@ class Store::Setting < Ohm::Model
   end
 
   def [] key
-    p key, data
-    Store::Setting.defaults.merge(data || {})[key]
+    data[key]
   end
 
-  def initialize params = {}
-    self.game_uuid = params.delete :game_uuid
-    self.data = Store::Setting.defaults.merge params
-    p '-----------------------------------', data
-  end
+  # def initialize params = {}
+  #   self.game_uuid = params.delete :game_uuid
+  #   self.data = Store::Setting.defaults.merge params
+  #   p '-----------------------------------', data
+  # end
 end

@@ -116,8 +116,8 @@ class Players
 
   def enough_players
     state = Actor[:"state_#{@game_uuid}"]
-    cfg = Store::Setting.defaults
-    p cfg[:min_players]
+    cfg = state.setting
+    p 'min_players', cfg[:min_players]
     players.select{|p| p.online }.size >= cfg[:min_players].to_i
   end
 
