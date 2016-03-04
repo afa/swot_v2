@@ -12,6 +12,9 @@
     "port": 3010,
     "autostart": {
       "type": "create",
+      "settings": {
+        "max_steps": 4
+      },
       "game": {
         "name": "aa",
         "description": "",
@@ -29,13 +32,25 @@
         },
         {
           "name": "bb",
-          "email": "bb@bb.bb",
+          "email": "bb@aa.aa",
+          "state": "not_invited",
+          "error": false
+        },
+        {
+          "name": "cc",
+          "email": "cc@aa.aa",
+          "state": "not_invited",
+          "error": false
+        },
+        {
+          "name": "dd",
+          "email": "dd@bb.bb",
           "state": "not_invited",
           "error": false
         }
       ],
       "start": {
-        "time": 90,
+        "time": 150,
         "time_zone": "+03:00"
       }
     }

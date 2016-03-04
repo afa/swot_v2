@@ -129,14 +129,18 @@ class Player
     state = Actor[:"state_#{@game_uuid}"]
     # timers = Actor[:"alarms_#{@game_uuid}"]
     players = Actor[:"players_#{@game_uuid}"]
-    msg = {type: 'event', subtype: 'ready', start_at: Timings::Start.instance(@game_uuid).at, pitcher: (players.queue.index(@uuid) == 0),  timer: Timings.instance(@game_uuid).next_stamp, version: SWOT_VERSION}
+    queue = Actor[:"queue_#{@game_uuid}"]
+    pit = queue.pitcher.uuid == @uuid
+    msg = {type: 'event', subtype: 'ready', start_at: Timings::Start.instance(@game_uuid).at, pitcher: pit,  timer: Timings.instance(@game_uuid).next_stamp, version: SWOT_VERSION}
     publish_msg msg
   end
 
   def send_event ev, params = {}
     state = Actor[:"state_#{@game_uuid}"]
     msg = {
-      type: 'event', subtype: ev,  timer: Timings.instance(@game_uuid).next_stamp
+      type: 'event',
+      subtype: ev,
+      timer: Timings.instance(@game_uuid).next_stamp
     }.merge params
     p @uuid, state.player_channels.keys
     publish_msg msg
@@ -172,7 +176,7 @@ class Player
     queue = Actor[:"queue_#{@game_uuid}"]
     players = Actor[:"players_#{@game_uuid}"]
     info "::::::ids #{ queue.ids.index(@uuid)}"
-    msg = {type: 'event', subtype: 'start_step', turn_in: queue.ids.index(@uuid), pitcher_name: queue.pitcher.uglify_name(state.stage), timer: Timings.instance(@game_uuid).next_stamp, step: {current: state.step, total: state.total_steps, status: state.step_status}}
+    msg = {type: 'event', subtype: 'start_step', turn_in: queue.index(@uuid), pitcher_name: queue.pitcher.uglify_name(state.stage), timer: Timings.instance(@game_uuid).next_stamp, step: {current: state.step, total: state.total_steps, status: state.step_status}}
     publish_msg msg
   end
 
@@ -193,17 +197,27 @@ class Player
   end
 
   def send_start_stage
-    players = Actor[:"players_#{@game_uuid}"]
+    queue = Actor[:"queue_#{@game_uuid}"]
     state = Actor[:"state_#{@game_uuid}"]
-    game = Actor[:"game_#{@game_uuid}"]
-    msg = {type: 'event', subtype: 'start_stage', value: game.stage, turn_in: (players.queue.index(@uuid) || 3)}
+    msg = {type: 'event', subtype: 'start_stage', value: state.stage, turn_in: (queue.index(@uuid) || 3)}
     publish_msg msg
   end
 
   def send_end_stage
     state = Actor[:"state_#{@game_uuid}"]
+    queue = Actor[:"queue_#{@game_uuid}"]
     info "sending end stage to pl #{@uuid}"
-    msg = {type: 'event', subtype: 'end_stage', value: state.stage, timer: Timings.instance(@game_uuid).next_stamp}
+
+    msg = {
+          type: 'event',
+          subtype: 'end_stage',
+          value: state.stage,
+          pitcher: %w(s w o t sw wo ot).include?(state.stage.to_s) && queue.pitcher == @uuid,
+          player: {
+            turn_in: (queue.index(@uuid) || 3)
+          },
+          timer: Timings.instance(@game_uuid).next_stamp
+        }
     publish_msg msg
   end
 
@@ -244,9 +258,17 @@ class Player
   def gen_state params = {}
     game = Actor[:"game_#{@game_uuid}"]
     players = Actor[:"players_#{@game_uuid}"]
+    queue = Actor[:"queue_#{@game_uuid}"]
     state = Actor[:"state_#{@game_uuid}"]
-    stage_swot = State::STAGES[state.stage][:swot]
+    stage_swot = State::STAGES.fetch(state.stage, {swot: :end})[:swot]
     statements = Actor[:"statements_#{@game_uuid}"]
+    if %w(rs rw ro rt).include? state.stage.to_s
+      stmnts = statements.visible_for_buf(rebuild_visisble_for_stage(stage_swot))
+    elsif %w(s w o t sw wo ot tr).include?(state.stage.to_s)
+      stmnts = statements.active_js(@uuid)
+    else 
+      stmnts = []
+    end
     
     info "current all statements #{statements.mapped_current}"
     info "current statements #{statements.active_js}"
@@ -257,16 +279,16 @@ class Player
       game: {
         time: current_stamp,
         step: {
-          current: game.step,
-          total: game.total_steps,
-          status: game.step_status
+          current: state.step,
+          total: state.total_steps,
+          status: state.step_status
         },
-        current_stage: game.stage, # one of stages
+        current_stage: state.stage, # one of stages
         conclusion: gen_conclusion,
         replaces: [],
-        statements: statements.active_js(stage_swot),
+        statements: stmnts,
         player: {
-          turn_in: (players.queue.index(@uuid) || 3)
+          turn_in: (queue.index(@uuid) || 3)
         },
 
         started_at: Timings::Start.instance(@game_uuid).at,

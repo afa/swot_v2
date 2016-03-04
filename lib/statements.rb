@@ -28,10 +28,14 @@ class Statements
     find(@last_stat)
   end
 
-  def visible
-    v = @visible.map{|s| find s }
+  def visible_for_buf(arr = @visible)
+    v = arr.map{|s| find s }
     v.each_with_index{|s, i| s.position = i + 1 }
     v
+  end
+
+  def visible
+    visible_for_buf
   end
 
   def validate_statement params = {}
@@ -62,9 +66,11 @@ class Statements
 
   def rebuild_visible_for(stage)
     vis = []
-    @statements.select{|s| s.stage == stage && s. }.sort_by{|s| s.step }
-
-
+    @statements.select{|s| s.stage == stage && s.status == 'accepted' }.sort_by{|s| s.step }.each do |s|
+      s.replaces.each{|r| vis.delete r }
+      vis << s.uuid
+    end
+    vis
   end
 
   def range_for params = {}
