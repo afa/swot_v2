@@ -263,7 +263,7 @@ class Player
     stage_swot = State::STAGES.fetch(state.stage, {swot: :end})[:swot]
     statements = Actor[:"statements_#{@game_uuid}"]
     if %w(rs rw ro rt).include? state.stage.to_s
-      stmnts = statements.visible_for_buf(rebuild_visisble_for_stage(stage_swot))
+      stmnts = statements.visible_for_buf(rebuild_visisble_for(stage_swot))
     elsif %w(s w o t sw wo ot tr).include?(state.stage.to_s)
       stmnts = statements.active_js(@uuid)
     else 
