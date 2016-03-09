@@ -170,6 +170,7 @@ class Statement
       count_catchers_score
       # game.count_pitchers_score
     end
+
   end
   private
 

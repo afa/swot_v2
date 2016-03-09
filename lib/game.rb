@@ -93,14 +93,14 @@ class Game
     state = Actor[:"state_#{@uuid}"]
     players = Actor[:"players_#{@uuid}"]
     if %w(s w o t).include? state.stage.to_s
-    queue = Actor[:"queue_#{@uuid}"]
-    info "start step step = #{state.step}"
-    if state.step == 1
-      Timings::FirstPitch.instance(@uuid).start
-    else
-      Timings::Pitch.instance(@uuid).start
-    end
-    state.step_status = state.first_enum(State::STEP_STATUSES)
+      queue = Actor[:"queue_#{@uuid}"]
+      info "start step step = #{state.step}"
+      if state.step == 1
+        Timings::FirstPitch.instance(@uuid).start
+      else
+        Timings::Pitch.instance(@uuid).start
+      end
+      state.step_status = state.first_enum(State::STEP_STATUSES)
     else
       Timings::Ranging.instance(@uuid).start
     end
@@ -197,7 +197,7 @@ class Game
       Timings::VotingQuorum.instance(@uuid).cancel
       statements.voting.calc_votes if statements.voting
       statements.update_visible
-      # statements.voting.vote_results! if statements.voting
+      statements.voting.vote_results! if statements.voting
       # statements.active.each_with_index{|s, i| s.position = i + 1 }
       state.step_status = state.next_enum(State::STEP_STATUSES, state.step_status)
       state.step_status = state.next_enum(State::STEP_STATUSES, state.step_status) unless state.step_status == :end
@@ -277,6 +277,10 @@ class Game
     async.start_stage
   end
 
+  def ranging_timeout params = {}
+    end_step
+    end_stage
+  end
 
   def push_event event, params = {}
     publish_msg({type: 'event', subtype: event})

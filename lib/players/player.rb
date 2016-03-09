@@ -77,6 +77,7 @@ class Player
   end
 
   def ranging params = {}
+    game = Actor[:"game_#{@game_uuid}"]
     send_ranging(value: params[:value], index: params[:index])
     game.async.ranging(value: params[:value], player: @uuid, index: params[:index])
   end
@@ -263,7 +264,7 @@ class Player
     stage_swot = State::STAGES.fetch(state.stage, {swot: :end})[:swot]
     statements = Actor[:"statements_#{@game_uuid}"]
     if %w(rs rw ro rt).include? state.stage.to_s
-      stmnts = statements.visible_for_buf(rebuild_visible_for(stage_swot))
+      stmnts = statements.visible_for_buf(statements.rebuild_visible_for(stage_swot)).map{|s| s.as_json(@uuid) }
     elsif %w(s w o t sw wo ot tr).include?(state.stage.to_s)
       stmnts = statements.active_js(@uuid)
     else 
