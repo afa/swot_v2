@@ -2,6 +2,7 @@ class Game
   include Celluloid
   include Celluloid::IO
   include Celluloid::Internals::Logger
+  include Celluloid::Notifications
   extend Forwardable
   finalizer :finalizer
   def_delegators :int_state, :stage, :step, :total_steps, :step_status, :statements, :setting
@@ -68,6 +69,7 @@ class Game
     if %w(waiting started).map(&:to_sym).include? state.state
       state.state = :started
       if players.enough_players
+        publish :game_started, @uuid
         start_stage
       else
         state.state = :terminated

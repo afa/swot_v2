@@ -192,10 +192,10 @@ class Player
       per = 100 - per unless stat.status == 'accepted'
       per = per.round(1)
       msg = {type: 'event', subtype: 'end_step', result: {status: params[:status], score: stat.author == @uuid ? @pitcher_rank : @catcher_score, delta: stat.author == @uuid ? 0 : @delta, players_voted: per}, timeout_at: Timings.instance(@game_uuid).next_stamp, time: current_stamp}
+    p 'endstep result msg pitcherscore', msg, @pitcher_rank
     else
       msg = {type: 'event', subtype: 'end_step', result: {status: params[:status], score: queue.prev_pitcher == @uuid ? @pitcher_rank : @catcher_score, delta: 0.0}, timeout_at: Timings.instance(@game_uuid).next_stamp, time: current_stamp}
     end
-    p 'endstep result msg catcherscore delta', msg, @catcher_score, @delta
     publish_msg msg
   end
 
