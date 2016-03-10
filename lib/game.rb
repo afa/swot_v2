@@ -194,9 +194,11 @@ class Game
       Timings::Pitch.instance(@uuid).cancel
       Timings::FirstPitch.instance(@uuid).cancel
       Timings::VotingQuorum.instance(@uuid).cancel
-      statements.voting.calc_votes if statements.voting
+      if statements.voting
+        statements.voting.calc_votes
+        statements.voting.vote_results!
+      end
       statements.update_visible
-      statements.voting.vote_results! if statements.voting
       # statements.active.each_with_index{|s, i| s.position = i + 1 }
       state.step_status = state.next_enum(State::STEP_STATUSES, state.step_status)
       state.step_status = state.next_enum(State::STEP_STATUSES, state.step_status) unless state.step_status == :end
