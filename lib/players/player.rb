@@ -122,7 +122,7 @@ class Player
 
   def send_result params = {}
     state = Actor[:"state_#{@game_uuid}"]
-    msg = {type: 'event', subtype: 'result',  timer: Timings.instance(@game_uuid).next_stamp}
+    msg = {type: 'event', subtype: 'result',  timer: Timings.instance(@game_uuid).next_stamp, time: current_stamp}
     publish_msg msg
   end
 
@@ -132,7 +132,7 @@ class Player
     players = Actor[:"players_#{@game_uuid}"]
     queue = Actor[:"queue_#{@game_uuid}"]
     pit = queue.pitcher.uuid == @uuid
-    msg = {type: 'event', subtype: 'ready', start_at: Timings::Start.instance(@game_uuid).at, pitcher: pit,  timer: Timings.instance(@game_uuid).next_stamp, version: SWOT_VERSION}
+    msg = {type: 'event', subtype: 'ready', start_at: Timings::Start.instance(@game_uuid).at, pitcher: pit,  timer: Timings.instance(@game_uuid).next_stamp, version: SWOT_VERSION, time: current_stamp}
     publish_msg msg
   end
 
@@ -140,7 +140,7 @@ class Player
     state = Actor[:"state_#{@game_uuid}"]
     msg = {
       type: 'event',
-      subtype: ev,
+      subtype: ev, time: current_stamp, time: current_stamp,
       timer: Timings.instance(@game_uuid).next_stamp
     }.merge params
     p @uuid, state.player_channels.keys
@@ -150,24 +150,24 @@ class Player
   def send_pitch params = {}
     state = Actor[:"state_#{@game_uuid}"]
     queue = Actor[:"queue_#{@game_uuid}"]
-    msg = {type: 'event', subtype: 'pitched', value: params[:value], to_replace: params[:to_replace], author: queue.pitcher.uglify_name(state.stage.to_s), timer: Timings.instance(@game_uuid).next_stamp, step: {status: state.step_status} }
+    msg = {type: 'event', subtype: 'pitched', value: params[:value], to_replace: params[:to_replace], author: queue.pitcher.uglify_name(state.stage.to_s), timer: Timings.instance(@game_uuid).next_stamp, time: current_stamp, step: {status: state.step_status} }
     publish_msg msg
   end
 
   def send_pass
     state = Actor[:"state_#{@game_uuid}"]
-    msg = {type: 'event', subtype: 'passed', timer: Timings.instance(@game_uuid).next_stamp}
+    msg = {type: 'event', subtype: 'passed', timer: Timings.instance(@game_uuid).next_stamp, time: current_stamp}
     publish_msg msg
   end
 
   def send_vote params = {}
     state = Actor[:"state_#{@game_uuid}"]
-    msg = {type: 'event', subtype: 'voted', timer: Timings.instance(@game_uuid).next_stamp}.merge(params)
+    msg = {type: 'event', subtype: 'voted', timer: Timings.instance(@game_uuid).next_stamp, time: current_stamp}.merge(params)
     publish_msg msg
   end
 
   def send_ranging params = {}
-    msg = {type: 'event', subtype: 'ranging', timer: Timings.instance(@game_uuid).next_stamp}.merge(params)
+    msg = {type: 'event', subtype: 'ranging', timer: Timings.instance(@game_uuid).next_stamp, time: current_stamp}.merge(params)
     publish_msg msg
   end
 
@@ -177,7 +177,7 @@ class Player
     queue = Actor[:"queue_#{@game_uuid}"]
     players = Actor[:"players_#{@game_uuid}"]
     info "::::::ids #{ queue.ids.index(@uuid)}"
-    msg = {type: 'event', subtype: 'start_step', turn_in: queue.index(@uuid), pitcher_name: queue.pitcher.uglify_name(state.stage), timer: Timings.instance(@game_uuid).next_stamp, step: {current: state.step, total: state.total_steps, status: state.step_status}}
+    msg = {type: 'event', subtype: 'start_step', turn_in: queue.index(@uuid), pitcher_name: queue.pitcher.uglify_name(state.stage), timer: Timings.instance(@game_uuid).next_stamp, step: {current: state.step, total: state.total_steps, status: state.step_status}, time: current_stamp}
     publish_msg msg
   end
 
@@ -190,9 +190,10 @@ class Player
     if stat
       per = 100 * stat.result.to_f
       per = 100 - per unless stat.status == 'accepted'
-      msg = {type: 'event', subtype: 'end_step', result: {status: params[:status], score: stat.author == @uuid ? @pitcher_rank : @catcher_score, delta: stat.author == @uuid ? 0 : @delta, players_voted: per}, timer: Timings.instance(@game_uuid).next_stamp}
+      per = per.round(1)
+      msg = {type: 'event', subtype: 'end_step', result: {status: params[:status], score: stat.author == @uuid ? @pitcher_rank : @catcher_score, delta: stat.author == @uuid ? 0 : @delta, players_voted: per}, timer: Timings.instance(@game_uuid).next_stamp, time: current_stamp}
     else
-      msg = {type: 'event', subtype: 'end_step', result: {status: params[:status], score: queue.prev_pitcher == @uuid ? @pitcher_rank : @catcher_score, delta: 0.0}, timer: Timings.instance(@game_uuid).next_stamp}
+      msg = {type: 'event', subtype: 'end_step', result: {status: params[:status], score: queue.prev_pitcher == @uuid ? @pitcher_rank : @catcher_score, delta: 0.0}, timer: Timings.instance(@game_uuid).next_stamp, time: current_stamp}
     end
     publish_msg msg
   end
@@ -214,9 +215,11 @@ class Player
           subtype: 'end_stage',
           value: state.stage,
           pitcher: %w(s w o t sw wo ot).include?(state.stage.to_s) && queue.pitcher == @uuid,
+          turn_in: (queue.index(@uuid) || 3),
           player: {
             turn_in: (queue.index(@uuid) || 3)
           },
+          time: current_stamp,
           timer: Timings.instance(@game_uuid).next_stamp
         }
     publish_msg msg
@@ -243,13 +246,14 @@ class Player
       vot = statements.voting
       per = 100 * vot.result.to_f
       per = 100 - per unless vot.status == 'accepted'
+      per = per.round(1)
       conclusion.merge!(
         value: vot.value,
         author: Actor[:"player_#{vot.author}"].uglify_name(state.stage),
         to_replace: vot.replaces,
         status: vot.status,
         player_score: 0.0,
-        players_voted: per.to_i
+        players_voted: per
         # players_voted: (100.0 * vot.voted_count.to_f / (players.players.size - 1).to_f).to_i
       )
     end
@@ -316,7 +320,7 @@ class Player
 
   def catcher_apply_delta(delta)
     @catcher_score += delta
-    @catcher_delta = delta
+    @delta = delta
   end
 
   def finalizer

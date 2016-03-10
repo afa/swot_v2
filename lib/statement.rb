@@ -137,6 +137,11 @@ class Statement
 
   def calc_votes
     v_count = @votes.map(&:player).uniq.size
+    if v_count == 0
+      @result = 0.0
+      @status = 'no_quorum'
+      return
+    end
     pro = @votes.select{|v| v.result == 'accepted' }.map(&:player).uniq.size
     contra = v_count - pro
     @result = pro.to_f / v_count.to_f

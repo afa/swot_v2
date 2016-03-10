@@ -13,6 +13,7 @@
     "autostart": {
       "type": "create",
       "settings": {
+        "min_players": 2,
         "max_steps": 4
       },
       "game": {
@@ -35,7 +36,17 @@
           "email": "bb@aa.aa",
           "state": "not_invited",
           "error": false
-        },
+        }
+      ],
+      "start": {
+        "time": 150,
+        "time_zone": "+03:00"
+      }
+    }
+  },
+  "tmp": {
+    "players":
+      [
         {
           "name": "cc",
           "email": "cc@aa.aa",
@@ -48,12 +59,7 @@
           "state": "not_invited",
           "error": false
         }
-      ],
-      "start": {
-        "time": 150,
-        "time_zone": "+03:00"
-      }
-    }
+      ]
   },
   "production": {
     "url": "http://swot-r.dev.techranch.ru",

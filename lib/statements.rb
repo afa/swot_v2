@@ -74,6 +74,7 @@ class Statements
   end
 
   def range_for params = {}
+    # TODO apply ranging
     #value, index, stage, player
   end
 

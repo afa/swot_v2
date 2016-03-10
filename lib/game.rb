@@ -127,7 +127,6 @@ class Game
 
   def ranging params = {}
     # value index player
-    info 'TODO ranging'
     state = Actor[:"state_#{@uuid}"]
     players = Actor[:"players_#{@uuid}"]
     statements = Actor[:"statements_#{@uuid}"]
