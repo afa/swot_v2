@@ -32,7 +32,7 @@ class Game
     end
       
     self.name = params[:name]
-    state = Actor[:"state_#{@uuid}"]
+    state = int_state
 
     Center.current.to_supervise(as: :"players_#{@uuid}", type: Players, args: [{game_uuid: @uuid}])
     players = Actor[:"players_#{@uuid}"]
@@ -62,7 +62,7 @@ class Game
   end
 
   def start
-    state = Actor[:"state_#{@uuid}"]
+    state = int_state
     players = Actor[:"players_#{@uuid}"]
     players.async.build_queue # TODO move to create
     if %w(waiting started).map(&:to_sym).include? state.state
@@ -77,7 +77,7 @@ class Game
   end
 
   def start_stage #whats?
-    state = Actor[:"state_#{@uuid}"]
+    state = int_state
     players = Actor[:"players_#{@uuid}"]
     # alarms = Actor[:"alarms_#{@uuid}"]
     queue = Actor[:"queue_#{@uuid}"]
@@ -90,7 +90,7 @@ class Game
   end
 
   def start_step
-    state = Actor[:"state_#{@uuid}"]
+    state = int_state
     players = Actor[:"players_#{@uuid}"]
     if %w(s w o t).include? state.stage.to_s
       queue = Actor[:"queue_#{@uuid}"]
@@ -111,7 +111,7 @@ class Game
   end
 
   def stage_timeout
-    state = Actor[:"state_#{@uuid}"]
+    state = int_state
     players = Actor[:"players_#{@uuid}"]
     # alarms = Actor[:"alarms_#{@uuid}"]
     queue = Actor[:"queue_#{@uuid}"]
@@ -127,14 +127,14 @@ class Game
 
   def ranging params = {}
     # value index player
-    state = Actor[:"state_#{@uuid}"]
+    state = int_state
     players = Actor[:"players_#{@uuid}"]
     statements = Actor[:"statements_#{@uuid}"]
     statements.async.range_for(player: params[:player], value: params[:value], index: params[:index], stage: State::STAGES[state.stage][:swot])
   end
 
   def pitch params = {}
-    state = Actor[:"state_#{@uuid}"]
+    state = int_state
     players = Actor[:"players_#{@uuid}"]
     # alarms = Actor[:"alarms_#{@uuid}"]
     queue = Actor[:"queue_#{@uuid}"]
@@ -168,7 +168,7 @@ class Game
   end
 
   def vote params = {}
-    state = Actor[:"state_#{@uuid}"]
+    state = int_state
     players = Actor[:"players_#{@uuid}"]
     # alarms = Actor[:"alarms_#{@uuid}"]
     queue = Actor[:"queue_#{@uuid}"]
@@ -181,7 +181,7 @@ class Game
   end
 
   def end_step params = {}
-    state = Actor[:"state_#{@uuid}"]
+    state = int_state
     players = Actor[:"players_#{@uuid}"]
     if %w(rs rw ro rt).include? state.stage.to_s
       msg = {type: 'event', subtype: 'end_step', timer: Timings.instance(@uuid).next_stamp}
@@ -199,7 +199,8 @@ class Game
         statements.voting.vote_results!
       end
       statements.update_visible
-      # statements.active.each_with_index{|s, i| s.position = i + 1 }
+      async.push_state
+      players.async.push_state
       state.step_status = state.next_enum(State::STEP_STATUSES, state.step_status)
       state.step_status = state.next_enum(State::STEP_STATUSES, state.step_status) unless state.step_status == :end
       Timings::Results.instance(@uuid).start
@@ -211,7 +212,7 @@ class Game
   end
 
   def voting_quorum_timeout params = {}
-    state = Actor[:"state_#{@uuid}"]
+    state = int_state
     players = Actor[:"players_#{@uuid}"]
     queue = Actor[:"queue_#{@uuid}"]
     statements = Actor[:"statements_#{@uuid}"]
@@ -225,7 +226,7 @@ class Game
   end
 
   def end_stage params = {}
-    state = Actor[:"state_#{@uuid}"]
+    state = int_state
     players = Actor[:"players_#{@uuid}"]
     # alarms = Actor[:"alarms_#{@uuid}"]
     # queue = Actor[:"queue_#{@uuid}"]
@@ -252,7 +253,7 @@ class Game
   end
 
   def results_timeout params = {}
-    state = Actor[:"state_#{@uuid}"]
+    state = int_state
     statements = Actor[:"statements_#{@uuid}"]
     Timings::Results.instance(@uuid).cancel
     if statements.check_triple_decline
@@ -268,7 +269,7 @@ class Game
   end
 
   def between_stages_timeout params = {}
-    state = Actor[:"state_#{@uuid}"]
+    state = int_state
     players = Actor[:"players_#{@uuid}"]
     state.stage = state.next_enum(State::STAGES, state.stage)
     state.step = 1
@@ -290,14 +291,12 @@ class Game
   def push_state params = {}
     state = int_state
     players = Actor[:"players_#{@uuid}"]
-    # alarms = Actor[:"alarms_#{@uuid}"]
     msg = params.merge status: state.state, stage: state.stage, timeout_at: Timings::Start.instance(@uuid).at + 1500, started_at: Timings::Start.instance(@uuid).at, players: players.players.map(&:uuid), step: {total: total_steps, current: step, status: step_status}
     # msg = params.merge status: state.state, stage: state.stage, timeout_at: alarm.next_time, started_at: alarm.start_at, players: players.players.map(&:uuid), step: {total: total_steps, current: step, status: step_status}
     publish_msg msg
   end
 
   def stage_timeout
-    info 'TODO stage timeout'
     async.end_stage
   end
 
