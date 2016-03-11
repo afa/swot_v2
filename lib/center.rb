@@ -13,6 +13,8 @@ require 'statement'
 require 'scores'
 require 'admin_logger'
 require 'player_connect'
+require 'admin_connect'
+# require 'client_connect'
 class Center # < Celluloid::Supervision::Container
   include Celluloid
   include Celluloid::IO

@@ -7,7 +7,7 @@ class Game
   finalizer :finalizer
   def_delegators :int_state, :stage, :step, :total_steps, :step_status, :statements, :setting
 
-  attr_accessor :name
+  attr_accessor :name, :online
   def self.create params = {}
     uuid = UUID.new.generate
     Center.current.async.to_supervise as: :"game_#{uuid}", type: Game, args: [{uuid: uuid}.merge(params)]
@@ -18,6 +18,7 @@ class Game
   end
 
   def initialize params = {}
+    @online = false
     @uuid = params[:uuid]
     @server_setup = params[:server_setup]
     info "#{@uuid} created"
@@ -307,6 +308,7 @@ class Game
     state = int_state
     players = Actor[:"players_#{@uuid}"]
     state.state = :terminated
+    publish :game_terminated, @uuid
     publish_msg({type: 'event', subtype: 'terminated'})
     players.async.push_terminated
     async.stop_timers
@@ -318,12 +320,50 @@ class Game
     timings.async.stop_timers
   end
 
-  def publish_msg hash
-    state = int_state
-    info "publish game #{hash.inspect}"
-    # fan = state.game[:fan]
-    # fan.publish hash.to_json, routing_key: "game.#{@uuid}"
+  def online!
+    @online = true
+    info "#{@uuid} online"
+    # state = Actor[:"state_#{@game_uuid}"]
+    # players = Actor[:"players_#{@game_uuid}"]
+    # players.check_min_players
+    # async.send_ready reply_to: 'connect' if state.state.to_s == 'waiting'
+    # async.send_state reply_to: 'connect' if state.state.to_s == 'started'
+    # async.send_terminated if state.state.to_s == 'terminated'
+    # async.send_result reply_to: 'connect' unless %w(waiting started).include?(state.state.to_s)
+    # info 'online'
+    # async.publish :player_online, @game_uuid, {uuid: @uuid}
   end
+
+  def offline!
+    @online = false
+    # players = Actor[:"players_#{@game_uuid}"]
+    # players.check_min_players
+    info "#{@uuid} offline"
+    # async.publish :player_offline, @game_uuid, {uuid: @uuid}
+  end
+
+  def publish_msg msg
+    if @online
+      ch = Actor[:"gm_chnl_#{@uuid}"]
+      if ch && ch.alive?
+        p 'game chnl ok'
+        ch.publish_msg msg.to_json
+      else
+        p 'chnl down'
+        offline!
+      end
+    else
+      info "game #{@uuid} offline"
+    end
+    info msg.inspect
+  end
+
+  # def publish_msg hash
+  #   state = int_state
+  #   info "publish game #{hash.inspect}"
+  #   # fan = state.game[:fan]
+  #   # fan.publish hash.to_json, routing_key: "game.#{@uuid}"
+  # end
 
   def finalizer
     # Center.current.delete(:"alarms_#{@uuid}")

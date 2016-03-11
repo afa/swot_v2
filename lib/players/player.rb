@@ -93,7 +93,7 @@ class Player
     async.send_terminated if state.state.to_s == 'terminated'
     async.send_result reply_to: 'connect' unless %w(waiting started).include?(state.state.to_s)
     info 'online'
-    async.publish :player_online, @game_uuid, {uuid: @uuid}
+    publish :player_online, @game_uuid, {uuid: @uuid}
   end
 
   def offline!
@@ -101,7 +101,7 @@ class Player
     players = Actor[:"players_#{@game_uuid}"]
     players.check_min_players
     info "#{@uuid} offline"
-    async.publish :player_offline, @game_uuid, {uuid: @uuid}
+    publish :player_offline, @game_uuid, {uuid: @uuid}
   end
 
   def publish_msg msg

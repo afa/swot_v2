@@ -47,6 +47,8 @@ class Web < Reel::Server::HTTP
   def route_websocket(socket)
     if socket.url =~ /\/player\//
       PlayerConnect.create(socket, socket.url)
+    elsif socket.url =~ /\/game\//
+      AdminConnect.create(socket, socket.url)
     elsif socket.url == '/swot/control'
       p 'control channel TODO'
       # ClientConnect(socket)
