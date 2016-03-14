@@ -93,19 +93,22 @@ class AdminLogger
     return unless @guid == game_id
     # TODO statistics
     # stage: sym
+
+    state = Actor[:"state_#{@guid}"]
     players = Actor[:"players_#{@guid}"]
-    stats = players.players.active.map do |p|
+    stats = players.players.select{|p| p.online }.map do |p|
       {
         name: p.name
-      }.merge(
-        p.stats_stage.raw_counters
-      )
+      }
+      # .merge(
+      #   p.stats_stage.raw_counters
+      # )
     end
     msg = {
       subtype: :next_stage,
-      from: game.previous_stage.name,
-      to: next_st.name,
-      stats: stats
+      from: state.previous_stage.name,
+      to: state.stage_name
+      # stats: stats
     }
     push msg
   end
@@ -133,12 +136,18 @@ class AdminLogger
 
   def statement_pitched topic, game_id, params = {}
     return unless @guid == game_id
+    players = Actor[:"players_#{@guid}"]
     statement = params[:statement]
+    statements = Actor[:"statements_#{@guid}"]
+    voting = statements.voting #TODO оставлять или нет непонятно. возможно нужно передать замены отдельно и урезать.
+    author = players.find(statement[:author])
+    return unless author && author.alive?
     msg = {
       subtype: :statement_pitched,
-      pitcher: begin game.current_pitcher.name; rescue PlayersQueue::ErrorEmptyQueue; '' end,
-      statement: statement.to_s.inspect,
-      replaces: statement.to_replace.map{|id| game.current_stage.statements.find(id).try(:statement)}.compact.map(&:inspect)
+      pitcher: author.name,
+      # pitcher: begin game.current_pitcher.name; rescue PlayersQueue::ErrorEmptyQueue; '' end,
+      statement: statement[:value],
+      replaces: voting.replaces.map{|id| statements.find(id).value}
     }
     push msg
   end
@@ -146,10 +155,12 @@ class AdminLogger
   def vote_added topic, game_id, params = {}
     return unless @guid == game_id
     vote = params[:vote]
+    player = Actor[:"player_#{vote[:player]}"]
+    return unless player && player.alive?
     msg = {
       subtype: :vote_added,
-      voted: vote.player.name,
-      result: vote.result
+      voted: player.name,
+      result: vote[:result]
     }
     push msg
   end
@@ -221,9 +232,11 @@ class AdminLogger
 
   def next_pitcher topic, game_id, params = {}
     return unless @guid == game_id
+    queue = Actor[:"queue_#{@guid}"]
+    state = Actor[:"state_#{@guid}"]
     msg = {
-      pitcher: begin game.current_pitcher.try(:name); rescue PlayersQueue::ErrorEmptyQueue; '' end,
-      step: game.current_stage.try(:step),
+      pitcher: queue.pitcher.name,
+      step: state.step,
       subtype: :next_pitcher
     }
     push msg

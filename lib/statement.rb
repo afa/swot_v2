@@ -74,6 +74,11 @@ class Statement
 
   end
 
+  def quorum?
+    players = Celluloid::Actor[:"players_#{@game_uuid}"]
+    #TODO
+  end
+
   def calc_result
     return 'no_quorum' if @votes.empty?
     p = @votes.map(&:result).select{|v| v == 'accepted' }.size
@@ -115,6 +120,24 @@ class Statement
       end
     end
     @contribution = contributors_hash
+  end
+
+      # pitcher_rank_multiplier_accepted: 1.2,
+      # pitcher_rank_multiplier_declined: 0.8,
+      # pitcher_rank_multiplier_pass: 0.9,
+      # pitcher_rank_multiplier_disconnected: 0.9,
+      # pitcher_minimum_rank: 0.3,
+
+
+  def count_pitcher_score
+    state = Celluloid::Actor[:"state_#{@game_uuid}"]
+    player = Celluloid::Actor[:"player_#{@author}"]
+    cfg = state.setting
+    typ = @status
+    mult = cfg[:"pitcher_rank_multiplier_#{typ}"].to_f
+    rank = player.pitcher_rank
+    rank *= mult
+    player.pitcher_rank = [rank, cfg[:pitcher_minimum_rank].to_f].max
   end
 
   def count_catchers_score
@@ -173,9 +196,8 @@ class Statement
       @result = @votes.inject(0){|r, v| r += v.result == 'accepted' ? 1 : 0 }.to_f / @votes.size.to_f
       @result >= 0.5 ? accept! : decline!
       count_catchers_score
-      # game.count_pitchers_score
     end
-
+    count_pitcher_score
   end
   private
 

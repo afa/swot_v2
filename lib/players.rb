@@ -102,6 +102,12 @@ class Players
     end
   end
 
+  def push_quorum
+    players.each do |pl|
+      pl.send_quorum
+    end
+  end
+
   def push_vote
     players.each do |pl|
       pl.send_vote
@@ -129,6 +135,14 @@ class Players
       else
         Timings::Terminate.instance(@game_uuid).start unless Timings::Terminate.instance(@game_uuid).next_time
       end
+    end
+  end
+
+  def find pl_id
+    if @players.include? pl_id
+      Actor[:"player_#{pl_id}"]
+    else 
+      nil
     end
   end
 

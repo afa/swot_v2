@@ -3,7 +3,10 @@ require 'bundler'
 Bundler.require(:default)
 $LOAD_PATH.unshift('./lib') unless $LOAD_PATH.include?('./lib')
 $LOAD_PATH.unshift('./models') unless $LOAD_PATH.include?('./models')
-SWOT_VERSION = File.open('./VERSION'){|f| f.read }.strip
+File.open('./VERSION') do |f|
+  SWOT_VERSION = f.readline.strip
+  SWOT_REL = f.readline.strip
+end
 require 'web'
 require 'utils'
 require 'celluloid/redis'

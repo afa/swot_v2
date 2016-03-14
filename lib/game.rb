@@ -149,6 +149,7 @@ class Game
     Timings::Pitch.instance(@uuid).cancel
     Timings::FirstPitch.instance(@uuid).cancel
     Timings::VotingQuorum.instance(@uuid).start
+    publish :statement_pitched, @uuid, statement: statement
     players.push_pitch(errors.merge(value: params[:value], to_replace: params[:to_replace] || [], author: queue.pitcher.uglify_name(state.stage.to_s), timer: Timings.instance(@uuid).next_stamp))
     publish_msg({type: 'event', subtype: 'pitched', value: params[:value], to_replace: params[:to_replace], author: queue.pitcher.uglify_name(state.stage.to_s), timer: Timings.instance(@uuid).next_stamp}.merge(errors))
     unless errors.empty?
@@ -177,8 +178,18 @@ class Game
     queue = Actor[:"queue_#{@uuid}"]
     statements = Actor[:"statements_#{@uuid}"]
     statements.voting.vote(player: params[:player], result: params[:result])
+    publish :vote_added, @uuid, vote: {player: params[:player], result: params[:result]}
+    if statements.voting.quorum?
+      if Timings.instance(@uuid).next_interval > state.setting[:voting_tail_timeout].to_i
+        Timings::VotingQuorum.instance(@uuid).cancel
+        Timings::VotingTail.instance(@uuid).start
+        async.publish_msg(type: 'event', subtype: 'quorum', timeout_at: Timings.instance(@uuid).next_stamp)
+        players.async.push_quorum
+      end
+    end
     if statements.voting.voted_count == players.players.size - 1
       Timings::VotingQuorum.instance(@uuid).cancel
+      Timings::VotingTail.instance(@uuid).cancel
       end_step(status: statements.voting.calc_result)
     end
   end
@@ -197,6 +208,7 @@ class Game
       Timings::Pitch.instance(@uuid).cancel
       Timings::FirstPitch.instance(@uuid).cancel
       Timings::VotingQuorum.instance(@uuid).cancel
+      Timings::VotingTail.instance(@uuid).cancel
       if statements.voting
         statements.voting.calc_votes
         statements.voting.vote_results!
@@ -208,6 +220,7 @@ class Game
       state.step_status = state.next_enum(State::STEP_STATUSES, state.step_status) unless state.step_status == :end
       Timings::Results.instance(@uuid).start
       queue.next!
+      publish :next_pitcher, @uuid
       msg = {type: 'event', subtype: 'end_step', result: {status: params[:status], score: 0, delta: 0}, timer: Timings.instance(@uuid).next_stamp}
       async.publish_msg msg
       players.async.push_end_step params
@@ -215,17 +228,19 @@ class Game
   end
 
   def voting_quorum_timeout params = {}
-    state = int_state
-    players = Actor[:"players_#{@uuid}"]
-    queue = Actor[:"queue_#{@uuid}"]
+    # state = int_state
+    # players = Actor[:"players_#{@uuid}"]
+    # queue = Actor[:"queue_#{@uuid}"]
     statements = Actor[:"statements_#{@uuid}"]
     #calc rank results
-
     Timings::VotingQuorum.instance(@uuid).cancel
     end_step(status: statements.voting.conclusion)
   end
 
   def voting_tail_timeout params = {}
+    statements = Actor[:"statements_#{@uuid}"]
+    Timings::VotingTail.instance(@uuid).cancel
+    end_step(status: statements.voting.conclusion)
   end
 
   def end_stage params = {}

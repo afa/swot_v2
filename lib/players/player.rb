@@ -9,7 +9,7 @@ class Player
   finalizer :finalizer
 
   attr_accessor :name, :email, :channel, :game_uuid, :uuid, :redis, :order, :score, :online
-  attr :pitcher_rank, :catcher_score, :delta
+  attr_accessor :pitcher_rank, :catcher_score, :delta
 
   def initialize params = {}
     @online = false
@@ -109,7 +109,7 @@ class Player
       ch = Actor[:"chnl_#{@uuid}"]
       if ch && ch.alive?
         p 'chnl ok'
-        ch.publish_msg msg.merge(time: current_stamp).to_json
+        ch.publish_msg msg.merge(time: current_stamp, rel: SWOT_REL, version: SWOT_VERSION).to_json
       else
         p 'chnl down'
         offline!
@@ -166,6 +166,11 @@ class Player
     publish_msg msg
   end
 
+  def send_quorum
+    msg = {type: 'event', subtype: 'quorum', timeout_at: Timings.instance(@game_uuid).next_stamp, continue: true}
+    publish_msg msg
+  end
+
   def send_ranging params = {}
     msg = {type: 'event', subtype: 'ranging', timeout_at: Timings.instance(@game_uuid).next_stamp, time: current_stamp}.merge(params)
     publish_msg msg
@@ -176,7 +181,7 @@ class Player
     state = Actor[:"state_#{@game_uuid}"]
     queue = Actor[:"queue_#{@game_uuid}"]
     players = Actor[:"players_#{@game_uuid}"]
-    info "::::::ids #{ queue.ids.index(@uuid)}"
+    # info "::::::ids #{ queue.ids.index(@uuid)}"
     msg = {type: 'event', subtype: 'start_step', turn_in: queue.index(@uuid), pitcher_name: queue.pitcher.uglify_name(state.stage), timeout_at: Timings.instance(@game_uuid).next_stamp, step: {current: state.step, total: state.total_steps, status: state.step_status}, time: current_stamp}
     publish_msg msg
   end
@@ -191,10 +196,20 @@ class Player
       per = 100 * stat.result.to_f
       per = 100 - per unless stat.status == 'accepted'
       per = per.round(1)
-      msg = {type: 'event', subtype: 'end_step', result: {status: params[:status], score: stat.author == @uuid ? @pitcher_rank : @catcher_score, delta: stat.author == @uuid ? 0 : @delta, players_voted: per}, timeout_at: Timings.instance(@game_uuid).next_stamp, time: current_stamp}
-    p 'endstep result msg pitcherscore', msg, @pitcher_rank
+      if stat.author == @uuid
+        rnk = {rank: @pitcher_rank}
+      else
+        rnk = {score: @catcher_score, delta: @delta}
+      end
+      msg = {type: 'event', subtype: 'end_step', result: {status: params[:status], players_voted: per}.merge(rnk), timeout_at: Timings.instance(@game_uuid).next_stamp, time: current_stamp}
+    # p 'endstep result msg pitcherscore', msg, @pitcher_rank
     else
-      msg = {type: 'event', subtype: 'end_step', result: {status: params[:status], score: queue.prev_pitcher == @uuid ? @pitcher_rank : @catcher_score, delta: 0.0}, timeout_at: Timings.instance(@game_uuid).next_stamp, time: current_stamp}
+      if queue.prev_pitcher == @uuid
+        rnk = {rank: @pitcher_rank}
+      else
+        rnk = {score: @catcher_score, delta: @delta}
+      end
+      msg = {type: 'event', subtype: 'end_step', result: {status: params[:status]}.merge(rnk), timeout_at: Timings.instance(@game_uuid).next_stamp, time: current_stamp}
     end
     publish_msg msg
   end
@@ -255,7 +270,6 @@ class Player
         status: vot.status,
         player_score: 0.0,
         players_voted: per
-        # players_voted: (100.0 * vot.voted_count.to_f / (players.players.size - 1).to_f).to_i
       )
     end
     conclusion
