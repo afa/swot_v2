@@ -91,7 +91,10 @@ class AdminLogger
 
   def next_stage topic, game_id, params = {}
     return unless @guid == game_id
-    stats = game.players.active.map do |p|
+    # TODO statistics
+    # stage: sym
+    players = Actor[:"players_#{@guid}"]
+    stats = players.players.active.map do |p|
       {
         name: p.name
       }.merge(
@@ -110,15 +113,17 @@ class AdminLogger
   
   def ranging topic, game_id, params = {}
     return unless @guid == game_id
-    totals = game.players.active.map do |p|
+    state = Actor[:"state_#{@guid}"]
+    players = Actor[:"players_#{@guid}"]
+    totals = players.players.active.map do |p|
       { name: p.name }.merge(p.stats_total.raw_counters)
     end
-    stats = game.players.active.map do |p|
+    stats = players.players.active.map do |p|
       { name: p.name }.merge(p.stats_stage.raw_counters)
     end
     msg = {
       subtype: :ranging,
-      from: game.previous_stage.name,
+      from: state.previous_stage.name,
       to: 'Ranging',
       stats: stats,
       totals: totals
@@ -185,7 +190,7 @@ class AdminLogger
     stats_data = game.players.inject({}){|r, v| r.merge v.name => v.score.to_player_stat[v.id.to_s].except(:delta).merge(rank: v.score.rank) }
     roles_data = game.current_stage.statements.accepted.inject({}){|r, v| r.merge v.to_s.inspect => v.players_contributions }
     queue_data = game.players_queue.next_pitchers.map(&:name).first(2)
-    if game.settings[:random_enabled]
+    if state.setting[:random_enabled]
       random_summary = game.players_queue.online_shuffle.data_summary
       random_data = game.players_queue.online_shuffle.data.map{|r| [r[0].to_s, r[1].name, r[2].to_s] }
       Rails.logger.info "---RAND #{random_data.inspect}"

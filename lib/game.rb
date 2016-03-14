@@ -241,6 +241,8 @@ class Game
       msg = {type: 'event', subtype: 'end_stage', value: state.stage, timer: Timings.instance(@uuid).next_stamp}
       async.publish_msg msg
       players.async.push_end_stage
+      async.publish :next_stage, @uuid, stage: state.stage unless state.stage == :tr
+      async.publish :ranging, @uuid, stage: state.stage if state.stage == :tr
     elsif %w(rs rw ro rt).include? state.stage.to_s
       msg = {type: 'event', subtype: 'end_stage', value: state.stage, timer: Time.now.to_i + 1}
       async.publish_msg msg
