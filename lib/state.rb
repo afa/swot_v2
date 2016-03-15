@@ -8,15 +8,15 @@ class State
   attr_accessor :state, :step, :total_steps, :step_status, :stage
   attr_accessor :game_uuid, :game, :players, :player_channels, :setting, :prev_pitcher
   STAGES = {
-    s: {beetwen: false, order: 1, name: 'Strengths', swot: :s},
-    sw: {beetwen: true, order: 2, swot: :s},
-    w: {beetwen: false, order: 3, name: 'Weaknesses', swot: :w},
-    wo: {beetwen: true, order: 4, swot: :w},
-    o: {beetwen: false, order: 5, name: 'Opportunities', swot: :o},
-    ot: {beetwen: true, order: 6, swot: :o},
-    t: {beetwen: false, order: 7, name: 'Threats', swot: :t},
-    tr: {beetwen: true, order: 8, swot: :t},
-    rs: {beetwen: false, order: 9, swot: :s},
+    s: {beetwen: false, order: 1, name: 'Strengths', swot: :s, next: :w},
+    sw: {beetwen: true, order: 2, swot: :s, next: :w},
+    w: {beetwen: false, order: 3, name: 'Weaknesses', swot: :w, next: :o},
+    wo: {beetwen: true, order: 4, swot: :w, next: :o},
+    o: {beetwen: false, order: 5, name: 'Opportunities', swot: :o, next: :t},
+    ot: {beetwen: true, order: 6, swot: :o, next: :t},
+    t: {beetwen: false, order: 7, name: 'Threats', swot: :t, next: :rs},
+    tr: {beetwen: true, order: 8, swot: :t, next: :rs},
+    rs: {beetwen: false, order: 9, swot: :s, name: 'Ranging'},
     rw: {beetwen: false, order: 10, swot: :w},
     ro: {beetwen: false, order: 11, swot: :o},
     rt: {beetwen: false, order: 12, swot: :t},
@@ -60,8 +60,6 @@ class State
       end
       init
     end
-
-
   end
 
   def try_recover
@@ -89,6 +87,14 @@ class State
 
   def stage
     @stage ||= @state == :started ? first_enum(STAGES) : nil
+  end
+
+  def previous_stage_name
+
+  end
+
+  def stage_name
+    STAGES[@stage].fetch(:name, STAGES[STAGES[@stage][:next]].fetch(:name, ''))
   end
 
   def next_stage!

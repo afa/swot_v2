@@ -106,7 +106,7 @@ class AdminLogger
     end
     msg = {
       subtype: :next_stage,
-      from: state.previous_stage.name,
+      from: state.previous_stage_name,
       to: state.stage_name
       # stats: stats
     }
