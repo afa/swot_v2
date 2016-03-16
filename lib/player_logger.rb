@@ -13,10 +13,15 @@ class PlayerLogger
 
   def initialize params = {}
     @guid = params[:game_uuid]
+    @uuid = params[:player_uuid]
     @records = []
-    subscribe #TODO!!!!!!
+    subscribe :player_log_push, :push
   end
 
+  def push topic, player_id, statement
+    return unless player_id == @uuid
+
+  end
 
   # field :step, type: Integer
   # field :statement, type: String
