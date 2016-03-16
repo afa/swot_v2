@@ -1,3 +1,6 @@
+class PlayerLogRecord < OpenStruct
+end
+
 class PlayerLogger
 
   include Celluloid
@@ -5,7 +8,15 @@ class PlayerLogger
   include Celluloid::Notifications
   include Celluloid::Internals::Logger
 
-  attr_accessor :guid, :records, :step, :statement, :replace, :pro_percent, :scores_delta, :votes, :player_name, :stage_title, :missed_pitching
+  attr_accessor :guid, :records
+  # :step, :statement, :replace, :pro_percent, :scores_delta, :votes, :player_name, :stage_title, :missed_pitching
+
+  def initialize params = {}
+    @guid = params[:game_uuid]
+    @records = []
+    subscribe #TODO!!!!!!
+  end
+
 
   # field :step, type: Integer
   # field :statement, type: String
