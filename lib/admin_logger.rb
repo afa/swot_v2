@@ -30,7 +30,6 @@ class AdminLogger
 
   def push hash
     @records << hash.merge(type: :log, created_at: Time.now.to_f.round(6))
-    p @records.last
     publish :admin_log_push, @guid
   end
 
@@ -46,9 +45,7 @@ class AdminLogger
     ch = Actor[:"gm_chnl_#{@guid}"]
     if ch && ch.alive?
       ch.publish_msg msg.to_json
-      puts 'sent'
     end
-    info msg.inspect
   end
 
   def resend_log topic, game_id
@@ -64,15 +61,14 @@ class AdminLogger
   def admin_log_push topic, game_id
     return unless @guid == game_id
     cnt = @records.size - @last_processed
-    p 'alpush count', cnt
     return if 0 == cnt
     game = Actor[:"game_#{@guid}"]
     unless game && game.alive? && game.online
+      info "admin_log_push TODO game offline"
       
       return
     end
     @records[-cnt..-1].each do |rcrd|
-      p 'alpush rcrd', rcrd
       publish_msg rcrd
     end
     @last_processed += cnt
