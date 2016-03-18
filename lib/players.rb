@@ -114,6 +114,14 @@ class Players
     end
   end
 
+  def push_player_log
+    statements = Actor[:"statements_#{@game_uuid}"]
+    @players.each do |pl|
+      p = Actor[:"player_#{pl}"]
+      publish :player_log_push, p.uuid, statements.voting.uuid if p && p.alive? && p.online && statements.voting
+    end
+  end
+
   def push_terminated
     players.each do |pl|
       pl.send_terminated

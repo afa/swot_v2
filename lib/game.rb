@@ -212,6 +212,7 @@ class Game
       if statements.voting
         statements.voting.calc_votes
         statements.voting.vote_results!
+        players.async.push_player_log
       end
       statements.update_visible
       async.push_state
