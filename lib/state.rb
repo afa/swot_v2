@@ -4,9 +4,11 @@ class State
   include Hashing
   include Celluloid
   include Celluloid::IO
+  include Celluloid::Notifications
   include Celluloid::Internals::Logger
   attr_accessor :state, :step, :total_steps, :step_status, :stage
-  attr_accessor :game_uuid, :game, :players, :player_channels, :setting, :prev_pitcher
+  attr_accessor :guid, :game, :players, :player_channels, :setting, :prev_pitcher
+  attr :saved
   STAGES = {
     s: {beetwen: false, order: 1, name: 'Strengths', swot: :s, next: :w},
     sw: {beetwen: true, order: 2, swot: :s, next: :w},
@@ -46,12 +48,23 @@ class State
     hash.select{|k, v| v[:order] == idx }.keys.first
   end
 
+  def game_uuid
+    @guid
+  end
+
   def initialize params = {}
-    @game_uuid = params[:game_uuid]
-    info "state init for #{@game_uuid}"
+    @guid = params[:game_uuid]
+    info "state init for #{@guid}"
     @game = {}
     @players = {}
     @stage = nil
+    @saved = {
+      game: false,
+      players: false,
+      statements: false,
+      admin_log: false,
+      player_log: false
+    }
     @player_channels = {}
     unless try_recover
       load_default_settings
@@ -60,19 +73,37 @@ class State
       end
       init
     end
+    subscribe :game_done, :game_done
+    subscribe :game_data_saved, :data_saved
+  end
+
+  def game_done topic, game_id
+    return unless game_id == @guid
+    publish :save_game_data, @guid
+  end
+
+  def data_saved topic, game_id, sym
+    return unless game_id == @guid
+    @saved[sym] = true
+    if @saved.values.all?
+      async.cleanup
+    end
+  end
+
+  def cleanup
   end
 
   def try_recover
-    store_game = Store::Game.find(uuid: @game_uuid)
+    store_game = Store::Game.find(uuid: @guid)
     return false unless store_game
     false # change when recovery will work TODO
   end
 
   def init
-    unless Actor[:"statements_#{@game_uuid}"]
-      Center.current.to_supervise as: :"statements_#{@game_uuid}", type: Statements, args: [{game_uuid: @game_uuid}]
+    unless Actor[:"statements_#{@guid}"]
+      Center.current.to_supervise as: :"statements_#{@guid}", type: Statements, args: [{game_uuid: @guid}]
     end
-    statements = Actor[:"statements_#{@game_uuid}"]
+    statements = Actor[:"statements_#{@guid}"]
     @step = 1
     @total_steps = @setting[:max_steps] || 12
     @step_status = first_enum(STEP_STATUSES)
@@ -82,7 +113,7 @@ class State
   end
 
   def load_default_settings
-    @setting = Store::Setting.for_game(@game_uuid)
+    @setting = Store::Setting.for_game(@guid)
   end
 
   def stage
@@ -118,7 +149,7 @@ class State
   end
 
   # def locate_player id
-  #   pls = Actor[:"players_#{@game_uuid}"]
+  #   pls = Actor[:"players_#{@guid}"]
   #   pl = @players[id]
   #   if pl && pl.alive?
   #     pl

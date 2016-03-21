@@ -12,6 +12,17 @@ class Statements
     @current = []
     @voting = nil
     @visible = []
+    subscribe :save_game_data, :save_game_data
+  end
+
+  def save_game_data topic, game_id
+    return unless game_id == @game_uuid
+    sync_statements
+    publish :game_data_saved, @game_uuid, :statements
+  end
+
+  def sync_statements
+    info 'syncing statements'
   end
 
   def find(uuid)

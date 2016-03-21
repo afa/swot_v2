@@ -51,7 +51,18 @@ class Game
     cntrl = Control.current.publish_control( (params.has_key?(:players) ? {players: players.players.map{|p| {name: p.name, url: "#{@server_setup[:url]}/game/#{p.uuid}", uuid: p.uuid, email: p.email}}} : {}).merge(type: 'status', uuid: @uuid, replly_to: 'create'))
     Control.current.add_game(@uuid)
     state.add_game @uuid
+    subscribe :save_game_data, :save_game_data
     async.run
+  end
+
+  def save_game_data topic, game_id
+    return unless game_id == @game_uuid
+    sync_game
+    publish :game_data_saved, @game_uuid, :game
+  end
+
+  def sync_game
+    info 'syncing game'
   end
 
   def onconnect
@@ -210,9 +221,11 @@ class Game
       Timings::VotingQuorum.instance(@uuid).cancel
       Timings::VotingTail.instance(@uuid).cancel
       if statements.voting
-        statements.voting.calc_votes
-        statements.voting.vote_results!
-        players.async.push_player_log
+        stat = statements.voting
+        stat.calc_votes
+        stat.vote_results!
+        publish :player_log_push, @uuid, stat.uuid
+        # players.async.push_player_log statement: stat.uuid
       end
       statements.update_visible
       async.push_state
@@ -271,6 +284,7 @@ class Game
 
   def end_game params = {}
     info 'TODO end game'
+    publish :game_done, @uuid
   end
 
   def results_timeout params = {}

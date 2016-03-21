@@ -26,6 +26,7 @@ class AdminLogger
     subscribe :importance_added, :importance_added
     subscribe :game_terminated, :game_terminated
     subscribe :admin_log_push, :admin_log_push
+    subscribe :save_game_data, :save_game_data
   end
 
   def push hash
@@ -39,6 +40,16 @@ class AdminLogger
 
   def restore
     info 'TODO admin log restore'
+  end
+
+  def save_game_data topic, game_id
+    return unless game_id == @game_uuid
+    sync_admin_log
+    publish :game_data_saved, @game_uuid, :admin_log
+  end
+
+  def sync_admin_log
+    info 'syncing admin_log'
   end
 
   def publish_msg msg

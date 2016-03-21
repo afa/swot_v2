@@ -8,6 +8,10 @@ class PlayerLogRecord < OpenStruct
   # field :player_name, type: String
   # field :stage_title, type: String
   # field :missed_pitching, type: Boolean, default: false
+
+  def as_json
+    self.marshal_dump
+  end
 end
 
 class PlayerLogger
@@ -22,14 +26,27 @@ class PlayerLogger
 
   def initialize params = {}
     @uuid = params[:player_uuid]
-    player = Actor[:"plyer_#{@uuid}"]
+    player = Actor[:"player_#{@uuid}"]
     @guid = player.game_uuid
+    p 'player logger init', @uuid, @guid
     @records = []
     subscribe :player_log_push, :push
+    subscribe :save_game_data, :save_game_data
   end
 
-  def push topic, player_id, statement_id
-    return unless player_id == @uuid
+  def save_game_data topic, game_id
+    return unless game_id == @game_uuid
+    sync_player_log
+    publish :game_data_saved, @game_uuid, :player_log
+  end
+
+  def sync_player_log
+    info 'syncing player_log'
+  end
+
+  def push topic, game_id, statement_id
+    p 'push player log', topic, game_id, statement_id
+    return unless game_id == @guid
     mklog(statement_id)
 
   end
@@ -41,21 +58,26 @@ class PlayerLogger
     return unless statement
     state = Actor[:"state_#{@guid}"]
     queue = Actor[:"queue_#{@guid}"]
+    players = Actor[:"players_#{@guid}"]
     replace = statement.replaces.map do |st_id|
-      statements.find(st_id).try(:statement)
+      statements.find(st_id).try(:value)
     end.compact.join('. ')
 
     log_votes = statement.votes.inject({}){|r, v| r.merge v.player.to_s => v.result }
 
     rec = PlayerLogRecord.new step: state.step,
       statement: statement.value,
-      stage_title: State::STAGES[:state.stage].name,
+      stage_title: State::STAGES[state.stage][:name],
       replace: replace,
       pro_percent: (statement.result*100).round,
       player_name: queue.pitcher.uglify_name(state.stage),
-      scores_deltas: players.players.inject({}){|r, (k, v)| r.merge(k => v.delta)},
+      scores_deltas: players.players.inject({}){|r, p| r.merge(p.uuid => p.delta)},
       votes: log_votes
     @records << rec
+    player = Actor[:"player_#{@uuid}"]
+    p player, rec
+    return unless player && player.alive? && player.online
+    player.async.publish_msg type: 'log', values: @records.last(12).map(&:as_json)
 
   end
 

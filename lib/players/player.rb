@@ -32,6 +32,7 @@ class Player
     end
     queue = Actor[:"queue_#{@game_uuid}"]
     queue.add @uuid
+    Center.current.async.to_supervise as: "player_logger_#{@uuid}", type: PlayerLogger, args: [{player_uuid: @uuid}]
     p queue.ids
     info "q first #{queue.first}"
     

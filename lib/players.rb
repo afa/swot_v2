@@ -7,6 +7,7 @@ class Players
   # extend Forwardable
   include Celluloid
   include Celluloid::IO
+  include Celluloid::Notifications
   include Celluloid::Internals::Logger
 
   attr :players
@@ -22,6 +23,17 @@ class Players
       state = Actor[:"state_#{params[:game_uuid]}"]
       state.players.each{|i| add(i) }
     end
+    subscribe :save_game_data, :save_game_data
+  end
+
+  def save_game_data topic, game_id
+    return unless game_id == @game_uuid
+    sync_players
+    publish :game_data_saved, @game_uuid, :players
+  end
+
+  def sync_players
+    info 'syncing players'
   end
 
   def push_event event, params = {}
@@ -114,15 +126,17 @@ class Players
     end
   end
 
-  def push_player_log
-    statements = Actor[:"statements_#{@game_uuid}"]
-    return unless statements.voting
-    @players.each do |pl|
-      p = Actor[:"player_#{pl}"]
-      #TODO voting at moment
-      publish :player_log_push, p.uuid, statements.voting.uuid if p && p.alive? && p.online
-    end
-  end
+  # def push_player_log params = {}
+  #   stat_id = params[:statement]
+  #   statements = Actor[:"statements_#{@game_uuid}"]
+  #   statement = statements.find(stat_id)
+  #   return unless statement
+  #   @players.each do |pl|
+  #     p = Actor[:"player_#{pl}"]
+  #     #TODO voting at moment
+  #     publish :player_log_push, p.uuid, statement.uuid if p && p.alive? && p.online
+  #   end
+  # end
 
   def push_terminated
     players.each do |pl|
