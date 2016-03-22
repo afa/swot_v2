@@ -72,6 +72,7 @@ class PlayerLogger
       pro_percent: (statement.result*100).round,
       player_name: queue.pitcher.uglify_name(state.stage),
       scores_deltas: players.players.inject({}){|r, p| r.merge(p.uuid => p.delta)},
+      player_id: @uuid,
       votes: log_votes
     @records << rec
     player = Actor[:"player_#{@uuid}"]

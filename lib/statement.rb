@@ -47,7 +47,7 @@ class Statement
     # author = Celluloid::Actor[:"player_#{@author}"]
     # player = Celluloid::Actor[:"player_#{player_id}"]
     score = score_for(player_id)
-    { index: @position, body: @value, score: score, author: @author}
+    { index: @position, body: @value, score: score, player_id: player_id, author: @author}
   end
 
   def vote params = {}
