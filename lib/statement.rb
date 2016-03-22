@@ -44,9 +44,10 @@ class Statement
   end
 
   def as_json player_id = nil
-    author = Celluloid::Actor[:"player_#{@author}"]
-    player = Celluloid::Actor[:"player_#{player_id}"]
-    { index: @position, body: @value, score: 0.0, author: @author}
+    # author = Celluloid::Actor[:"player_#{@author}"]
+    # player = Celluloid::Actor[:"player_#{player_id}"]
+    score = score_for(player_id)
+    { index: @position, body: @value, score: score, author: @author}
   end
 
   def vote params = {}
@@ -58,12 +59,14 @@ class Statement
   end
 
   def score_for(player_id)
-
+    @contribution[player_id]
   end
 
   def quorum?
     players = Celluloid::Actor[:"players_#{@game_uuid}"]
-    #TODO
+    queue = Celluloid::Actor[:"queue_#{@game_uuid}"]
+    (voted_count.to_f * 2) > (players.players.select(&:online) - [queue.pitcher]).size
+    #TODO ??
   end
 
   def calc_result
