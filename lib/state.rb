@@ -85,12 +85,28 @@ class State
   def data_saved topic, game_id, sym
     return unless game_id == @guid
     @saved[sym] = true
+    p :data_saved, @saved
     if @saved.values.all?
       async.cleanup
     end
   end
 
   def cleanup
+    info 'state cleanup, game done'
+    Timings.instance(@guid).async.stop_timers
+    Timings.instance(@guid).async.cleanup
+    players = Actor[:"players_#{@guid}"]
+    players.players.each do |pl|
+      Center.current.async.delete_supervision :"player_log_#{pl.uuid}"
+      Center.current.async.delete_supervision :"player_#{pl.uuid}"
+    end
+    Center.current.async.delete_supervision :"admin_log_#{@guid}"
+    Center.current.async.delete_supervision :"statements_#{@guid}"
+    Center.current.async.delete_supervision :"queue_#{@guid}"
+    Center.current.async.delete_supervision :"players_#{@guid}"
+    Center.current.async.delete_supervision :"state_#{@guid}"
+    Center.current.async.delete_supervision :"game_#{@guid}"
+    Center.current.async.supervision_info
   end
 
   def try_recover

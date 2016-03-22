@@ -43,9 +43,9 @@ class AdminLogger
   end
 
   def save_game_data topic, game_id
-    return unless game_id == @game_uuid
+    return unless game_id == @guid
     sync_admin_log
-    publish :game_data_saved, @game_uuid, :admin_log
+    publish :game_data_saved, @guid, :admin_log
   end
 
   def sync_admin_log
@@ -86,6 +86,7 @@ class AdminLogger
   end
 
   def game_started topic, game_id, params = {}
+    # TODO fix rescue and game methods
     return unless @guid == game_id
     msg = {
       subtype: :start,
@@ -125,18 +126,19 @@ class AdminLogger
     return unless @guid == game_id
     state = Actor[:"state_#{@guid}"]
     players = Actor[:"players_#{@guid}"]
-    totals = players.players.active.map do |p|
-      { name: p.name }.merge(p.stats_total.raw_counters)
-    end
-    stats = players.players.active.map do |p|
-      { name: p.name }.merge(p.stats_stage.raw_counters)
-    end
+    # TODO restore when calc online statistics done
+    # totals = players.players.select(&:online).map do |p|
+    #   { name: p.name }.merge(p.stats_total.raw_counters)
+    # end
+    # stats = players.players.select(&:online).map do |p|
+    #   { name: p.name }.merge(p.stats_stage.raw_counters)
+    # end
     msg = {
       subtype: :ranging,
-      from: state.previous_stage.name,
-      to: 'Ranging',
-      stats: stats,
-      totals: totals
+      from: state.previous_stage_name,
+      # stats: stats,
+      # totals: totals,
+      to: 'Ranging'
     }
     push msg
   end

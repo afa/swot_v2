@@ -56,9 +56,9 @@ class Game
   end
 
   def save_game_data topic, game_id
-    return unless game_id == @game_uuid
+    return unless game_id == @uuid
     sync_game
-    publish :game_data_saved, @game_uuid, :game
+    publish :game_data_saved, @uuid, :game
   end
 
   def sync_game

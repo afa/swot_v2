@@ -33,6 +33,13 @@ class Timings
     end
   end
 
+  def cleanup
+    list = self.class.subtimers
+    list.map do |cl|
+      Center.current.async.delete_supervision :"timer_#{cl.reg_name}_#{@guid}"
+    end
+  end
+
   def pause
   end
 

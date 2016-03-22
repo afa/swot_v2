@@ -64,7 +64,12 @@ class Center # < Celluloid::Supervision::Container
   end
 
   def delete_supervision name
+    info "clean supervision for #{name}"
     @config.delete name
+  end
+
+  def supervision_info
+    p @config
   end
 
   def stop

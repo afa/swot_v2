@@ -35,9 +35,9 @@ class PlayerLogger
   end
 
   def save_game_data topic, game_id
-    return unless game_id == @game_uuid
+    return unless game_id == @guid
     sync_player_log
-    publish :game_data_saved, @game_uuid, :player_log
+    publish :game_data_saved, @guid, :player_log
   end
 
   def sync_player_log
