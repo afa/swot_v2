@@ -151,7 +151,7 @@ class Player
   def send_pitch params = {}
     state = Actor[:"state_#{@game_uuid}"]
     queue = Actor[:"queue_#{@game_uuid}"]
-    msg = {type: 'event', subtype: 'pitched', value: params[:value], to_replace: params[:to_replace], author: queue.pitcher.uglify_name(state.stage.to_s), timeout_at: Timings.instance(@game_uuid).next_stamp, time: current_stamp, step: {status: state.step_status} }
+    msg = {type: 'event', subtype: 'pitched', value: params[:value], to_replace: params[:to_replace], author: queue.pitcher.uglify_name(state.stage), timeout_at: Timings.instance(@game_uuid).next_stamp, time: current_stamp, step: {status: state.step_status} }
     publish_msg msg
   end
 
@@ -249,7 +249,7 @@ class Player
   end
 
   def uglify_name(stage)
-    %w(s t).map(&:to_sym).include?(stage) ? "Player #{order}" : name
+    %w(s sw t tr).map(&:to_sym).include?(stage) ? "Player #{order}" : name
   end
 
   def gen_conclusion
@@ -269,7 +269,7 @@ class Player
         author: Actor[:"player_#{vot.author}"].uglify_name(state.stage),
         to_replace: vot.replaces,
         status: vot.status,
-        player_score: 0.0,
+        player_score: 0.0, #TODO fix scores
         players_voted: per
       )
     end
@@ -291,8 +291,8 @@ class Player
       stmnts = []
     end
     
-    info "current all statements #{statements.mapped_current}"
-    info "current statements #{statements.active_js}"
+    # info "current all statements #{statements.mapped_current}"
+    # info "current statements #{statements.active_js}"
     msg = {
       type: 'status',
       version: SWOT_VERSION,

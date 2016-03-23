@@ -88,10 +88,11 @@ class AdminLogger
   def game_started topic, game_id, params = {}
     # TODO fix rescue and game methods
     return unless @guid == game_id
+    state = Actor[:"state_#{@guid}"]
     msg = {
       subtype: :start,
-      pitcher: begin game.current_pitcher.name; rescue PlayersQueue::ErrorEmptyQueue; '' end,
-      queue: begin [ game.players_queue.current_pitcher.name ]; rescue PlayersQueue::ErrorEmptyQueue; [] end + game.players_queue.next_pitchers.map(&:name),
+      pitcher: begin game.current_pitcher.uglify_name(state.stage.to_s); rescue PlayersQueue::ErrorEmptyQueue; '' end,
+      queue: begin [ game.players_queue.current_pitcher.uglify_name(state.stage.to_s) ]; rescue PlayersQueue::ErrorEmptyQueue; [] end + game.players_queue.next_pitchers.map(&:name),
       time_left: time_left(game)
     }
     push msg
