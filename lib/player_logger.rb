@@ -63,7 +63,7 @@ class PlayerLogger
       statements.find(st_id).try(:value)
     end.compact.join('. ')
 
-    log_votes = statement.votes.inject({}){|r, v| r.merge v.player.to_s => v.result }
+    log_votes = statement.votes.inject({}){|r, v| r.merge v.player.to_s => statement.format_value(v.result) }
 
     rec = PlayerLogRecord.new step: state.step,
       statement: statement.value,

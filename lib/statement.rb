@@ -189,7 +189,6 @@ class Statement
     end
     count_pitcher_score
   end
-  private
 
   def format_value(str)
     return 'pro' if str == 'accepted'
@@ -198,6 +197,7 @@ class Statement
   end
 end
 
+  private
   # def count_pitchers_score opts={}
   #   all_contributions = accepted_statements.map &:contributors
 
