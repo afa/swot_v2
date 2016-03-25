@@ -7,7 +7,8 @@ class ReelRouter
   end
 
   def self.parse_post_params(env)
-    lst = env.body.to_s.split("\n").map(&:chomp).map{|s| s.split('&') }.flatten.map{|s| s.split('=') }.inject({}){|r, a| r.merge(a.first => a.last) }
+    lst = MultiJson.load(env.body.to_s)
+    # lst = env.body.to_s.split("\n").map(&:chomp).map{|s| s.split('&') }.flatten.map{|s| s.split('=') }.inject({}){|r, a| r.merge(a.first => a.last) }
     p lst
     lst
   end
@@ -105,7 +106,9 @@ class Web < Reel::Server::HTTP
 
   def create_game(params)
     p params
-    [:ok, 'test it2']
+    uuid = Game.build params
+    p uuid
+    [:ok, {uuid: uuid}.to_json]
   end
 
   def game_params(id)

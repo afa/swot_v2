@@ -9,8 +9,39 @@ class Game
 
   attr_accessor :name, :online
   def self.create params = {}
-    uuid = UUID.new.generate
+    uuid = build(params)
     Center.current.async.to_supervise as: :"game_#{uuid}", type: Game, args: [{uuid: uuid}.merge(params)]
+  end
+
+  def self.build params = {}
+    uuid = UUID.new.generate
+
+    p params[:id]
+    store = Store::Game.create({
+      mongo_id: params[:id],
+      name: params[:name],
+      uuid: uuid,
+      company: params[:company],
+      country: params[:country],
+      description: params[:description],
+      industry: params[:industry],
+      state: params[:state],
+      time_zone: params[:time_zone],
+      start_at: params[:start_at]
+    })
+
+    if params[:players]
+      params[:players].each do |pl|
+        Player.build pl.merge(game_uuid: uuid)
+      end
+    end
+
+    sett = Store::Setting.for_game(uuid)
+    if params[:settings]
+      sett.update data: sett.data.merge(params[:settings])
+    end
+
+    uuid
   end
 
   def int_state
@@ -232,12 +263,13 @@ class Game
       players.async.push_state
       state.step_status = state.next_enum(State::STEP_STATUSES, state.step_status)
       state.step_status = state.next_enum(State::STEP_STATUSES, state.step_status) unless state.step_status == :end
-      Timings::Results.instance(@uuid).start
+      Timings::Results.instance(@uuid).start unless %w(passed timeouted).include?(params[:status])
       queue.next!
       publish :next_pitcher, @uuid
       msg = {type: 'event', subtype: 'end_step', result: {status: params[:status], score: 0, delta: 0}, timer: Timings.instance(@uuid).next_stamp}
       async.publish_msg msg
       players.async.push_end_step params
+      async.results_timeout if %w(passed timeouted).include?(params[:status])
     end
   end
 

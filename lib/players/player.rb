@@ -11,15 +11,28 @@ class Player
   attr_accessor :name, :email, :channel, :game_uuid, :uuid, :redis, :order, :score, :online
   attr_accessor :pitcher_rank, :catcher_score, :delta
 
+  def self.build params = {}
+    uuid = UUID.new.generate
+    store = Store::Player.create(name: params[:name], email: params[:email], state: params[:state], uuid: uuid, game_uuid: params[:game_uuid])
+
+
+  # attribute :uuid
+  # attribute :state
+  # attribute :game_uuid
+  # attribute :name
+  # attribute :email
+  # attribute :score, Type::Decimal
+  # attribute :rank, Type::Decimal
+  # attribute :order, Type::Integer
+  end
+
   def initialize params = {}
     @online = false
-    # @redis ||= ::Redis.new(driver: :celluloid)
     @game_uuid = params[:game_uuid]
     if params[:uuid]
       store = Store::Player.find(uuid: params[:uuid]).first
       unless store
         info "player #{params.inspect} started"
-        store = Store::Player.create(name: params[:name], email: params[:email], state: params[:state], uuid: params[:uuid], game_uuid: params[:game_uuid], score: params[:score] || 0.0)
       end
       @uuid = store.uuid
       @game_uuid = store.game_uuid

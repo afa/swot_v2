@@ -76,7 +76,6 @@ class PlayerLogger
       votes: log_votes
     @records << rec
     player = Actor[:"player_#{@uuid}"]
-    p player, rec
     return unless player && player.alive? && player.online
     player.async.publish_msg type: 'log', values: @records.last(12).map(&:as_json)
 
