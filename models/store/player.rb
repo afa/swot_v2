@@ -11,4 +11,17 @@ class Store::Player < Ohm::Model
   index :uuid
   index :game_uuid
   index :order
+
+  def as_json
+    {
+      uuid: uuid,
+      state: state,
+      game_uuid: game_uuid,
+      name: name,
+      email: email,
+      order: order,
+      score: score,
+      rank: rank
+    }
+  end
 end

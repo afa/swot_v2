@@ -112,7 +112,15 @@ class Web < Reel::Server::HTTP
   end
 
   def game_params(id)
-    [:ok, 'test it']
+    game = Store::Game.find(uuid: id).first
+    if game
+      settings = Store::Setting.find(game_uuid: game.uuid).first.data
+      players = Store::Player.find(game_uuid: game.uuid).to_a
+      p settings, players
+      [:ok, {name: game.name, settings: settings, players: players.map(&:as_json), start_at: game.start_at, time: Time.now.to_f.round(6)}.to_json]
+    else
+      [:not_found, {errors: ["Game with id #{id} not found in core"]}.to_json]
+    end
   end
 
   def route_websocket(socket)
