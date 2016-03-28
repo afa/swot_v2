@@ -95,6 +95,10 @@ class Store::Setting < Ohm::Model
     data[key]
   end
 
+  def as_json
+    data
+  end
+
   # def initialize params = {}
   #   self.game_uuid = params.delete :game_uuid
   #   self.data = Store::Setting.defaults.merge params

@@ -14,6 +14,18 @@ class Store::Game < Ohm::Model
   index :uuid
   unique :uuid
 
+  def as_json
+    {
+      name: name,
+      uuid: uuid,
+      start_at: start_at.to_i,
+      state: state,
+      mongo_id: mongo_id,
+      settings: settings.as_json,
+      players: players.as_json
+    }
+  end
+
   # def initialize params = {}
   #   # self.name = params[:name] if params[:name]
   #   # self.uuid = params[:uuid] if params[:uuid]
