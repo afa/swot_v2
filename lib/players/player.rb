@@ -12,8 +12,8 @@ class Player
   attr_accessor :pitcher_rank, :catcher_score, :delta
 
   def self.build params = {}
-    uuid = UUID.new.generate
-    store = Store::Player.create(name: params[:name], email: params[:email], state: params[:state], uuid: uuid, game_uuid: params[:game_uuid])
+    d = UUID.new.generate
+    store = Store::Player.create(name: params[:name], email: params[:email], state: params[:state], mongo_id: params[:mongo_id], uuid: d, game_uuid: params[:game_uuid])
 
 
   # attribute :uuid
@@ -28,7 +28,7 @@ class Player
 
   def initialize params = {}
     @online = false
-    @game_uuid = params[:game_uuid]
+    # @game_uuid = params[:game_uuid]
     if params[:uuid]
       store = Store::Player.find(uuid: params[:uuid]).first
       unless store

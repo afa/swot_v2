@@ -1,6 +1,7 @@
 class Store::Player < Ohm::Model
   include Ohm::DataTypes
   attribute :uuid
+  attribute :mongo_id
   attribute :state
   attribute :game_uuid
   attribute :name
@@ -15,6 +16,7 @@ class Store::Player < Ohm::Model
   def as_json
     {
       uuid: uuid,
+      id: mongo_id,
       state: state,
       game_uuid: game_uuid,
       name: name,
@@ -22,6 +24,6 @@ class Store::Player < Ohm::Model
       order: order,
       score: score,
       rank: rank
-    }
+    }.tap{|x| p x }
   end
 end

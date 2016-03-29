@@ -8,15 +8,15 @@ class Game
   def_delegators :int_state, :stage, :step, :total_steps, :step_status, :statements, :setting
 
   attr_accessor :name, :online
+
   def self.create params = {}
     uuid = build(params)
-    Center.current.async.to_supervise as: :"game_#{uuid}", type: Game, args: [{uuid: uuid}.merge(params)]
+    Center.current.async.to_supervise as: :"game_#{uuid}", type: Game, args: [{uuid: uuid}.merge(params[:server_setup] ? {server_setup: params[:server_setup]} : {})]
   end
 
   def self.build params = {}
     uuid = UUID.new.generate
 
-    p params[:id]
     store = Store::Game.create({
       mongo_id: params[:id],
       name: params[:name],
@@ -32,7 +32,11 @@ class Game
 
     if params[:players]
       params[:players].each do |pl|
-        Player.build pl.merge(game_uuid: uuid)
+        p pl
+        dat = pl.merge(game_uuid: uuid)
+        mid = dat.delete(:id)
+        dat.merge!(mongo_id: mid)
+        Player.build dat
       end
     end
 
