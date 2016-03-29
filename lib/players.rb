@@ -18,10 +18,16 @@ class Players
     @players = []
     if params[:game_uuid]
       @game_uuid = params[:game_uuid]
-      p 'game_uuid players create', @game_uuid, params
+      splayers = Store::Player.find(game_uuid: @game_uuid).to_a.sort_by(&:order)
+      splayers.each do |pl|
+        p_id = pl.uuid
+        Center.current.to_supervise(as: :"player_#{p_id}", type: Player, args: [uuid: p_id])
+        async.add p_id
+      end
+
       @queue = Center.current.to_supervise as: :"queue_#{@game_uuid}", type: Queue, args: [{game_uuid: @game_uuid}]
-      state = Actor[:"state_#{params[:game_uuid]}"]
-      state.players.each{|i| add(i) }
+      # state = Actor[:"state_#{params[:game_uuid]}"]
+      # state.players.each{|i| add(i) }
     end
     subscribe :save_game_data, :save_game_data
   end

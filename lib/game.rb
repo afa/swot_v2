@@ -15,6 +15,11 @@ class Game
   end
 
   def self.build params = {}
+    # time_params = {}
+    # if params[:start]
+    #   time_params.merge!(start: params[:start][:time].to_i) if params[:start][:time]
+    #   @timezone = params[:start][:time_zone]
+    # end
     uuid = UUID.new.generate
 
     store = Store::Game.create({
@@ -56,19 +61,16 @@ class Game
     @online = false
     @uuid = params[:uuid]
     @server_setup = params[:server_setup]
+    sgame = Store::Game.find(uuid: @uuid)
     info "#{@uuid} created"
-    sett = {settings: params[:settings]} if params[:settings] && !params[:settings].empty?
-    sett ||= {}
-    p 'settings', sett
+    # sett = {settings: params[:settings]} if params[:settings] && !params[:settings].empty?
+    # sett ||= {}
+    # p 'settings', sett
     Center.current.to_supervise as: :"admin_logger_#{@uuid}", type: AdminLogger, args: [{game_uuid: @uuid}]
-    Center.current.to_supervise as: :"state_#{@uuid}", type: State, args: [{game_uuid: @uuid}.merge(sett)]
-    time_params = {}
-    if params[:start]
-      time_params.merge!(start: params[:start][:time].to_i) if params[:start][:time]
-      @timezone = params[:start][:time_zone]
-    end
+    Center.current.to_supervise as: :"state_#{@uuid}", type: State, args: [{game_uuid: @uuid}]
+    # Center.current.to_supervise as: :"state_#{@uuid}", type: State, args: [{game_uuid: @uuid}.merge(sett)]
       
-    self.name = params[:name]
+    self.name = sgame.name
     state = int_state
 
     Center.current.to_supervise(as: :"players_#{@uuid}", type: Players, args: [{game_uuid: @uuid}])
@@ -76,8 +78,6 @@ class Game
     if params[:players]
       params[:players].each do |p|
         p_id = UUID.new.generate
-        Center.current.to_supervise(as: :"player_#{p_id}", type: Player, args: [p.merge(game_uuid: @uuid, uuid: p_id)])
-        players.async.add p_id
       end
     end
     timers = Center.current.to_supervise as: :"timers_#{@uuid}", type: Timings, args: [{game_uuid: @uuid}.merge(time_params)]

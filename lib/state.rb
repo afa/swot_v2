@@ -7,7 +7,8 @@ class State
   include Celluloid::Notifications
   include Celluloid::Internals::Logger
   attr_accessor :state, :step, :total_steps, :step_status, :stage
-  attr_accessor :guid, :game, :players, :player_channels, :setting, :prev_pitcher
+  attr_accessor :guid, :game, :player_channels, :setting, :prev_pitcher
+  # attr_accessor :guid, :game, :players, :player_channels, :setting, :prev_pitcher
   attr :saved
   STAGES = {
     s: {beetwen: false, order: 1, name: 'Strengths', swot: :s, next: :w},
@@ -56,7 +57,7 @@ class State
     @guid = params[:game_uuid]
     info "state init for #{@guid}"
     @game = {}
-    @players = {}
+    # @players = {}
     @stage = nil
     @saved = {
       game: false,
@@ -151,12 +152,12 @@ class State
     statements.clear_current
   end
 
-  def store_player id
-    pl = Actor[:"player_#{id}"]
-    if pl && pl.alive?
-      @players[id] = pl.as_json
-    end
-  end
+  # def store_player id
+  #   pl = Actor[:"player_#{id}"]
+  #   if pl && pl.alive?
+  #     @players[id] = pl.as_json
+  #   end
+  # end
 
   def add_game id
   end
