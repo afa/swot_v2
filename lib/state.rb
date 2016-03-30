@@ -74,6 +74,7 @@ class State
       init
     end
     @settings = Store::Setting.find(game_uuid: @guid).first.data
+    @settings.keys.each{|k| @settings[k.to_sym] = @settings[k] }
     p @settings
     subscribe :game_done, :game_done
     subscribe :game_data_saved, :data_saved
