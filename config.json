@@ -75,7 +75,8 @@
     "autostart": {
       "type": "create",
       "settings": {
-        "max_steps": 4
+        "max_steps": 10,
+	"pitching_timeout": 60
       },
       "game": {
         "name": "aa",
