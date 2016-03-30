@@ -232,7 +232,7 @@ class Game
         players.async.push_quorum
       end
     end
-    if statements.voting.voted_count == players.players.size - 1
+    if statements.voting.voted_count == (players.players.select{|p| p.online }.map(&:uuid) - [statements.voting.author] ).size
       Timings::VotingQuorum.instance(@uuid).cancel
       Timings::VotingTail.instance(@uuid).cancel
       end_step(status: statements.voting.calc_result)

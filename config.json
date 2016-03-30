@@ -93,38 +93,38 @@
       "players":
       [
         {
-          "name": "aa",
-          "email": "aa@aa.aa",
+          "name": "Александр",
+          "email": "alexanderbiryukov14@gmail.com",
           "state": "not_invited",
           "error": false
         },
         {
-          "name": "bb",
-          "email": "bb@bb.aa",
+          "name": "Егор",
+          "email": "Egor_shitov@rambler.ru",
           "state": "not_invited",
           "error": false
         },
         {
-          "name": "cc",
-          "email": "cc@cc.aa",
+          "name": "Катя",
+          "email": "ekaterinasandler@mail.ru",
           "state": "not_invited",
           "error": false
         },
         {
-          "name": "dd",
-          "email": "dd@dd.bb",
+          "name": "Юля",
+          "email": "juleko@yandex.ru",
           "state": "not_invited",
           "error": false
         },
         {
-          "name": "ee",
-          "email": "ee@ee.aa",
+          "name": "Валя",
+          "email": "valentinaledeneva@yandex.ru",
           "state": "not_invited",
           "error": false
         },
         {
-          "name": "ff",
-          "email": "ff@ff.aa",
+          "name": "Маша",
+          "email": "mashaelchaninova@gmail.com",
           "state": "not_invited",
           "error": false
         },
