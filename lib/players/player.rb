@@ -13,7 +13,7 @@ class Player
 
   def self.build params = {}
     d = UUID.new.generate
-    store = Store::Player.create(name: params[:name], email: params[:email], state: params[:state], mongo_id: params[:mongo_id], uuid: d, game_uuid: params[:game_uuid])
+    store = Store::Player.create(name: params[:name], email: params[:email], state: params[:state], mongo_id: params[:mongo_id], uuid: d, game_uuid: params[:game_uuid], order: params[:order])
 
 
   # attribute :uuid
@@ -32,7 +32,7 @@ class Player
     if params[:uuid]
       store = Store::Player.find(uuid: params[:uuid]).first
       unless store
-        info "player #{params.inspect} started"
+        warn "player #{params.inspect} invalid"
       end
       @uuid = store.uuid
       @game_uuid = store.game_uuid
@@ -50,6 +50,7 @@ class Player
     info "q first #{queue.first}"
     
     info store.inspect
+    subscribe :send_score, :send_players_score
   end
 
   def current_stamp
@@ -58,6 +59,18 @@ class Player
 
   # def run
   # end
+
+  def send_players_score topic, guid
+    return unless @game_uuid == guid
+    players = Actor[:"players_#{@game_uuid}"]
+    dat = players.players.sort{|a, b| a.uuid == b.uuid ? 0 : a.uuid == @uuid ? -1 : a.uuid <=> b.uuid }.map{|p| {pitcher: p.pitcher_rank, catcher: p.catcher_score} }
+    msg = {
+      type: 'event',
+      subtype: 'ranks',
+      value: dat
+    }
+    publish_msg msg
+  end
 
   def pitch params = {}
     # timers = Actor[:"alarms_#{@game_uuid}"]

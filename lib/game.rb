@@ -32,13 +32,13 @@ class Game
       industry: params[:industry],
       state: params[:state],
       time_zone: params[:time_zone],
-      start_at: params[:start_at]
+      start_at: params[:start][:time]
     })
 
     if params[:players]
-      params[:players].each do |pl|
+      params[:players].each_with_index do |pl, i|
         p pl
-        dat = pl.merge(game_uuid: uuid)
+        dat = pl.merge(game_uuid: uuid, order: i + 1)
         mid = dat.delete(:id)
         dat.merge!(mongo_id: mid)
         Player.build dat
@@ -61,7 +61,8 @@ class Game
     @online = false
     @uuid = params[:uuid]
     @server_setup = params[:server_setup]
-    sgame = Store::Game.find(uuid: @uuid)
+    sgame = Store::Game.find(uuid: @uuid).first
+    @start_at = sgame.start_at
     info "#{@uuid} created"
     # sett = {settings: params[:settings]} if params[:settings] && !params[:settings].empty?
     # sett ||= {}
@@ -75,13 +76,15 @@ class Game
 
     Center.current.to_supervise(as: :"players_#{@uuid}", type: Players, args: [{game_uuid: @uuid}])
     players = Actor[:"players_#{@uuid}"]
-    if params[:players]
-      params[:players].each do |p|
-        p_id = UUID.new.generate
-      end
-    end
-    timers = Center.current.to_supervise as: :"timers_#{@uuid}", type: Timings, args: [{game_uuid: @uuid}.merge(time_params)]
-    p Timings::Start.instance(@uuid).set_time params[:start][:time]
+    # if params[:players]
+    #   params[:players].each do |p|
+    #     p_id = UUID.new.generate
+    #   end
+    # end
+    # timers = Center.current.to_supervise as: :"timers_#{@uuid}", type: Timings, args: [{game_uuid: @uuid}.merge(time_params)]
+    timers = Center.current.to_supervise as: :"timers_#{@uuid}", type: Timings, args: [{game_uuid: @uuid}]
+    p sgame
+    Timings::Start.instance(@uuid).set_time @start_at
     state.state = Timings::Start.instance(@uuid).next_time ? :waiting : Timings::Start.instance(@uuid).at ? :started : :waiting
     cntrl = Control.current.publish_control( (params.has_key?(:players) ? {players: players.players.map{|p| {name: p.name, url: "#{@server_setup[:url]}/game/#{p.uuid}", uuid: p.uuid, email: p.email}}} : {}).merge(type: 'status', uuid: @uuid, replly_to: 'create'))
     Control.current.add_game(@uuid)
@@ -270,6 +273,7 @@ class Game
       Timings::Results.instance(@uuid).start unless %w(passed timeouted).include?(params[:status])
       queue.next!
       publish :next_pitcher, @uuid
+      publish :send_score, @uuid
       msg = {type: 'event', subtype: 'end_step', result: {status: params[:status], score: 0, delta: 0}, timer: Timings.instance(@uuid).next_stamp}
       async.publish_msg msg
       players.async.push_end_step params

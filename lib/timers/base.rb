@@ -45,8 +45,10 @@ class Timings::Base
     #only start
     if time.kind_of?(Time)
       @at = time.to_i
+      raise if @at < Time.now.to_i
     elsif time.kind_of?(Numeric)
       if time < Time.now.to_i
+        p time, Time.now.to_i
         raise
       end
       @at = time

@@ -134,10 +134,10 @@ class Statement
     state = Celluloid::Actor[:"state_#{@game_uuid}"]
     cfg = state.setting
     rslt = conclusion
-    catcher_zone =  if   @result < cfg[:catcher_low_border]  ; 1
-                    elsif @result <  0.5                     ; 2
-                    elsif @result < cfg[:catcher_high_border]; 3
-                    else                                     ; 4
+    catcher_zone =  if    @result < cfg[:catcher_low_border]  ; 1
+                    elsif @result <  0.5                      ; 2
+                    elsif @result < cfg[:catcher_high_border] ; 3
+                    else                                      ; 4
                     end
     @votes.each do |vote|
       zone = "catcher_#{format_value(vote.result)}_zone_#{catcher_zone}_score"
