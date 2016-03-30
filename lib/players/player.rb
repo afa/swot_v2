@@ -14,6 +14,8 @@ class Player
   def self.build params = {}
     d = UUID.new.generate
     store = Store::Player.create(name: params[:name], email: params[:email], state: params[:state], mongo_id: params[:mongo_id], uuid: d, game_uuid: params[:game_uuid])
+    p store
+    store
 
 
   # attribute :uuid
@@ -28,6 +30,7 @@ class Player
 
   def initialize params = {}
     @online = false
+    p 'player', params
     # @game_uuid = params[:game_uuid]
     if params[:uuid]
       store = Store::Player.find(uuid: params[:uuid]).first

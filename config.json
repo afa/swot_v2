@@ -75,8 +75,13 @@
     "autostart": {
       "type": "create",
       "settings": {
-        "max_steps": 10,
-	"pitching_timeout": 60
+        "max_steps": 18,
+        "pitcher_single_replace_score": 0.7,
+        "pitcher_rank_multiplier_pass": 0.9,
+        "pitcher_rank_multiplier_disconnected": 1.0,
+        "catcher_abstainer_score": 0.0,
+	"pitching_timeout": 60,
+	"ranging_timeout": 60
       },
       "game": {
         "name": "aa",

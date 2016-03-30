@@ -72,13 +72,12 @@ class Game
 
     Center.current.to_supervise(as: :"players_#{@uuid}", type: Players, args: [{game_uuid: @uuid}])
     players = Actor[:"players_#{@uuid}"]
-    if params[:players]
-      params[:players].each do |p|
-        p_id = UUID.new.generate
-        Center.current.to_supervise(as: :"player_#{p_id}", type: Player, args: [p.merge(game_uuid: @uuid, uuid: p_id)])
+    pl_list = Store::Player.find(game_uuid: @uuid).to_a
+      pl_list.each do |p|
+        p_id = p.uuid
+        Center.current.to_supervise(as: :"player_#{p_id}", type: Player, args: [{game_uuid: @uuid, uuid: p_id}])
         players.async.add p_id
       end
-    end
     timers = Center.current.to_supervise as: :"timers_#{@uuid}", type: Timings, args: [{game_uuid: @uuid}.merge(time_params)]
     p Timings::Start.instance(@uuid).set_time params[:start][:time]
     state.state = Timings::Start.instance(@uuid).next_time ? :waiting : Timings::Start.instance(@uuid).at ? :started : :waiting
