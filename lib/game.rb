@@ -32,7 +32,6 @@ class Game
 
     if params[:players]
       params[:players].each do |pl|
-        p pl
         dat = pl.merge(game_uuid: uuid)
         mid = dat.delete(:id)
         dat.merge!(mongo_id: mid)
@@ -87,6 +86,7 @@ class Game
     Control.current.add_game(@uuid)
     state.add_game @uuid
     subscribe :save_game_data, :save_game_data
+    p players.players.map(&:uuid)
     async.run
   end
 
