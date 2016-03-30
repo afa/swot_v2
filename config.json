@@ -93,37 +93,37 @@
       "players":
       [
         {
-          "name": "Александр",
+          "name": "Alexander",
           "email": "alexanderbiryukov14@gmail.com",
           "state": "not_invited",
           "error": false
         },
         {
-          "name": "Егор",
+          "name": "Egor",
           "email": "Egor_shitov@rambler.ru",
           "state": "not_invited",
           "error": false
         },
         {
-          "name": "Катя",
+          "name": "Katya",
           "email": "ekaterinasandler@mail.ru",
           "state": "not_invited",
           "error": false
         },
         {
-          "name": "Юля",
+          "name": "Yulya",
           "email": "juleko@yandex.ru",
           "state": "not_invited",
           "error": false
         },
         {
-          "name": "Валя",
+          "name": "Valya",
           "email": "valentinaledeneva@yandex.ru",
           "state": "not_invited",
           "error": false
         },
         {
-          "name": "Маша",
+          "name": "Masha",
           "email": "mashaelchaninova@gmail.com",
           "state": "not_invited",
           "error": false
