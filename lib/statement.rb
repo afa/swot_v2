@@ -112,12 +112,10 @@ class Statement
     @contribution = contributors_hash
   end
 
-      # pitcher_rank_multiplier_accepted: 1.2,
-      # pitcher_rank_multiplier_declined: 0.8,
-      # pitcher_rank_multiplier_pass: 0.9,
-      # pitcher_rank_multiplier_disconnected: 0.9,
-      # pitcher_minimum_rank: 0.3,
-
+  def player_contribution
+    players = Celluloid::Actor[:"players_#{@game_uuid}"]
+    @contribution.inject({}){|r, (k, v)| r.merge(players.find(k).name => v) }
+  end
 
   def count_pitcher_score
     state = Celluloid::Actor[:"state_#{@game_uuid}"]
@@ -128,6 +126,8 @@ class Statement
     rank = player.pitcher_rank
     rank *= mult
     player.pitcher_rank = [rank, cfg[:pitcher_minimum_rank].to_f].max
+    statements = Celluloid::Actor[:"statements_#{@game_uuid}"]
+    statements.count_pitchers_score
   end
 
   def count_catchers_score

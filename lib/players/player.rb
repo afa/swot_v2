@@ -9,7 +9,7 @@ class Player
   finalizer :finalizer
 
   attr_accessor :name, :email, :channel, :game_uuid, :uuid, :redis, :order, :score, :online
-  attr_accessor :pitcher_rank, :catcher_score, :delta
+  attr_accessor :pitcher_score, :pitcher_rank, :catcher_score, :delta
 
   def self.build params = {}
     d = UUID.new.generate

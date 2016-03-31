@@ -226,27 +226,29 @@ class AdminLogger
     state = Actor[:"state_#{@guid}"]
     queue = Actor[:"queue_#{@guid}"]
     # stats_data = game.players.inject({}){|r, v| r.merge v.name => v.score.to_player_stat[v.id.to_s].except(:delta).merge(rank: v.score.rank) }
-    stats_data = {} #TODO fix stats
-    roles_data = statements.in_stage(state.stage).select{|s| s.status == 'accepted' }.inject({}){|r, v| r.merge v.value.inspect => v.contribution }
+    stats_data = players.players.inject({}){|r, v| r.merge v.name => {pitcher: v.pitcher_score, catcher: v.catcher_score, rank: v.pitcher_rank} }
+    # stats_data = {} #TODO fix stats
+    roles_data = statements.in_stage(state.stage).select{|s| s.status == 'accepted' }.inject({}){|r, v| r.merge v.value.inspect => v.player_contribution }
     queue_data = queue.list.map(&:name).first(2)
-    if false && state.setting[:random_enabled]
-      random_summary = game.players_queue.online_shuffle.data_summary
-      random_data = game.players_queue.online_shuffle.data.map{|r| [r[0].to_s, r[1].name, r[2].to_s] }
-    else
-      random_summary = ''
-      random_data = []
-    end
+    # if false && state.setting[:random_enabled]
+    #   random_summary = game.players_queue.online_shuffle.data_summary
+    #   random_data = game.players_queue.online_shuffle.data.map{|r| [r[0].to_s, r[1].name, r[2].to_s] }
+    # else
+    #   random_summary = ''
+    #   random_data = []
+    # end
     msg = {
       subtype: :step_results,
       stats: stats_data,
-      random: random_data,
-      random_summary: random_summary,
+      # random: random_data,
+      # random_summary: random_summary,
       roles: roles_data,
       queue: queue_data,
       time_left: Timings::Stage.instance(@guid).next_time,
       last_statements_state: statements.in_stage(state.stage).last(3).map(&:status)
     }
     push msg
+    info "::::::----------------step_results---------#{msg.inspect}----::::::::::::::::"
   end
 
   def delimit topic, game_id, params = {}
