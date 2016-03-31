@@ -178,7 +178,9 @@ class Game
     state = int_state
     players = Actor[:"players_#{@uuid}"]
     statements = Actor[:"statements_#{@uuid}"]
-    statements.async.range_for(player: params[:player], value: params[:value], index: params[:index], stage: State::STAGES[state.stage][:swot])
+    impo = { player: params[:player], value: params[:value], index: params[:index], stage: State::STAGES[state.stage][:swot] }
+    statements.async.range_for(impo)
+    publish :importance_added, @uuid, impo
   end
 
   def pitch params = {}
@@ -205,6 +207,9 @@ class Game
   def pitch_timeout params = {}
     Timings::Pitch.instance(@uuid).cancel
     Timings::FirstPitch.instance(@uuid).cancel
+    queue = Actor[:"queue_#{@uuid}"]
+    p = queue.pitcher
+    publish :pitch_timeout, @uuid, p.uuid if p && p.alive?
     end_step(status: 'timeouted')
 
   end
@@ -232,7 +237,7 @@ class Game
         players.async.push_quorum
       end
     end
-    if statements.voting.voted_count == (players.players.select{|p| p.online }.map(&:uuid) - [statements.voting.author] ).size
+    if statements.voting.voted_count == (players.players.online.map(&:uuid) - [statements.voting.author] ).size
       Timings::VotingQuorum.instance(@uuid).cancel
       Timings::VotingTail.instance(@uuid).cancel
       end_step(status: statements.voting.calc_result)
@@ -258,6 +263,7 @@ class Game
         stat = statements.voting
         stat.calc_votes
         stat.vote_results!
+        publish :statement_results, @uuid, stat.uuid
         publish :player_log_push, @uuid, stat.uuid
         # players.async.push_player_log statement: stat.uuid
       end
@@ -268,6 +274,7 @@ class Game
       state.step_status = state.next_enum(State::STEP_STATUSES, state.step_status) unless state.step_status == :end
       Timings::Results.instance(@uuid).start unless %w(passed timeouted).include?(params[:status])
       queue.next!
+      publish :step_results, @uuid
       publish :next_pitcher, @uuid
       msg = {type: 'event', subtype: 'end_step', result: {status: params[:status], score: 0, delta: 0}, timer: Timings.instance(@uuid).next_stamp}
       async.publish_msg msg
@@ -283,12 +290,14 @@ class Game
     statements = Actor[:"statements_#{@uuid}"]
     #calc rank results
     Timings::VotingQuorum.instance(@uuid).cancel
+    publish :vote_timeouts, @uuid, {statement: statements.voting.uuid}
     end_step(status: statements.voting.conclusion)
   end
 
   def voting_tail_timeout params = {}
     statements = Actor[:"statements_#{@uuid}"]
     Timings::VotingTail.instance(@uuid).cancel
+    publish :vote_timeouts, @uuid, {statement: statements.voting.uuid}
     end_step(status: statements.voting.conclusion)
   end
 

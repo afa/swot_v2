@@ -68,11 +68,15 @@ class Statements
 
   def check_triple_decline
     state = Actor[:"state_#{@game_uuid}"]
-    stats = @statements.select{|s| s.stage == state.stage }
+    stats = in_stage(state.stage)
     dec_count = [state.setting[:declined_in_row_statements].to_i, stats.size].min
     return false if dec_count < state.setting[:declined_in_row_statements].to_i
     # dec_count = state.setting[:declined_in_row_statements].to_i
     stats[-dec_count, dec_count].all?{|s| s.status == 'declined' }
+  end
+
+  def in_stage(stage)
+    @statements.select{|s| s.stage == stage }
   end
 
   def rebuild_visible_for(stage)

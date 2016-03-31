@@ -59,6 +59,11 @@ class Queue
     @current + @tail
   end
 
+  def list
+    players = Actor[:"players_#{@game_uuid}"]
+    ids.map{|i| players.find(i) }
+  end
+
   def first
     @current.first # || @tail.first
   end
