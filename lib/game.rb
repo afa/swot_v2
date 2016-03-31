@@ -269,7 +269,7 @@ class Game
       end
       statements.update_visible
       async.push_state
-      players.async.push_state
+      players.async.push_messages
       state.step_status = state.next_enum(State::STEP_STATUSES, state.step_status)
       state.step_status = state.next_enum(State::STEP_STATUSES, state.step_status) unless state.step_status == :end
       Timings::Results.instance(@uuid).start unless %w(passed timeouted).include?(params[:status])

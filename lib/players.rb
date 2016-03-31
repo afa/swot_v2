@@ -41,8 +41,11 @@ class Players
   end
 
   def push_state params = {}
-    p 'send state to:', @players
     players.each{|p| p.send_state params }
+  end
+
+  def push_messages params = {}
+    players.each{|p| p.send_messages params }
   end
 
   def players
