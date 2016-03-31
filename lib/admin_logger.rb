@@ -92,8 +92,8 @@ class AdminLogger
     queue = Actor[:"queue_#{@guid}"]
     msg = {
       subtype: :start,
-      pitcher: queue.pitcher.uglify_name(state.stage.to_s),
-      queue: [ queue.pitcher.uglify_name(state.stage.to_s) ] + queue.list.first(2).map{|p| p.uglify_name(state.stage) },
+      pitcher: queue.pitcher.name,
+      queue: queue.list.first(3).last(2).map(&:name),
       time_left: Timings::Stage.instance(@guid).next_time
     }
     push msg
@@ -106,9 +106,9 @@ class AdminLogger
 
     state = Actor[:"state_#{@guid}"]
     players = Actor[:"players_#{@guid}"]
-    stats = players.players.online.map do |p|
+    stats = players.online.map do |p|
       {
-        name: p.uglify_name(state.stage)
+        name: p.name
       }
       # .merge(
       #   p.stats_stage.raw_counters
@@ -156,7 +156,7 @@ class AdminLogger
     return unless author && author.alive?
     msg = {
       subtype: :statement_pitched,
-      pitcher: author.uglify_name(state.stage),
+      pitcher: author.name,
       # pitcher: begin game.current_pitcher.name; rescue PlayersQueue::ErrorEmptyQueue; '' end,
       statement: statement[:value],
       replaces: voting.replaces.map{|id| statements.find(id).value}
@@ -169,10 +169,10 @@ class AdminLogger
     vote = params[:vote]
     player = Actor[:"player_#{vote[:player]}"]
     return unless player && player.alive?
-    state = Actor[:"state_#{@uuid}"]
+    state = Actor[:"state_#{@guid}"]
     msg = {
       subtype: :vote_added,
-      voted: player.uglify_name(state.stage),
+      voted: player.name,
       result: vote[:result]
     }
     push msg
@@ -185,7 +185,7 @@ class AdminLogger
     statements = Actor[:"statements_#{@guid}"]
     state = Actor[:"state_#{@guid}"]
     statement = statements.find()
-    vote_timeouted_players = (players.online.map(&:uuid) - statement.votes.map(&:player) - [statement.author]).map{|i| players.find(i).uglify_name(state.stage) }
+    vote_timeouted_players = (players.online.map(&:uuid) - statement.votes.map(&:player) - [statement.author]).map{|i| players.find(i).name }
     msg = {
       players: vote_timeouted_players,
       subtype: :vote_timeouts
@@ -213,7 +213,7 @@ class AdminLogger
     pitcher = players.find(pitcher_id)
     # pitcher = begin game.current_pitcher; rescue PlayersQueue::ErrorEmptyQueue; nil end
     msg = {
-      pitcher: pitcher.uglify_name(state.stage),
+      pitcher: pitcher.name,
       subtype: :pitch_timeout
     }
     push msg
@@ -228,7 +228,7 @@ class AdminLogger
     # stats_data = game.players.inject({}){|r, v| r.merge v.name => v.score.to_player_stat[v.id.to_s].except(:delta).merge(rank: v.score.rank) }
     stats_data = {} #TODO fix stats
     roles_data = statements.in_stage(state.stage).select{|s| s.status == 'accepted' }.inject({}){|r, v| r.merge v.value.inspect => v.contribution }
-    queue_data = queue.list.mapi{|p| p.uglify_name(state.stage) }.first(2)
+    queue_data = queue.list.map(&:name).first(2)
     if false && state.setting[:random_enabled]
       random_summary = game.players_queue.online_shuffle.data_summary
       random_data = game.players_queue.online_shuffle.data.map{|r| [r[0].to_s, r[1].name, r[2].to_s] }
@@ -262,7 +262,7 @@ class AdminLogger
     queue = Actor[:"queue_#{@guid}"]
     state = Actor[:"state_#{@guid}"]
     msg = {
-      pitcher: queue.pitcher.uglify_name(state.stage),
+      pitcher: queue.pitcher.name,
       step: state.step,
       subtype: :next_pitcher
     }

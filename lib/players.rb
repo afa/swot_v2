@@ -148,12 +148,13 @@ class Players
   def enough_players
     state = Actor[:"state_#{@game_uuid}"]
     cfg = state.setting
-    players.online.size >= cfg[:min_players].to_i
+    online.size >= cfg[:min_players].to_i
   end
 
   def online
     players.select(&:online)
   end
+
   def check_min_players
     state = Actor[:"state_#{@game_uuid}"]
     if state.state == :started && %w(s sw w wo o ot t).include?(state.stage.to_s)
