@@ -90,10 +90,12 @@ class AdminLogger
     return unless @guid == game_id
     state = Actor[:"state_#{@guid}"]
     queue = Actor[:"queue_#{@guid}"]
+    lst = queue.list.first(3)
+    pit = lst.shift
     msg = {
       subtype: :start,
-      pitcher: queue.pitcher.name,
-      queue: queue.list.first(3).last(2).map(&:name),
+      pitcher: pit.name,
+      queue: lst.map(&:name),
       time_left: Timings::Stage.instance(@guid).next_time
     }
     push msg

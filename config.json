@@ -75,6 +75,7 @@
     "autostart": {
       "type": "create",
       "settings": {
+        "min_players": 3,
         "max_steps": 18,
         "pitcher_single_replace_score": 0.7,
         "pitcher_rank_multiplier_pass": 0.9,
@@ -111,6 +112,14 @@
           "error": false
         },
         {
+          "name": "gg",
+          "email": "gg@gg.aa",
+          "state": "not_invited",
+          "error": false
+        }
+      ],
+      "temp": [
+        {
           "name": "Yulya",
           "email": "juleko@yandex.ru",
           "state": "not_invited",
@@ -125,12 +134,6 @@
         {
           "name": "Masha",
           "email": "mashaelchaninova@gmail.com",
-          "state": "not_invited",
-          "error": false
-        },
-        {
-          "name": "gg",
-          "email": "gg@gg.aa",
           "state": "not_invited",
           "error": false
         }

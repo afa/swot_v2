@@ -284,8 +284,6 @@ class Game
       info '------------------------------------33333333333---------------------------'
       lg.statement_results :statement_results, @uuid, stat.uuid if stat
       # publish :statement_results, @uuid, stat.uuid if stat
-      info '------------------------------------44444444444---------------------------'
-      lg.next_pitcher :next_pitcher, @uuid
       # publish :next_pitcher, @uuid
       info '------------------------------------55555555555---------------------------'
       # lg.send_score :send_score, @uuid
@@ -353,6 +351,7 @@ class Game
   def results_timeout params = {}
     state = int_state
     statements = Actor[:"statements_#{@uuid}"]
+    players = Actor[:"players_#{@uuid}"]
     Timings::Results.instance(@uuid).cancel
     if statements.check_triple_decline
       async.end_stage
@@ -360,8 +359,12 @@ class Game
       p '====================step====================', state.step, '======================'
       if state.step < state.total_steps
         state.step += 1
+        lg = Actor[:"admin_logger_#{@uuid}"]
+        info '------------------------------------44444444444---------------------------'
+        lg.next_pitcher :next_pitcher, @uuid
         async.start_step
       else
+    players = Actor[:"players_#{@uuid}"]
         async.end_stage
       end
     end
