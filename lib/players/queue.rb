@@ -51,11 +51,18 @@ class Queue
   end
 
   def fill_current
-    (3 - @current.size).times do
-      next if @current.size >= 3
-      p = @tail.shift
-      @current << p if p
+    c = (@current + @tail).uniq
+    @current = c.first(3)
+    if c.size > 3
+      @tail = c.last(c.size - 3)
+    else
+      @tail = []
     end
+    # (3 - @current.size).times do
+    #   next if @current.size >= 3
+    #   p = @tail.shift
+    #   @current << p if p
+    # end
   end
 
   def ids
@@ -78,7 +85,7 @@ class Queue
     @tail = []
     last_order = Actor[:"player_#{@current.last}"].try(:order)
     last_order ||= 0
-    lst.delete_if{|l| self.ids.include?(l.uuid) || l.order.to_i < 1 }
+    p 'cleanup', ids, lst.delete_if{|l| self.ids.include?(l.uuid) || l.order.to_i < 1 }
     p 'pl list after', lst.map(&:uuid)
     idx = lst.index{|l| l.order > last_order }
     p 'pos for last order', last_order, idx
