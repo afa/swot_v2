@@ -89,6 +89,7 @@ class Statements
   end
 
   def range_for params = {}
+    #{ player: params[:player], value: params[:value], index: params[:index], stage: State::STAGES[state.stage][:swot] }
     # TODO apply ranging
     #value, index, stage, player
   end

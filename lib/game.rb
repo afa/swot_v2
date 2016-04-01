@@ -259,11 +259,10 @@ class Game
       Timings::FirstPitch.instance(@uuid).cancel
       Timings::VotingQuorum.instance(@uuid).cancel
       Timings::VotingTail.instance(@uuid).cancel
-      if statements.voting
-        stat = statements.voting
+      stat = statements.voting
+      if stat
         stat.calc_votes
         stat.vote_results!
-        publish :statement_results, @uuid, stat.uuid
         publish :player_log_push, @uuid, stat.uuid
         # players.async.push_player_log statement: stat.uuid
       end
@@ -275,6 +274,7 @@ class Game
       Timings::Results.instance(@uuid).start unless %w(passed timeouted).include?(params[:status])
       queue.next!
       publish :step_results, @uuid
+      publish :statement_results, @uuid, stat.uuid if stat
       publish :next_pitcher, @uuid
       msg = {type: 'event', subtype: 'end_step', result: {status: params[:status], score: 0, delta: 0}, timer: Timings.instance(@uuid).next_stamp}
       async.publish_msg msg

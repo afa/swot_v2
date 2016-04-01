@@ -225,11 +225,9 @@ class AdminLogger
     players = Actor[:"players_#{@guid}"]
     state = Actor[:"state_#{@guid}"]
     queue = Actor[:"queue_#{@guid}"]
-    # stats_data = game.players.inject({}){|r, v| r.merge v.name => v.score.to_player_stat[v.id.to_s].except(:delta).merge(rank: v.score.rank) }
     stats_data = players.players.inject({}){|r, v| r.merge v.name => {pitcher: v.pitcher_score, catcher: v.catcher_score, rank: v.pitcher_rank} }
-    # stats_data = {} #TODO fix stats
     roles_data = statements.in_stage(state.stage).select{|s| s.status == 'accepted' }.inject({}){|r, v| r.merge v.value.inspect => v.player_contribution }
-    queue_data = queue.list.map(&:name).first(2)
+    queue_data = queue.list.map(&:name).first(3).last(2)
     # if false && state.setting[:random_enabled]
     #   random_summary = game.players_queue.online_shuffle.data_summary
     #   random_data = game.players_queue.online_shuffle.data.map{|r| [r[0].to_s, r[1].name, r[2].to_s] }
