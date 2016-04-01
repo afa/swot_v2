@@ -199,7 +199,7 @@ class AdminLogger
     statement = statements.find(stat_id)
     msg = {
       statement: statement.value.inspect,
-      result: statement.status,
+      result: statement.format_value(statement.status),
       total_percents: statement.result,
       subtype: :statement_results
     }

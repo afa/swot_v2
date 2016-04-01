@@ -178,7 +178,10 @@ class Game
     state = int_state
     players = Actor[:"players_#{@uuid}"]
     statements = Actor[:"statements_#{@uuid}"]
-    impo = { player: params[:player], value: params[:value], index: params[:index], stage: State::STAGES[state.stage][:swot] }
+    stage_swot = State::STAGES.fetch(params[:stage], {swot: :end})[:swot]
+    stmnts = statements.visible_for_buf(statements.rebuild_visible_for(stage_swot))
+    st = stmnts[params[:index].to_i - 1]
+    impo = { player: params[:player], value: params[:value], index: params[:index], stage: State::STAGES[state.stage][:swot], statement: st.value.inspect }
     statements.async.range_for(impo)
     publish :importance_added, @uuid, impo
   end
