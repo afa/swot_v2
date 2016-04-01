@@ -279,6 +279,7 @@ class Game
       publish :step_results, @uuid
       publish :statement_results, @uuid, stat.uuid if stat
       publish :next_pitcher, @uuid
+      publish :send_score, @uuid
       msg = {type: 'event', subtype: 'end_step', result: {status: params[:status], score: 0, delta: 0}, timer: Timings.instance(@uuid).next_stamp}
       async.publish_msg msg
       players.async.push_end_step params

@@ -53,6 +53,7 @@ class Player
     info "q first #{queue.first}"
     
     info store.inspect
+    subscribe :send_score, :send_players_score
   end
 
   def current_stamp
@@ -205,6 +206,18 @@ class Player
       stmnts = []
     end
     msg = {type: 'event', subtype: 'statements', value: stmnts}
+    publish_msg msg
+  end
+
+  def send_players_score topic, guid
+    return unless @game_uuid == guid
+    players = Actor[:"players_#{@game_uuid}"]
+    dat = players.players.sort{|a, b| a.uuid == b.uuid ? 0 : a.uuid == @uuid ? -1 : a.uuid <=> b.uuid }.map{|p| {pitcher: p.pitcher_rank, catcher: p.catcher_score} }
+    msg = {
+      type: 'event',
+      subtype: 'ranks',
+      value: dat
+    }
     publish_msg msg
   end
 
