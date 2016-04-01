@@ -18,9 +18,9 @@ class Queue
   end
 
   def add(pl)
-    players = Actor[:"players_#{@game_uuid}"]
-    pl_id = pl.is_a?(String) ? pl : pl.uuid
-    players.players << pl_id unless players.players.include?(pl_id)
+    # players = Actor[:"players_#{@game_uuid}"]
+    # pl_id = pl.is_a?(String) ? pl : pl.uuid
+    # players.player_ids << pl_id unless players.player_ids.include?(pl_id)
     rebuild_tail
     fill_current
   end
@@ -38,6 +38,9 @@ class Queue
 
   def next!
     skip!
+    while pitcher && pitcher.alive? && !pitcher.online
+      skip!
+    end
     rebuild_tail
     fill_current
   end
@@ -70,22 +73,23 @@ class Queue
 
   def rebuild_tail
     players = Actor[:"players_#{@game_uuid}"]
-    list = players.players.sort_by(&:order)
-    p 'pl list before', list.map(&:uuid)
+    lst = players.players.sort_by(&:order)
+    p 'pl list before', lst.map(&:uuid)
     @tail = []
     last_order = Actor[:"player_#{@current.last}"].try(:order)
     last_order ||= 0
-    list.delete_if{|l| @current.include? l.uuid || l.order.to_i < 1 }
-    p 'pl list after', list.map(&:uuid)
-    idx = list.index{|l| l.order > last_order }
+    lst.delete_if{|l| self.ids.include?(l.uuid) || l.order.to_i < 1 }
+    p 'pl list after', lst.map(&:uuid)
+    idx = lst.index{|l| l.order > last_order }
     p 'pos for last order', last_order, idx
     if idx
-      @tail += list[idx..-1].map(&:uuid)
-      list = list[0, idx]
-      p @tail
-      @tail += list[idx..-1].map(&:uuid)
+      @tail += lst[idx..-1].map(&:uuid)
+      lst = lst[0, idx]
+      p '@tail', @tail
+      @tail += lst.map(&:uuid)
+      # @tail += lst[idx..-1].map(&:uuid)
     else
-      @tail = list.map(&:uuid)
+      @tail = lst.map(&:uuid)
     end
     p 'queues and size', @current, @tail, (@current + @tail).size
 

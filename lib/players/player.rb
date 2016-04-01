@@ -210,6 +210,7 @@ class Player
   end
 
   def send_players_score topic, guid
+    p '-----------------------------', topic, '---------------------------------'
     return unless @game_uuid == guid
     players = Actor[:"players_#{@game_uuid}"]
     dat = players.players.sort{|a, b| a.uuid == b.uuid ? 0 : a.uuid == @uuid ? -1 : a.uuid <=> b.uuid }.map{|p| {pitcher: p.pitcher_rank, catcher: p.catcher_score} }

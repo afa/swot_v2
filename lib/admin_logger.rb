@@ -158,8 +158,8 @@ class AdminLogger
       subtype: :statement_pitched,
       pitcher: author.name,
       # pitcher: begin game.current_pitcher.name; rescue PlayersQueue::ErrorEmptyQueue; '' end,
-      statement: statement[:value],
-      replaces: voting.replaces.map{|id| statements.find(id).value}
+      statement: statement[:value].inspect,
+      replaces: voting.replaces.map{|id| statements.find(id).value.inspect}
     }
     push msg
   end
@@ -195,15 +195,17 @@ class AdminLogger
   end
 
   def statement_results topic, game_id, stat_id
+    p '-----------------------------', topic, '---------------------------------'
     return unless @guid == game_id
     statements = Actor[:"statements_#{@guid}"]
     statement = statements.find(stat_id)
     msg = {
       statement: statement.value.inspect,
       result: statement.format_value(statement.status),
-      total_percents: statement.result,
+      total_percents: (statement.result * 100).round(1),
       subtype: :statement_results
     }
+    p '+-----------------------------', topic, '---------------------------------'
     push msg
   end
 
@@ -221,6 +223,7 @@ class AdminLogger
   end
 
   def step_results topic, game_id, params = {}
+    p '-----------------------------', topic, '---------------------------------'
     return unless @guid == game_id
     statements = Actor[:"statements_#{@guid}"]
     players = Actor[:"players_#{@guid}"]
@@ -246,6 +249,7 @@ class AdminLogger
       time_left: Timings::Stage.instance(@guid).next_time,
       last_statements_state: statements.in_stage(state.stage).last(3).map(&:status)
     }
+    p '+-----------------------------', topic, '---------------------------------'
     push msg
     info "::::::----------------step_results---------#{msg.inspect}----::::::::::::::::"
   end
@@ -259,6 +263,7 @@ class AdminLogger
   end
 
   def next_pitcher topic, game_id, params = {}
+    p '-----------------------------', topic, '---------------------------------'
     return unless @guid == game_id
     queue = Actor[:"queue_#{@guid}"]
     state = Actor[:"state_#{@guid}"]
@@ -268,6 +273,7 @@ class AdminLogger
       subtype: :next_pitcher
     }
     push msg
+    p '+-----------------------------', topic, '---------------------------------'
   end
 
   def importance_added topic, game_id, params = {}
