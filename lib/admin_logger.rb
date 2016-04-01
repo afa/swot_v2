@@ -170,10 +170,11 @@ class AdminLogger
     player = Actor[:"player_#{vote[:player]}"]
     return unless player && player.alive?
     state = Actor[:"state_#{@guid}"]
+    statements = Actor[:"statements_#{@guid}"]
     msg = {
       subtype: :vote_added,
       voted: player.name,
-      result: vote[:result]
+      result: statements.voting.format_value(vote[:result])
     }
     push msg
   end
