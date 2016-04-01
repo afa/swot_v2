@@ -89,8 +89,15 @@ class Statements
   end
 
   def range_for params = {}
+    state = Actor[:"state_#{@game_uuid}"]
+    stage_swot = State::STAGES.fetch(params[:stage], {swot: :end})[:swot]
+    # stage_swot = State::STAGES.fetch(state.stage, {swot: :end})[:swot]
+    statements = Actor[:"statements_#{@game_uuid}"]
+    stmnts = statements.visible_for_buf(statements.rebuild_visible_for(stage_swot))
+    st = stmnts[params[:index].to_i - 1]
+    st.add_impo(params[:player], params[:value])
+
     #{ player: params[:player], value: params[:value], index: params[:index], stage: State::STAGES[state.stage][:swot] }
-    # TODO apply ranging
     #value, index, stage, player
   end
 

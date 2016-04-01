@@ -270,15 +270,17 @@ class AdminLogger
   end
 
   def importance_added topic, game_id, params = {}
-    return
     return unless @guid == game_id
+    names = ['', 'Not important', 'Rather not important', 'Important', 'Very important', 'Extremely important']
+    players = Actor[:"players_#{@guid}"]
+    player = players.find(params[:player])
     msg = {
-      player: importance.player.name,
-      value_raw: importance.value_raw,
-      value: importance.value_name,
-      auto: importance.auto,
-      stage: importance.statement.stage.name,
-      statement: importance.statement.to_s,
+      player: player.name,
+      value_raw: params[:value],
+      value: names[params[:value].to_i],
+      auto: params.fetch(:auto, false),
+      stage: State::STAGES[params[:stage].to_sym][:name],
+      statement: params[:statement],
       subtype: :importance_added
     }
     push msg

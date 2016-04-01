@@ -190,6 +190,14 @@ class Statement
     count_pitcher_score
   end
 
+  def add_impo(pl_id, val)
+    idx = nil
+    @importances.each_with_index{|v, i| idx = i if v[:player] == pl_id }
+    @importances.delete_at(idx) if idx
+    auto = params.fetch(:auto, false)
+    @importances << {player: pl_id, value: val.to_i, auto: auto}
+  end
+
   def format_value(str)
     return 'pro' if str == 'accepted'
     return 'contra' if str == 'declined'
@@ -197,7 +205,7 @@ class Statement
   end
 end
 
-  private
+  # private
   # def count_pitchers_score opts={}
   #   all_contributions = accepted_statements.map &:contributors
 
