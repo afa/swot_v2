@@ -132,7 +132,7 @@ class Game
     statements = Actor[:"statements_#{@uuid}"]
     Timings::Stage.instance(@uuid).start
     statements.clean_current
-    async.publish_msg(type: 'event', subtype: 'start_stage', value: stage)
+    # async.publish_msg(type: 'event', subtype: 'start_stage', value: stage)
     players.async.push_start_stage
     async.start_step
   end
@@ -152,7 +152,7 @@ class Game
     else
       Timings::Ranging.instance(@uuid).start
     end
-    async.publish_msg(type: 'event', subtype: 'start_step')
+    # async.publish_msg(type: 'event', subtype: 'start_step')
     players.async.push_start_step
     async.push_state
     players.async.push_state
@@ -165,11 +165,11 @@ class Game
     queue = Actor[:"queue_#{@uuid}"]
     info "stage timeout: #{state.stage}"
     state.stage = state.next_enum(State::STAGES, state.stage)
-    msg = {type: 'event', subtype: 'end_stage', value: state.stage}
+    # msg = {type: 'event', subtype: 'end_stage', value: state.stage}
     Timings::Pitch.instance(@uuid).cancel
     Timings::FirstPitch.instance(@uuid).cancel
     Timings::BetweenStages.instance(@uuid).start
-    async.publish_msg msg
+    # async.publish_msg msg
     players.async.push_end_stage
   end
 
@@ -201,7 +201,7 @@ class Game
     Timings::VotingQuorum.instance(@uuid).start
     publish :statement_pitched, @uuid, statement: statement
     players.push_pitch(errors.merge(value: params[:value], to_replace: params[:to_replace] || [], author: queue.pitcher.uglify_name(state.stage.to_s), timer: Timings.instance(@uuid).next_stamp))
-    publish_msg({type: 'event', subtype: 'pitched', value: params[:value], to_replace: params[:to_replace], author: queue.pitcher.uglify_name(state.stage.to_s), timer: Timings.instance(@uuid).next_stamp}.merge(errors))
+    # publish_msg({type: 'event', subtype: 'pitched', value: params[:value], to_replace: params[:to_replace], author: queue.pitcher.uglify_name(state.stage.to_s), timer: Timings.instance(@uuid).next_stamp}.merge(errors))
     unless errors.empty?
       end_step(errors)
     end
@@ -233,10 +233,10 @@ class Game
     statements.voting.vote(player: params[:player], result: params[:result])
     publish :vote_added, @uuid, vote: {player: params[:player], result: params[:result]}
     if statements.voting.quorum?
-      if Timings.instance(@uuid).next_interval > state.setting[:voting_tail_timeout].to_i
+      if Timings::VotingQuorum.instance(@uuid).next_interval > state.setting[:voting_tail_timeout].to_f
         Timings::VotingQuorum.instance(@uuid).cancel
         Timings::VotingTail.instance(@uuid).start
-        async.publish_msg(type: 'event', subtype: 'quorum', timeout_at: Timings.instance(@uuid).next_stamp)
+        # async.publish_msg(type: 'event', subtype: 'quorum', timeout_at: Timings.instance(@uuid).next_stamp)
         players.async.push_quorum
       end
     end
@@ -251,8 +251,8 @@ class Game
     state = int_state
     players = Actor[:"players_#{@uuid}"]
     if %w(rs rw ro rt).include? state.stage.to_s
-      msg = {type: 'event', subtype: 'end_step', timer: Timings.instance(@uuid).next_stamp}
-      async.publish_msg msg
+      # msg = {type: 'event', subtype: 'end_step', timer: Timings.instance(@uuid).next_stamp}
+      # async.publish_msg msg
       players.async.push_end_step params
       async.end_stage
     else
@@ -288,10 +288,10 @@ class Game
       info '------------------------------------55555555555---------------------------'
       # lg.send_score :send_score, @uuid
       publish :send_score, @uuid
-      info '------------------------------------66666666666---------------------------'
-      msg = {type: 'event', subtype: 'end_step', result: {status: params[:status], score: 0, delta: 0}, timer: Timings.instance(@uuid).next_stamp}
-      info '------------------------------------77777777777---------------------------'
-      async.publish_msg msg
+      # info '------------------------------------66666666666---------------------------'
+      # msg = {type: 'event', subtype: 'end_step', result: {status: params[:status], score: 0, delta: 0}, timer: Timings.instance(@uuid).next_stamp}
+      # info '------------------------------------77777777777---------------------------'
+      # async.publish_msg msg
       info '------------------------------------88888888888---------------------------'
       players.async.push_end_step params
       info '------------------------------------99999999999---------------------------'
@@ -328,14 +328,14 @@ class Game
     Timings::Terminate.instance(@uuid).cancel if state.stage == :tr
     if %w(sw wo ot tr).include? state.stage.to_s
       Timings::BetweenStages.instance(@uuid).start
-      msg = {type: 'event', subtype: 'end_stage', value: state.stage, timer: Timings.instance(@uuid).next_stamp}
-      async.publish_msg msg
+      # msg = {type: 'event', subtype: 'end_stage', value: state.stage, timer: Timings.instance(@uuid).next_stamp}
+      # async.publish_msg msg
       players.async.push_end_stage
-      async.publish :next_stage, @uuid, stage: state.stage unless state.stage == :tr
-      async.publish :ranging, @uuid, stage: state.stage if state.stage == :tr
+      publish :next_stage, @uuid, stage: state.stage unless state.stage == :tr
+      publish :ranging, @uuid, stage: state.stage if state.stage == :tr
     elsif %w(rs rw ro rt).include? state.stage.to_s
-      msg = {type: 'event', subtype: 'end_stage', value: state.stage, timer: Time.now.to_i + 1}
-      async.publish_msg msg
+      # msg = {type: 'event', subtype: 'end_stage', value: state.stage, timer: Time.now.to_i + 1}
+      # async.publish_msg msg
       players.async.push_end_stage
       async.start_stage
     elsif state.stage == :end
@@ -386,16 +386,16 @@ class Game
     end_stage
   end
 
-  def push_event event, params = {}
-    publish_msg({type: 'event', subtype: event})
-  end
+  # def push_event event, params = {}
+  #   publish_msg({type: 'event', subtype: event})
+  # end
 
   def push_state params = {}
-    state = int_state
-    players = Actor[:"players_#{@uuid}"]
-    msg = params.merge status: state.state, stage: state.stage, timeout_at: Timings::Start.instance(@uuid).at + 1500, started_at: Timings::Start.instance(@uuid).at, players: players.players.map(&:uuid), step: {total: total_steps, current: step, status: step_status}
-    # msg = params.merge status: state.state, stage: state.stage, timeout_at: alarm.next_time, started_at: alarm.start_at, players: players.players.map(&:uuid), step: {total: total_steps, current: step, status: step_status}
-    publish_msg msg
+    # state = int_state
+    # players = Actor[:"players_#{@uuid}"]
+    # msg = params.merge status: state.state, stage: state.stage, timeout_at: Timings::Start.instance(@uuid).at + 1500, started_at: Timings::Start.instance(@uuid).at, players: players.players.map(&:uuid), step: {total: total_steps, current: step, status: step_status}
+    # # msg = params.merge status: state.state, stage: state.stage, timeout_at: alarm.next_time, started_at: alarm.start_at, players: players.players.map(&:uuid), step: {total: total_steps, current: step, status: step_status}
+    # publish_msg msg
   end
 
   def stage_timeout
@@ -408,7 +408,7 @@ class Game
     players = Actor[:"players_#{@uuid}"]
     state.state = :terminated
     publish :game_terminated, @uuid
-    publish_msg({type: 'event', subtype: 'terminated'})
+    # publish_msg({type: 'event', subtype: 'terminated'})
     players.async.push_terminated
     async.stop_timers
     async.end_game

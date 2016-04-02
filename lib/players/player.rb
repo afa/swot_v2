@@ -140,7 +140,8 @@ class Player
 
   def send_result params = {}
     state = Actor[:"state_#{@game_uuid}"]
-    msg = {type: 'event', subtype: 'result',  timeout_at: Timings.instance(@game_uuid).next_stamp, time: current_stamp}
+    intervals = params[:intervals].map(&:to_sym)
+    msg = {type: 'event', subtype: 'result',  timeout_at: Timings.instance(@game_uuid).stamps(intervals), time: current_stamp}
     publish_msg msg
   end
 
@@ -150,47 +151,48 @@ class Player
     players = Actor[:"players_#{@game_uuid}"]
     queue = Actor[:"queue_#{@game_uuid}"]
     pit = queue.pitcher.uuid == @uuid
-    msg = {type: 'event', subtype: 'ready', start_at: Timings::Start.instance(@game_uuid).at, pitcher: pit,  timeout_at: Timings.instance(@game_uuid).next_stamp, version: SWOT_VERSION, time: current_stamp}
+    msg = {type: 'event', subtype: 'ready', start_at: Timings::Start.instance(@game_uuid).at, pitcher: pit,  timeout_at: Timings.instance(@game_uuid).stamps(%w(start).map(&:to_sym)), version: SWOT_VERSION, time: current_stamp}
     publish_msg msg
   end
 
-  def send_event ev, params = {}
-    state = Actor[:"state_#{@game_uuid}"]
-    msg = {
-      type: 'event',
-      subtype: ev, time: current_stamp, time: current_stamp,
-      timeout_at: Timings.instance(@game_uuid).next_stamp
-    }.merge params
-    p @uuid, state.player_channels.keys
-    publish_msg msg
-  end
+  # def send_event ev, params = {}
+  #   state = Actor[:"state_#{@game_uuid}"]
+  #   msg = {
+  #     type: 'event',
+  #     subtype: ev, time: current_stamp, time: current_stamp,
+  #     timeout_at: Timings.instance(@game_uuid).next_stamp
+  #   }.merge params
+  #   p @uuid, state.player_channels.keys
+  #   publish_msg msg
+  # end
 
   def send_pitch params = {}
     state = Actor[:"state_#{@game_uuid}"]
     queue = Actor[:"queue_#{@game_uuid}"]
-    msg = {type: 'event', subtype: 'pitched', value: params[:value], to_replace: params[:to_replace], author: queue.pitcher.uglify_name(state.stage), timeout_at: Timings.instance(@game_uuid).next_stamp, time: current_stamp, step: {status: state.step_status} }
+    msg = {type: 'event', subtype: 'pitched', value: params[:value], to_replace: params[:to_replace], author: queue.pitcher.uglify_name(state.stage), timeout_at: Timings.instance(@game_uuid).stamps(%w(stage voting_quorum voting_tail)), time: current_stamp, step: {status: state.step_status} }
     publish_msg msg
   end
 
   def send_pass
     state = Actor[:"state_#{@game_uuid}"]
-    msg = {type: 'event', subtype: 'passed', timeout_at: Timings.instance(@game_uuid).next_stamp, time: current_stamp}
+    msg = {type: 'event', subtype: 'passed', time: current_stamp}
+    # msg = {type: 'event', subtype: 'passed', timeout_at: Timings.instance(@game_uuid).next_stamp, time: current_stamp}
     publish_msg msg
   end
 
   def send_vote params = {}
     state = Actor[:"state_#{@game_uuid}"]
-    msg = {type: 'event', subtype: 'voted', timeout_at: Timings.instance(@game_uuid).next_stamp, time: current_stamp}.merge(params)
+    msg = {type: 'event', subtype: 'voted', timeout_at: Timings.instance(@game_uuid).stamps(%w(voting_quorum voting_tail stage).map(&:to_sym)), time: current_stamp}.merge(params)
     publish_msg msg
   end
 
   def send_quorum
-    msg = {type: 'event', subtype: 'quorum', timeout_at: Timings.instance(@game_uuid).next_stamp, continue: true}
+    msg = {type: 'event', subtype: 'quorum', timeout_at: Timings.instance(@game_uuid).stamps(%w(voting_quorum voting_tail stage).map(&:to_sym)), continue: true}
     publish_msg msg
   end
 
   def send_ranging params = {}
-    msg = {type: 'event', subtype: 'ranging', timeout_at: Timings.instance(@game_uuid).next_stamp, time: current_stamp}.merge(params)
+    msg = {type: 'event', subtype: 'ranging', timeout_at: Timings.instance(@game_uuid).stamps([:ranging]), time: current_stamp}.merge(params)
     publish_msg msg
   end
 
@@ -228,7 +230,7 @@ class Player
     queue = Actor[:"queue_#{@game_uuid}"]
     players = Actor[:"players_#{@game_uuid}"]
     # info "::::::ids #{ queue.ids.index(@uuid)}"
-    msg = {type: 'event', subtype: 'start_step', turn_in: queue.index(@uuid), pitcher_name: queue.pitcher.uglify_name(state.stage), timeout_at: Timings.instance(@game_uuid).next_stamp, step: {current: state.step, total: state.total_steps, status: state.step_status}, time: current_stamp}
+    msg = {type: 'event', subtype: 'start_step', turn_in: queue.index(@uuid), pitcher_name: queue.pitcher.uglify_name(state.stage), timeout_at: Timings.instance(@game_uuid).stamps(%w(ranging stage first_pitch pitch).map(&:to_sym)), step: {current: state.step, total: state.total_steps, status: state.step_status}, time: current_stamp}
     publish_msg msg
   end
 
@@ -247,7 +249,7 @@ class Player
       else
         rnk = {score: @catcher_score, delta: @delta}
       end
-      msg = {type: 'event', subtype: 'end_step', result: {status: params[:status], players_voted: per}.merge(rnk), timeout_at: Timings.instance(@game_uuid).next_stamp, time: current_stamp}
+      msg = {type: 'event', subtype: 'end_step', result: {status: params[:status], players_voted: per}.merge(rnk), timeout_at: Timings.instance(@game_uuid).stamps(%w(stage results between_stages).map(&:to_sym)), time: current_stamp}
     # p 'endstep result msg pitcherscore', msg, @pitcher_rank
     else
       if queue.prev_pitcher == @uuid
@@ -255,7 +257,7 @@ class Player
       else
         rnk = {score: @catcher_score, delta: @delta}
       end
-      msg = {type: 'event', subtype: 'end_step', result: {status: params[:status]}.merge(rnk), timeout_at: Timings.instance(@game_uuid).next_stamp, time: current_stamp}
+      msg = {type: 'event', subtype: 'end_step', result: {status: params[:status]}.merge(rnk), timeout_at: Timings.instance(@game_uuid).stamps(%w(stage results between_stages).map(&:to_sym)), time: current_stamp}
     end
     publish_msg msg
   end
@@ -282,7 +284,7 @@ class Player
             turn_in: (queue.index(@uuid) || 3)
           },
           time: current_stamp,
-          timeout_at: Timings.instance(@game_uuid).next_stamp
+          timeout_at: Timings.instance(@game_uuid).stamps([:between_stages])
         }
     publish_msg msg
   end
@@ -358,7 +360,7 @@ class Player
         },
 
         started_at: Timings::Start.instance(@game_uuid).at,
-        timeout_at: Timings.instance(@game_uuid).next_stamp
+        timeout_at: Timings.instance(@game_uuid).stamps(%w(stage pitch first_pitch voting_quorum voting_tail ranging between_stages results start).map(&:to_sym))
       },
     }
   end

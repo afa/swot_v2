@@ -21,6 +21,18 @@ class Timings
     terminate_timeout: 10
   }
 
+  NAMES = {
+    start: Timings::Start,
+    stage: Timings::Stage,
+    first_pitch: Timings::FirstPitch,
+    pitch: Timings::Pitch,
+    voting_quorum: Timings::VotingQuorum,
+    voting_tail: Timings::VotingTail,
+    results: Timings::Results,
+    between_stages: Timings::BetweenStages,
+    ranging: Timings::Ranging,
+    terminate: Timings::Terminate
+  }
   def self.subtimers
     constants(false).map{|s| const_get(s) }.select{|c| c.is_a?(Class) } - [Timings::Base]
   end
@@ -46,10 +58,19 @@ class Timings
   def resume
   end
 
-  def cancel
+  def cancel list = []
+    list.map{|it| it.instance(@guid) }.each(&:cancel)
   end
 
-  def reset
+  def stamps list = []
+    list.inject(10000.0) do |r, l|
+      t = NAMES[l].instance(@guid)
+      t.next_stamp && r > t.next_stamp ? t.next_stamp : r
+    end
+  end
+
+  def reset list = []
+    list.map{|it| it.instance(@guid) }.each(&:reset)
   end
 
   def terminate
