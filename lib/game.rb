@@ -233,7 +233,7 @@ class Game
     statements.voting.vote(player: params[:player], result: params[:result])
     publish :vote_added, @uuid, vote: {player: params[:player], result: params[:result]}
     if statements.voting.quorum?
-      if Timings::VotingQuorum.instance(@uuid).next_interval > state.setting[:voting_tail_timeout].to_f
+      if Timings::VotingQuorum.instance(@uuid).next_time > state.setting[:voting_tail_timeout].to_f
         Timings::VotingQuorum.instance(@uuid).cancel
         Timings::VotingTail.instance(@uuid).start
         # async.publish_msg(type: 'event', subtype: 'quorum', timeout_at: Timings.instance(@uuid).next_stamp)

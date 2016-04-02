@@ -169,7 +169,7 @@ class Player
   def send_pitch params = {}
     state = Actor[:"state_#{@game_uuid}"]
     queue = Actor[:"queue_#{@game_uuid}"]
-    msg = {type: 'event', subtype: 'pitched', value: params[:value], to_replace: params[:to_replace], author: queue.pitcher.uglify_name(state.stage), timeout_at: Timings.instance(@game_uuid).stamps(%w(stage voting_quorum voting_tail)), time: current_stamp, step: {status: state.step_status} }
+    msg = {type: 'event', subtype: 'pitched', value: params[:value], to_replace: params[:to_replace], author: queue.pitcher.uglify_name(state.stage), timeout_at: Timings.instance(@game_uuid).stamps(%w(stage voting_quorum voting_tail).map(&:to_sym)), time: current_stamp, step: {status: state.step_status} }
     publish_msg msg
   end
 
