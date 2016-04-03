@@ -47,7 +47,8 @@ class Timings
   end
 
   def cancel list = []
-    list.map{|it| classes[it].instance(@guid) }.each(&:cancel)
+    p list
+    list.map(&:to_sym).map{|it| classes[it].instance(@guid) }.each(&:cancel)
   end
 
   def classes
@@ -68,7 +69,9 @@ class Timings
   def stamps list = []
     list.inject(Time.now.to_f + 10000.0) do |r, l|
       t = classes[l].instance(@guid)
-      t.next_stamp && r > t.next_stamp ? t.next_stamp : r
+      s = t.next_stamp
+      info "stamps #{l} => #{s}"
+      s && (r > s) ? s : r
     end
   end
 

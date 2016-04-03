@@ -201,10 +201,12 @@ class AdminLogger
     return unless @guid == game_id
     statements = Actor[:"statements_#{@guid}"]
     statement = statements.find(stat_id)
+    stat_res = statement.result * 100.0
+    stat_res = 100.0 - stat_res unless statement.status == 'accepted'
     msg = {
       statement: statement.value.inspect,
       result: statement.format_value(statement.status),
-      total_percents: (statement.result * 100).round(1),
+      total_percents: stat_res.round(1),
       subtype: :statement_results
     }
     p '+-----------------------------', topic, '---------------------------------'

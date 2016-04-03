@@ -95,7 +95,7 @@ class Statements
     statements = Actor[:"statements_#{@game_uuid}"]
     stmnts = statements.visible_for_buf(statements.rebuild_visible_for(stage_swot))
     st = stmnts[params[:index].to_i - 1]
-    st.add_impo(params[:player], params[:value])
+    st.add_impo(params[:player], params[:value])  #, true for auto
 
     #{ player: params[:player], value: params[:value], index: params[:index], stage: State::STAGES[state.stage][:swot] }
     #value, index, stage, player

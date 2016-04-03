@@ -154,7 +154,7 @@ class Game
     end
     # async.publish_msg(type: 'event', subtype: 'start_step')
     players.async.push_start_step
-    async.push_state
+    # async.push_state
     players.async.push_state
   end
 
@@ -179,9 +179,11 @@ class Game
     players = Actor[:"players_#{@uuid}"]
     statements = Actor[:"statements_#{@uuid}"]
     stage_swot = State::STAGES.fetch(params[:stage], {swot: :end})[:swot]
+    p 'stswot', stage_swot, params
     stmnts = statements.visible_for_buf(statements.rebuild_visible_for(stage_swot))
+    p stmnts
     st = stmnts[params[:index].to_i - 1]
-    impo = { player: params[:player], value: params[:value], index: params[:index], stage: State::STAGES[state.stage][:swot], statement: st.value.inspect }
+    impo = { player: params[:player], value: params[:value], index: params[:index], stage: stage_swot, statement: st.value.inspect }
     statements.async.range_for(impo)
     publish :importance_added, @uuid, impo
   end
@@ -234,16 +236,15 @@ class Game
     publish :vote_added, @uuid, vote: {player: params[:player], result: params[:result]}
     if statements.voting.quorum?
       if Timings::VotingQuorum.instance(@uuid).next_time > state.setting[:voting_tail_timeout].to_f
-        Timings::VotingQuorum.instance(@uuid).cancel
+        Timings.instance(@uuid).cancel(%w(voting_quorum voting_tail))
         Timings::VotingTail.instance(@uuid).start
         # async.publish_msg(type: 'event', subtype: 'quorum', timeout_at: Timings.instance(@uuid).next_stamp)
         players.async.push_quorum
       end
     end
     if statements.voting.voted_count == (players.online.map(&:uuid) - [statements.voting.author] ).size
-      Timings::VotingQuorum.instance(@uuid).cancel
-      Timings::VotingTail.instance(@uuid).cancel
-      end_step(status: statements.voting.calc_result)
+        Timings.instance(@uuid).cancel(%w(voting_quorum voting_tail))
+      async.end_step(status: statements.voting.calc_result)
     end
   end
 
@@ -258,10 +259,7 @@ class Game
     else
       queue = Actor[:"queue_#{@uuid}"]
       statements = Actor[:"statements_#{@uuid}"]
-      Timings::Pitch.instance(@uuid).cancel
-      Timings::FirstPitch.instance(@uuid).cancel
-      Timings::VotingQuorum.instance(@uuid).cancel
-      Timings::VotingTail.instance(@uuid).cancel
+      Timings.instance(@uuid).cancel(%w(pitch first_pitch voting_quorum voting_tail))
       stat = statements.voting
       if stat
         stat.calc_votes
@@ -307,12 +305,14 @@ class Game
     statements = Actor[:"statements_#{@uuid}"]
     #calc rank results
     Timings::VotingQuorum.instance(@uuid).cancel
+    Timings::VotingTail.instance(@uuid).cancel
     publish :vote_timeouts, @uuid, {statement: statements.voting.uuid}
     end_step(status: statements.voting.conclusion)
   end
 
   def voting_tail_timeout params = {}
     statements = Actor[:"statements_#{@uuid}"]
+    Timings::VotingQuorum.instance(@uuid).cancel
     Timings::VotingTail.instance(@uuid).cancel
     publish :vote_timeouts, @uuid, {statement: statements.voting.uuid}
     end_step(status: statements.voting.conclusion)
@@ -321,7 +321,6 @@ class Game
   def end_stage params = {}
     state = int_state
     players = Actor[:"players_#{@uuid}"]
-    # alarms = Actor[:"alarms_#{@uuid}"]
     # queue = Actor[:"queue_#{@uuid}"]
     # statements = Actor[:"statements_#{@uuid}"]
     state.stage = state.next_enum(State::STAGES, state.stage)
@@ -364,7 +363,7 @@ class Game
         lg.next_pitcher :next_pitcher, @uuid
         async.start_step
       else
-    players = Actor[:"players_#{@uuid}"]
+        players = Actor[:"players_#{@uuid}"]
         async.end_stage
       end
     end
@@ -373,6 +372,7 @@ class Game
   def between_stages_timeout params = {}
     state = int_state
     players = Actor[:"players_#{@uuid}"]
+    Timings::BetweenStages.instance(@uuid).cancel
     state.stage = state.next_enum(State::STAGES, state.stage)
     state.step = 1
     state.step_status = state.first_enum(State::STEP_STATUSES)
@@ -382,8 +382,9 @@ class Game
   end
 
   def ranging_timeout params = {}
-    end_step
-    end_stage
+    Timings::Ranging.instance(@uuid).cancel
+    async.end_step
+    # end_stage
   end
 
   # def push_event event, params = {}

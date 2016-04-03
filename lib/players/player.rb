@@ -96,8 +96,9 @@ class Player
 
   def ranging params = {}
     game = Actor[:"game_#{@game_uuid}"]
+    state = Actor[:"state_#{@game_uuid}"]
     send_ranging(value: params[:value], index: params[:index])
-    game.async.ranging(value: params[:value], player: @uuid, index: params[:index])
+    game.async.ranging(value: params[:value], player: @uuid, index: params[:index], stage: state.stage)
   end
 
   def online!
@@ -187,7 +188,7 @@ class Player
   end
 
   def send_quorum
-    msg = {type: 'event', subtype: 'quorum', timeout_at: Timings.instance(@game_uuid).stamps(%w(voting_quorum voting_tail stage).map(&:to_sym)), continue: true}
+    msg = {type: 'event', subtype: 'quorum', timeout_at: Timings.instance(@game_uuid).stamps(%w(voting_quorum voting_tail stage).map(&:to_sym)), continue: true, time: current_stamp}
     publish_msg msg
   end
 

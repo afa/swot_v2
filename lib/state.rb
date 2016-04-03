@@ -32,7 +32,7 @@ class State
   }
 
   def to_swot(stg)
-    STAGES[stg][:swot]
+    STAGES[stg][:swot] || :end
   end
 
   def first_enum(hash)

@@ -190,11 +190,10 @@ class Statement
     count_pitcher_score
   end
 
-  def add_impo(pl_id, val)
+  def add_impo(pl_id, val, auto = false)
     idx = nil
     @importances.each_with_index{|v, i| idx = i if v[:player] == pl_id }
     @importances.delete_at(idx) if idx
-    auto = params.fetch(:auto, false)
     @importances << {player: pl_id, value: val.to_i, auto: auto}
   end
 
