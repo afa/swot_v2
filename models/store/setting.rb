@@ -21,13 +21,14 @@ class Store::Setting < Ohm::Model
       end
       st = create(game_uuid: guid, data: df.data)
     end
+    p '---sett---', st.data
     st
   end
 
   def self.defaults
     {
       min_players: 2,
-      max_players: 18,
+      max_players: 12,
       max_statements: 7,
       default_url_host: 'localhost:3000',
       default_invitation_template: '%{admin_name} invites you to take part in swot analysis session. the session will be held online',

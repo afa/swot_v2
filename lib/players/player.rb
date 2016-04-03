@@ -245,7 +245,7 @@ class Player
       per = 100 * stat.result.to_f
       per = 100 - per unless stat.status == 'accepted'
       per = per.round(1)
-      if stat.aute
+      if stat.auto
         rnk = {score: @catcher_score, delta: @delta}
       end
       msg = {type: 'event', subtype: 'end_step', result: {status: params[:status], players_voted: per}.merge(rnk), timeout_at: Timings.instance(@game_uuid).stamps(%w(stage results between_stages).map(&:to_sym)), time: current_stamp}
