@@ -152,7 +152,7 @@ class Player
     players = Actor[:"players_#{@game_uuid}"]
     queue = Actor[:"queue_#{@game_uuid}"]
     pit = queue.pitcher.uuid == @uuid
-    msg = {type: 'event', subtype: 'ready', start_at: Timings::Start.instance(@game_uuid).at, pitcher: pit,  timeout_at: Timings.instance(@game_uuid).stamps(%w(start).map(&:to_sym)), version: SWOT_VERSION, time: current_stamp}
+    msg = {type: 'event', subtype: 'ready', name: @name, start_at: Timings::Start.instance(@game_uuid).at, pitcher: pit,  timeout_at: Timings.instance(@game_uuid).stamps(%w(start).map(&:to_sym)), version: SWOT_VERSION, time: current_stamp}
     publish_msg msg
   end
 
@@ -245,9 +245,7 @@ class Player
       per = 100 * stat.result.to_f
       per = 100 - per unless stat.status == 'accepted'
       per = per.round(1)
-      if stat.author == @uuid
-        rnk = {rank: @pitcher_rank}
-      else
+      if stat.aute
         rnk = {score: @catcher_score, delta: @delta}
       end
       msg = {type: 'event', subtype: 'end_step', result: {status: params[:status], players_voted: per}.merge(rnk), timeout_at: Timings.instance(@game_uuid).stamps(%w(stage results between_stages).map(&:to_sym)), time: current_stamp}
@@ -345,6 +343,7 @@ class Player
       type: 'status',
       version: SWOT_VERSION,
       state: state.state,
+      name: @name,
       game: {
         time: current_stamp,
         step: {
