@@ -26,7 +26,7 @@ class Store::Setting < Ohm::Model
 
   def self.defaults
     {
-      min_players: 4,
+      min_players: 2,
       max_players: 18,
       max_statements: 7,
       default_url_host: 'localhost:3000',

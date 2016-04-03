@@ -75,7 +75,7 @@
     "autostart": {
       "type": "create",
       "settings": {
-        "min_players": 4,
+        "min_players": 2,
         "max_steps": 18,
         "pitcher_single_replace_score": 0.7,
         "pitcher_rank_multiplier_pass": 0.9,
