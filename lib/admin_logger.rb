@@ -187,7 +187,7 @@ class AdminLogger
     s_id = params[:statement]
     statements = Actor[:"statements_#{@guid}"]
     state = Actor[:"state_#{@guid}"]
-    statement = statements.find()
+    statement = statements.find(s_id)
     vote_timeouted_players = (players.online.map(&:uuid) - statement.votes.map(&:player) - [statement.author]).map{|i| players.find(i).name }
     msg = {
       players: vote_timeouted_players,

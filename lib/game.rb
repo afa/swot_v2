@@ -272,29 +272,22 @@ class Game
       state.step_status = state.next_enum(State::STEP_STATUSES, state.step_status)
       state.step_status = state.next_enum(State::STEP_STATUSES, state.step_status) unless state.step_status == :end
       Timings::Results.instance(@uuid).start unless %w(passed timeouted).include?(params[:status])
-      info '------------------------------------11111111111---------------------------'
       p 'stat', stat
       lg = Actor[:"admin_logger_#{@uuid}"]
       queue.next!
-      info '------------------------------------22222222222---------------------------'
       lg.step_results :step_results, @uuid
       # publish :step_results, @uuid
-      info '------------------------------------33333333333---------------------------'
       lg.statement_results :statement_results, @uuid, stat.uuid if stat
       # publish :statement_results, @uuid, stat.uuid if stat
       # publish :next_pitcher, @uuid
-      info '------------------------------------55555555555---------------------------'
       # lg.send_score :send_score, @uuid
       publish :send_score, @uuid
       # info '------------------------------------66666666666---------------------------'
       # msg = {type: 'event', subtype: 'end_step', result: {status: params[:status], score: 0, delta: 0}, timer: Timings.instance(@uuid).next_stamp}
       # info '------------------------------------77777777777---------------------------'
       # async.publish_msg msg
-      info '------------------------------------88888888888---------------------------'
       players.async.push_end_step params
-      info '------------------------------------99999999999---------------------------'
       async.results_timeout if %w(passed timeouted).include?(params[:status])
-      info '------------------------------------00000000000---------------------------'
     end
   end
 
