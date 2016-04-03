@@ -14,8 +14,8 @@ class Statement
                 :importances,
                 :status,
                 :result,
-                :contribution,
-                :auto
+                :contribution
+                # :auto
 
   def initialize params = {}
     @value = params[:value]
