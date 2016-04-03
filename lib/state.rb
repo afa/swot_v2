@@ -124,7 +124,7 @@ class State
     end
     statements = Actor[:"statements_#{@guid}"]
     @step = 1
-    @total_steps = @setting[:max_steps] || 12
+    @total_steps = @setting[:max_steps] || 18
     @step_status = first_enum(STEP_STATUSES)
     statements.clean_current
 
