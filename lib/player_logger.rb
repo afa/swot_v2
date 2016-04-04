@@ -26,6 +26,7 @@ class PlayerLogger
 
   def initialize params = {}
     @uuid = params[:player_uuid]
+    sleep 1
     player = Actor[:"player_#{@uuid}"]
     @guid = player.game_uuid
     p 'player logger init', @uuid, @guid

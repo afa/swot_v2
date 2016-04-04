@@ -33,7 +33,7 @@ class State
   }
 
   def to_swot(stg)
-    STAGES[stg][:swot]
+    STAGES[stg][:swot] || :end
   end
 
   def first_enum(hash)
@@ -74,6 +74,9 @@ class State
       end
       init
     end
+    @setting = Store::Setting.find(game_uuid: @guid).first.data
+    @setting.keys.each{|k| @setting[k.to_sym] = @setting[k] }
+    p @setting
     subscribe :game_done, :game_done
     subscribe :game_data_saved, :data_saved
   end
@@ -122,7 +125,7 @@ class State
     end
     statements = Actor[:"statements_#{@guid}"]
     @step = 1
-    @total_steps = @setting[:max_steps] || 12
+    @total_steps = @setting[:max_steps] || 18
     @step_status = first_enum(STEP_STATUSES)
     statements.clean_current
 

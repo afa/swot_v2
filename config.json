@@ -75,8 +75,14 @@
     "autostart": {
       "type": "create",
       "settings": {
-        "pitching_timeout": 60,
-        "max_steps": 10
+        "max_steps": 10,
+        "min_players": 2,
+        "pitcher_single_replace_score": 0.7,
+        "pitcher_rank_multiplier_pass": 0.9,
+        "pitcher_rank_multiplier_disconnected": 1.0,
+        "catcher_abstainer_score": 0.0,
+	"pitching_timeout": 60,
+	"ranging_timeout": 60
       },
       "game": {
         "name": "aa",
@@ -88,32 +94,52 @@
       "players":
       [
         {
-          "name": "aa",
-          "email": "aa@aa.aa",
+          "name": "Alexander",
+          "email": "alexanderbiryukov14@gmail.com",
           "state": "not_invited",
           "error": false
         },
         {
-          "name": "bb",
-          "email": "bb@bb.aa",
+          "name": "Egor",
+          "email": "Egor_shitov@rambler.ru",
           "state": "not_invited",
           "error": false
         },
         {
-          "name": "cc",
-          "email": "cc@cc.aa",
+          "name": "Katya",
+          "email": "ekaterinasandler@mail.ru",
           "state": "not_invited",
           "error": false
         },
         {
-          "name": "dd",
-          "email": "dd@dd.bb",
+          "name": "Yulya",
+          "email": "juleko@yandex.ru",
+          "state": "not_invited",
+          "error": false
+        },
+        {
+          "name": "Valya",
+          "email": "valentinaledeneva@yandex.ru",
+          "state": "not_invited",
+          "error": false
+        },
+        {
+          "name": "Masha",
+          "email": "mashaelchaninova@gmail.com",
+          "state": "not_invited",
+          "error": false
+        },
+        {
+          "name": "gg",
+          "email": "gg@gg.aa",
           "state": "not_invited",
           "error": false
         }
       ],
+      "temp": [
+      ],
       "start": {
-        "time": 300,
+        "time": 600,
         "time_zone": "+03:00"
       }
     }

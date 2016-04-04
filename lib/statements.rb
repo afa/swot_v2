@@ -68,11 +68,15 @@ class Statements
 
   def check_triple_decline
     state = Actor[:"state_#{@game_uuid}"]
-    stats = @statements.select{|s| s.stage == state.stage }
+    stats = in_stage(state.stage)
     dec_count = [state.setting[:declined_in_row_statements].to_i, stats.size].min
     return false if dec_count < state.setting[:declined_in_row_statements].to_i
     # dec_count = state.setting[:declined_in_row_statements].to_i
     stats[-dec_count, dec_count].all?{|s| s.status == 'declined' }
+  end
+
+  def in_stage(stage)
+    @statements.select{|s| s.stage == stage }
   end
 
   def rebuild_visible_for(stage)
@@ -85,7 +89,15 @@ class Statements
   end
 
   def range_for params = {}
-    # TODO apply ranging
+    state = Actor[:"state_#{@game_uuid}"]
+    stage_swot = State::STAGES.fetch(params[:stage], {swot: :end})[:swot]
+    # stage_swot = State::STAGES.fetch(state.stage, {swot: :end})[:swot]
+    statements = Actor[:"statements_#{@game_uuid}"]
+    stmnts = statements.visible_for_buf(statements.rebuild_visible_for(stage_swot))
+    st = stmnts[params[:index].to_i - 1]
+    st.add_impo(params[:player], params[:value])  #, true for auto
+
+    #{ player: params[:player], value: params[:value], index: params[:index], stage: State::STAGES[state.stage][:swot] }
     #value, index, stage, player
   end
 
@@ -109,6 +121,16 @@ class Statements
     statement.set_contribution
     @voting = uuid
     {}
+  end
+
+  def count_pitchers_score
+    all_contributions = @statements.select{|s| s.status == 'accepted' }.map &:contribution
+
+    players = Actor[:"players_#{@game_uuid}"]
+    players.players.each do |player|
+      # player.score.pitcher_before_ranging = player.score.pitcher if opts[:save_before]
+      player.pitcher_score = all_contributions.inject(0.0){|r, x| r + x[player.uuid.to_s].to_f }
+    end
   end
 
   def update_visible

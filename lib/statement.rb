@@ -15,6 +15,7 @@ class Statement
                 :status,
                 :result,
                 :contribution
+                # :auto
 
   def initialize params = {}
     @value = params[:value]
@@ -112,12 +113,10 @@ class Statement
     @contribution = contributors_hash
   end
 
-      # pitcher_rank_multiplier_accepted: 1.2,
-      # pitcher_rank_multiplier_declined: 0.8,
-      # pitcher_rank_multiplier_pass: 0.9,
-      # pitcher_rank_multiplier_disconnected: 0.9,
-      # pitcher_minimum_rank: 0.3,
-
+  def player_contribution
+    players = Celluloid::Actor[:"players_#{@game_uuid}"]
+    @contribution.inject({}){|r, (k, v)| r.merge(players.find(k).name => v) }
+  end
 
   def count_pitcher_score
     state = Celluloid::Actor[:"state_#{@game_uuid}"]
@@ -128,6 +127,8 @@ class Statement
     rank = player.pitcher_rank
     rank *= mult
     player.pitcher_rank = [rank, cfg[:pitcher_minimum_rank].to_f].max
+    statements = Celluloid::Actor[:"statements_#{@game_uuid}"]
+    statements.count_pitchers_score
   end
 
   def count_catchers_score
@@ -190,6 +191,13 @@ class Statement
     count_pitcher_score
   end
 
+  def add_impo(pl_id, val, auto = false)
+    idx = nil
+    @importances.each_with_index{|v, i| idx = i if v[:player] == pl_id }
+    @importances.delete_at(idx) if idx
+    @importances << {player: pl_id, value: val.to_i, auto: auto}
+  end
+
   def format_value(str)
     return 'pro' if str == 'accepted'
     return 'contra' if str == 'declined'
@@ -197,7 +205,7 @@ class Statement
   end
 end
 
-  private
+  # private
   # def count_pitchers_score opts={}
   #   all_contributions = accepted_statements.map &:contributors
 

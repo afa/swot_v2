@@ -21,12 +21,13 @@ class Store::Setting < Ohm::Model
       end
       st = create(game_uuid: guid, data: df.data)
     end
+    p '---sett---', st.data
     st
   end
 
   def self.defaults
     {
-      min_players: 4,
+      min_players: 2,
       max_players: 12,
       max_statements: 7,
       default_url_host: 'localhost:3000',
@@ -40,14 +41,14 @@ class Store::Setting < Ohm::Model
 
       # pitcher scores
       pitcher_no_replace_score: 1,
-      pitcher_single_replace_score: 0.30,
+      pitcher_single_replace_score: 0.70,
       pitcher_double_replace_score: 0.50,
 
       # pitcher's ranks
       pitcher_rank_multiplier_accepted: 1.2,
       pitcher_rank_multiplier_declined: 0.8,
       pitcher_rank_multiplier_pass: 0.9,
-      pitcher_rank_multiplier_disconnected: 0.9,
+      pitcher_rank_multiplier_disconnected: 1.0,
       pitcher_minimum_rank: 0.3,
 
       # catcher zone borders
@@ -63,7 +64,7 @@ class Store::Setting < Ohm::Model
       catcher_contra_zone_2_score: +1.0,
       catcher_contra_zone_3_score: -1.0,
       catcher_contra_zone_4_score: -1.5,
-      catcher_abstainer_score: -0.5,
+      catcher_abstainer_score: 0.0,
 
       # ranging scores
       ranging_importance_0_score: +0.3,
@@ -77,7 +78,7 @@ class Store::Setting < Ohm::Model
       voting_tail_timeout: 15,
       results_timeout: 5,
       between_stages_timeout: 10,
-      max_steps: 60,
+      max_steps: 18,
       first_pitching_timeout: 120,
       pitching_timeout: 20,
       ranging_timeout: 30,

@@ -55,8 +55,11 @@ class Players
   end
 
   def push_state params = {}
-    p 'send state to:', @players
     players.each{|p| p.send_state params }
+  end
+
+  def push_messages params = {}
+    players.each{|p| p.send_messages params }
   end
 
   def players
@@ -77,6 +80,7 @@ class Players
     @players << pl_id
     queue.add pl_id
     Control.current.add_player(@game_uuid, pl_id)
+    p 'player add', pl_id
     # state.async
   end
 
@@ -161,8 +165,11 @@ class Players
   def enough_players
     state = Actor[:"state_#{@game_uuid}"]
     cfg = state.setting
-    p 'min_players', cfg[:min_players].to_i, players.size, players
-    players.select{|p| p.online }.size >= cfg[:min_players].to_i
+    online.size >= cfg[:min_players].to_i
+  end
+
+  def online
+    players.select(&:online)
   end
 
   def check_min_players

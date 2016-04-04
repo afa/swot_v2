@@ -19,7 +19,7 @@ class Timings::Base
   end
 
   def at
-    @at
+    @at || @old_time
   end
 
   def next_stamp
@@ -64,6 +64,8 @@ class Timings::Base
 
   def cancel
     return unless @timer
+    @old_time = @at if @at
+    @at = nil
     @timer.cancel
   end
 

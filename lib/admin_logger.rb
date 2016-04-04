@@ -89,11 +89,14 @@ class AdminLogger
     # TODO fix rescue and game methods
     return unless @guid == game_id
     state = Actor[:"state_#{@guid}"]
+    queue = Actor[:"queue_#{@guid}"]
+    lst = queue.list.first(3)
+    pit = lst.shift
     msg = {
       subtype: :start,
-      pitcher: begin game.current_pitcher.uglify_name(state.stage.to_s); rescue PlayersQueue::ErrorEmptyQueue; '' end,
-      queue: begin [ game.players_queue.current_pitcher.uglify_name(state.stage.to_s) ]; rescue PlayersQueue::ErrorEmptyQueue; [] end + game.players_queue.next_pitchers.map(&:name),
-      time_left: time_left(game)
+      pitcher: pit.name,
+      queue: lst.map(&:name),
+      time_left: Timings::Stage.instance(@guid).next_time
     }
     push msg
   end
@@ -105,7 +108,7 @@ class AdminLogger
 
     state = Actor[:"state_#{@guid}"]
     players = Actor[:"players_#{@guid}"]
-    stats = players.players.select{|p| p.online }.map do |p|
+    stats = players.online.map do |p|
       {
         name: p.name
       }
@@ -147,6 +150,7 @@ class AdminLogger
   def statement_pitched topic, game_id, params = {}
     return unless @guid == game_id
     players = Actor[:"players_#{@guid}"]
+    state = Actor[:"state_#{@guid}"]
     statement = params[:statement]
     statements = Actor[:"statements_#{@guid}"]
     voting = statements.voting #TODO оставлять или нет непонятно. возможно нужно передать замены отдельно и урезать.
@@ -156,8 +160,8 @@ class AdminLogger
       subtype: :statement_pitched,
       pitcher: author.name,
       # pitcher: begin game.current_pitcher.name; rescue PlayersQueue::ErrorEmptyQueue; '' end,
-      statement: statement[:value],
-      replaces: voting.replaces.map{|id| statements.find(id).value}
+      statement: statement[:value].inspect,
+      replaces: voting.replaces.map{|id| statements.find(id).value.inspect}
     }
     push msg
   end
@@ -167,17 +171,24 @@ class AdminLogger
     vote = params[:vote]
     player = Actor[:"player_#{vote[:player]}"]
     return unless player && player.alive?
+    state = Actor[:"state_#{@guid}"]
+    statements = Actor[:"statements_#{@guid}"]
     msg = {
       subtype: :vote_added,
       voted: player.name,
-      result: vote[:result]
+      result: statements.voting.format_value(vote[:result])
     }
     push msg
   end
 
   def vote_timeouts topic, game_id, params = {}
     return unless @guid == game_id
-    vote_timeouted_players = (game.players - statement.votes.map(&:player) - begin [game.current_pitcher]; rescue PlayersQueue::ErrorEmptyQueue; [] end).map(&:name)
+    players = Actor[:"players_#{@guid}"]
+    s_id = params[:statement]
+    statements = Actor[:"statements_#{@guid}"]
+    state = Actor[:"state_#{@guid}"]
+    statement = statements.find(s_id)
+    vote_timeouted_players = (players.online.map(&:uuid) - statement.votes.map(&:player) - [statement.author]).map{|i| players.find(i).name }
     msg = {
       players: vote_timeouted_players,
       subtype: :vote_timeouts
@@ -185,51 +196,67 @@ class AdminLogger
     push msg
   end
 
-  def statement_results topic, game_id, params = {}
+  def statement_results topic, game_id, stat_id
+    p '-----------------------------', topic, '---------------------------------'
     return unless @guid == game_id
+    statements = Actor[:"statements_#{@guid}"]
+    statement = statements.find(stat_id)
+    stat_res = statement.result * 100.0
+    stat_res = 100.0 - stat_res unless statement.status == 'accepted'
     msg = {
-      statement: statement.to_s.inspect,
-      result: statement.state,
-      total_percents: statement.result,
+      statement: statement.value.inspect,
+      result: statement.status,
+      # result: statement.format_value(statement.status),
+      total_percents: stat_res.round(1),
       subtype: :statement_results
     }
+    p '+-----------------------------', topic, '---------------------------------'
     push msg
   end
 
-  def pitch_timeout topic, game_id, params = {}
+  def pitch_timeout topic, game_id, pitcher_id
     return unless @guid == game_id
-    pitcher = begin game.current_pitcher; rescue PlayersQueue::ErrorEmptyQueue; nil end
+    players = Actor[:"players_#{@guid}"]
+    state = Actor[:"state_#{@guid}"]
+    pitcher = players.find(pitcher_id)
+    # pitcher = begin game.current_pitcher; rescue PlayersQueue::ErrorEmptyQueue; nil end
     msg = {
-      pitcher: pitcher ? pitcher.name : '',
+      pitcher: pitcher.name,
       subtype: :pitch_timeout
     }
     push msg
   end
 
   def step_results topic, game_id, params = {}
+    p '-----------------------------', topic, '---------------------------------'
     return unless @guid == game_id
-    stats_data = game.players.inject({}){|r, v| r.merge v.name => v.score.to_player_stat[v.id.to_s].except(:delta).merge(rank: v.score.rank) }
-    roles_data = game.current_stage.statements.accepted.inject({}){|r, v| r.merge v.to_s.inspect => v.players_contributions }
-    queue_data = game.players_queue.next_pitchers.map(&:name).first(2)
-    if state.setting[:random_enabled]
-      random_summary = game.players_queue.online_shuffle.data_summary
-      random_data = game.players_queue.online_shuffle.data.map{|r| [r[0].to_s, r[1].name, r[2].to_s] }
-      Rails.logger.info "---RAND #{random_data.inspect}"
-    else
-      random_summary = ''
-      random_data = []
-    end
+    statements = Actor[:"statements_#{@guid}"]
+    players = Actor[:"players_#{@guid}"]
+    state = Actor[:"state_#{@guid}"]
+    queue = Actor[:"queue_#{@guid}"]
+    stats_data = players.players.inject({}){|r, v| r.merge v.name => {pitcher: v.pitcher_score, catcher: v.catcher_score, rank: v.pitcher_rank} }
+    roles_data = statements.in_stage(state.stage).select{|s| s.status == 'accepted' }.inject({}){|r, v| r.merge v.value.inspect => v.player_contribution }
+    queue_data = queue.list.map(&:name).first(3).last(2)
+    # if false && state.setting[:random_enabled]
+    #   random_summary = game.players_queue.online_shuffle.data_summary
+    #   random_data = game.players_queue.online_shuffle.data.map{|r| [r[0].to_s, r[1].name, r[2].to_s] }
+    # else
+    #   random_summary = ''
+    #   random_data = []
+    # end
     msg = {
       subtype: :step_results,
       stats: stats_data,
-      random: random_data,
-      random_summary: random_summary,
+      # random: random_data,
+      # random_summary: random_summary,
       roles: roles_data,
       queue: queue_data,
-      time_left: time_left(game),
-      last_statements_state: game.current_stage.statements.order_by(:created_at.desc).limit(3).map(&:state)
+      time_left: Timings::Stage.instance(@guid).next_time,
+      last_statements_state: statements.in_stage(state.stage).last(3).map(&:status)
     }
+    p '+-----------------------------', topic, '---------------------------------'
     push msg
+    info "::::::----------------step_results---------#{msg.inspect}----::::::::::::::::"
   end
 
   def delimit topic, game_id, params = {}
@@ -241,6 +268,7 @@ class AdminLogger
   end
 
   def next_pitcher topic, game_id, params = {}
+    p '-----------------------------', topic, '---------------------------------'
     return unless @guid == game_id
     queue = Actor[:"queue_#{@guid}"]
     state = Actor[:"state_#{@guid}"]
@@ -250,17 +278,21 @@ class AdminLogger
       subtype: :next_pitcher
     }
     push msg
+    p '+-----------------------------', topic, '---------------------------------'
   end
 
   def importance_added topic, game_id, params = {}
     return unless @guid == game_id
+    names = ['', 'Not important', 'Rather not important', 'Important', 'Very important', 'Extremely important']
+    players = Actor[:"players_#{@guid}"]
+    player = players.find(params[:player])
     msg = {
-      player: importance.player.name,
-      value_raw: importance.value_raw,
-      value: importance.value_name,
-      auto: importance.auto,
-      stage: importance.statement.stage.name,
-      statement: importance.statement.to_s,
+      player: player.name,
+      value_raw: params[:value],
+      value: names[params[:value].to_i],
+      auto: params.fetch(:auto, false),
+      stage: State::STAGES[params[:stage].to_sym][:name],
+      statement: params[:statement],
       subtype: :importance_added
     }
     push msg

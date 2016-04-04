@@ -46,10 +46,37 @@ class Timings
   def resume
   end
 
-  def cancel
+  def cancel list = []
+    p list
+    list.map(&:to_sym).map{|it| classes[it].instance(@guid) }.each(&:cancel)
   end
 
-  def reset
+  def classes
+    {
+      start: Timings::Start,
+      stage: Timings::Stage,
+      first_pitch: Timings::FirstPitch,
+      pitch: Timings::Pitch,
+      voting_quorum: Timings::VotingQuorum,
+      voting_tail: Timings::VotingTail,
+      results: Timings::Results,
+      between_stages: Timings::BetweenStages,
+      ranging: Timings::Ranging,
+      terminate: Timings::Terminate
+    }
+  end
+
+  def stamps list = []
+    list.inject(Time.now.to_f + 10000.0) do |r, l|
+      t = classes[l].instance(@guid)
+      s = t.next_stamp
+      info "stamps #{l} => #{s}"
+      s && (r > s) ? s : r
+    end
+  end
+
+  def reset list = []
+    list.map{|it| classes[it].instance(@guid) }.each(&:reset)
   end
 
   def terminate

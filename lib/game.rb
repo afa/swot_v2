@@ -11,7 +11,7 @@ class Game
 
   def self.create params = {}
     uuid = build(params)
-    Center.current.async.to_supervise as: :"game_#{uuid}", type: Game, args: [{uuid: uuid}.merge(params[:server_setup] ? {server_setup: params[:server_setup]} : {})]
+    Center.current.async.to_supervise as: :"game_#{uuid}", type: Game, args: [{uuid: uuid}.merge(params[:server_setup] ? {server_setup: params[:server_setup]} : {}).merge(start: params[:start])]
   end
 
   def self.build params = {}
@@ -76,6 +76,7 @@ class Game
 
     Center.current.to_supervise(as: :"players_#{@uuid}", type: Players, args: [{game_uuid: @uuid}])
     players = Actor[:"players_#{@uuid}"]
+# <<<<<<< HEAD
     # if params[:players]
     #   params[:players].each do |p|
     #     p_id = UUID.new.generate
@@ -85,11 +86,22 @@ class Game
     timers = Center.current.to_supervise as: :"timers_#{@uuid}", type: Timings, args: [{game_uuid: @uuid}]
     p sgame
     Timings::Start.instance(@uuid).set_time @start_at
+# =======
+#     pl_list = Store::Player.find(game_uuid: @uuid).to_a
+#       pl_list.each do |p|
+#         p_id = p.uuid
+#         Center.current.to_supervise(as: :"player_#{p_id}", type: Player, args: [{game_uuid: @uuid, uuid: p_id}])
+#         players.async.add p_id
+#       end
+#     timers = Center.current.to_supervise as: :"timers_#{@uuid}", type: Timings, args: [{game_uuid: @uuid}.merge(time_params)]
+#     p Timings::Start.instance(@uuid).set_time params[:start][:time]
+# >>>>>>> dev
     state.state = Timings::Start.instance(@uuid).next_time ? :waiting : Timings::Start.instance(@uuid).at ? :started : :waiting
     cntrl = Control.current.publish_control( (params.has_key?(:players) ? {players: players.players.map{|p| {name: p.name, url: "#{@server_setup[:url]}/game/#{p.uuid}", uuid: p.uuid, email: p.email}}} : {}).merge(type: 'status', uuid: @uuid, replly_to: 'create'))
     Control.current.add_game(@uuid)
     state.add_game @uuid
     subscribe :save_game_data, :save_game_data
+    p players.players.map(&:uuid)
     async.run
   end
 
@@ -136,7 +148,7 @@ class Game
     statements = Actor[:"statements_#{@uuid}"]
     Timings::Stage.instance(@uuid).start
     statements.clean_current
-    async.publish_msg(type: 'event', subtype: 'start_stage', value: stage)
+    # async.publish_msg(type: 'event', subtype: 'start_stage', value: stage)
     players.async.push_start_stage
     async.start_step
   end
@@ -156,9 +168,9 @@ class Game
     else
       Timings::Ranging.instance(@uuid).start
     end
-    async.publish_msg(type: 'event', subtype: 'start_step')
+    # async.publish_msg(type: 'event', subtype: 'start_step')
     players.async.push_start_step
-    async.push_state
+    # async.push_state
     players.async.push_state
   end
 
@@ -169,11 +181,11 @@ class Game
     queue = Actor[:"queue_#{@uuid}"]
     info "stage timeout: #{state.stage}"
     state.stage = state.next_enum(State::STAGES, state.stage)
-    msg = {type: 'event', subtype: 'end_stage', value: state.stage}
+    # msg = {type: 'event', subtype: 'end_stage', value: state.stage}
     Timings::Pitch.instance(@uuid).cancel
     Timings::FirstPitch.instance(@uuid).cancel
     Timings::BetweenStages.instance(@uuid).start
-    async.publish_msg msg
+    # async.publish_msg msg
     players.async.push_end_stage
   end
 
@@ -182,7 +194,14 @@ class Game
     state = int_state
     players = Actor[:"players_#{@uuid}"]
     statements = Actor[:"statements_#{@uuid}"]
-    statements.async.range_for(player: params[:player], value: params[:value], index: params[:index], stage: State::STAGES[state.stage][:swot])
+    stage_swot = State::STAGES.fetch(params[:stage], {swot: :end})[:swot]
+    p 'stswot', stage_swot, params
+    stmnts = statements.visible_for_buf(statements.rebuild_visible_for(stage_swot))
+    p stmnts
+    st = stmnts[params[:index].to_i - 1]
+    impo = { player: params[:player], value: params[:value], index: params[:index], stage: stage_swot, statement: st.value.inspect }
+    statements.async.range_for(impo)
+    publish :importance_added, @uuid, impo
   end
 
   def pitch params = {}
@@ -200,7 +219,7 @@ class Game
     Timings::VotingQuorum.instance(@uuid).start
     publish :statement_pitched, @uuid, statement: statement
     players.push_pitch(errors.merge(value: params[:value], to_replace: params[:to_replace] || [], author: queue.pitcher.uglify_name(state.stage.to_s), timer: Timings.instance(@uuid).next_stamp))
-    publish_msg({type: 'event', subtype: 'pitched', value: params[:value], to_replace: params[:to_replace], author: queue.pitcher.uglify_name(state.stage.to_s), timer: Timings.instance(@uuid).next_stamp}.merge(errors))
+    # publish_msg({type: 'event', subtype: 'pitched', value: params[:value], to_replace: params[:to_replace], author: queue.pitcher.uglify_name(state.stage.to_s), timer: Timings.instance(@uuid).next_stamp}.merge(errors))
     unless errors.empty?
       end_step(errors)
     end
@@ -209,6 +228,9 @@ class Game
   def pitch_timeout params = {}
     Timings::Pitch.instance(@uuid).cancel
     Timings::FirstPitch.instance(@uuid).cancel
+    queue = Actor[:"queue_#{@uuid}"]
+    p = queue.pitcher
+    publish :pitch_timeout, @uuid, p.uuid if p && p.alive?
     end_step(status: 'timeouted')
 
   end
@@ -229,17 +251,16 @@ class Game
     statements.voting.vote(player: params[:player], result: params[:result])
     publish :vote_added, @uuid, vote: {player: params[:player], result: params[:result]}
     if statements.voting.quorum?
-      if Timings.instance(@uuid).next_interval > state.setting[:voting_tail_timeout].to_i
-        Timings::VotingQuorum.instance(@uuid).cancel
+      if Timings::VotingQuorum.instance(@uuid).next_time.to_f > state.setting[:voting_tail_timeout].to_f
+        Timings.instance(@uuid).cancel(%w(voting_quorum voting_tail))
         Timings::VotingTail.instance(@uuid).start
-        async.publish_msg(type: 'event', subtype: 'quorum', timeout_at: Timings.instance(@uuid).next_stamp)
+        # async.publish_msg(type: 'event', subtype: 'quorum', timeout_at: Timings.instance(@uuid).next_stamp)
         players.async.push_quorum
       end
     end
-    if statements.voting.voted_count == players.players.size - 1
-      Timings::VotingQuorum.instance(@uuid).cancel
-      Timings::VotingTail.instance(@uuid).cancel
-      end_step(status: statements.voting.calc_result)
+    if statements.voting.voted_count == (players.online.map(&:uuid) - [statements.voting.author] ).size
+        Timings.instance(@uuid).cancel(%w(voting_quorum voting_tail))
+      async.end_step(status: statements.voting.calc_result)
     end
   end
 
@@ -247,35 +268,40 @@ class Game
     state = int_state
     players = Actor[:"players_#{@uuid}"]
     if %w(rs rw ro rt).include? state.stage.to_s
-      msg = {type: 'event', subtype: 'end_step', timer: Timings.instance(@uuid).next_stamp}
-      async.publish_msg msg
+      # msg = {type: 'event', subtype: 'end_step', timer: Timings.instance(@uuid).next_stamp}
+      # async.publish_msg msg
       players.async.push_end_step params
       async.end_stage
     else
       queue = Actor[:"queue_#{@uuid}"]
       statements = Actor[:"statements_#{@uuid}"]
-      Timings::Pitch.instance(@uuid).cancel
-      Timings::FirstPitch.instance(@uuid).cancel
-      Timings::VotingQuorum.instance(@uuid).cancel
-      Timings::VotingTail.instance(@uuid).cancel
-      if statements.voting
-        stat = statements.voting
+      Timings.instance(@uuid).cancel(%w(pitch first_pitch voting_quorum voting_tail))
+      stat = statements.voting
+      if stat
         stat.calc_votes
         stat.vote_results!
         publish :player_log_push, @uuid, stat.uuid
-        # players.async.push_player_log statement: stat.uuid
       end
       statements.update_visible
-      async.push_state
-      players.async.push_state
+      # async.push_state
+      players.async.push_messages
       state.step_status = state.next_enum(State::STEP_STATUSES, state.step_status)
       state.step_status = state.next_enum(State::STEP_STATUSES, state.step_status) unless state.step_status == :end
       Timings::Results.instance(@uuid).start unless %w(passed timeouted).include?(params[:status])
+      p 'stat', stat
+      lg = Actor[:"admin_logger_#{@uuid}"]
       queue.next!
-      publish :next_pitcher, @uuid
+      lg.step_results :step_results, @uuid
+      # publish :step_results, @uuid
+      lg.statement_results :statement_results, @uuid, stat.uuid if stat
+      # publish :statement_results, @uuid, stat.uuid if stat
+      # publish :next_pitcher, @uuid
+      # lg.send_score :send_score, @uuid
       publish :send_score, @uuid
-      msg = {type: 'event', subtype: 'end_step', result: {status: params[:status], score: 0, delta: 0}, timer: Timings.instance(@uuid).next_stamp}
-      async.publish_msg msg
+      # info '------------------------------------66666666666---------------------------'
+      # msg = {type: 'event', subtype: 'end_step', result: {status: params[:status], score: 0, delta: 0}, timer: Timings.instance(@uuid).next_stamp}
+      # info '------------------------------------77777777777---------------------------'
+      # async.publish_msg msg
       players.async.push_end_step params
       async.results_timeout if %w(passed timeouted).include?(params[:status])
     end
@@ -288,33 +314,36 @@ class Game
     statements = Actor[:"statements_#{@uuid}"]
     #calc rank results
     Timings::VotingQuorum.instance(@uuid).cancel
+    Timings::VotingTail.instance(@uuid).cancel
+    publish :vote_timeouts, @uuid, {statement: statements.voting.uuid}
     end_step(status: statements.voting.conclusion)
   end
 
   def voting_tail_timeout params = {}
     statements = Actor[:"statements_#{@uuid}"]
+    Timings::VotingQuorum.instance(@uuid).cancel
     Timings::VotingTail.instance(@uuid).cancel
+    publish :vote_timeouts, @uuid, {statement: statements.voting.uuid}
     end_step(status: statements.voting.conclusion)
   end
 
   def end_stage params = {}
     state = int_state
     players = Actor[:"players_#{@uuid}"]
-    # alarms = Actor[:"alarms_#{@uuid}"]
     # queue = Actor[:"queue_#{@uuid}"]
     # statements = Actor[:"statements_#{@uuid}"]
     state.stage = state.next_enum(State::STAGES, state.stage)
     Timings::Terminate.instance(@uuid).cancel if state.stage == :tr
     if %w(sw wo ot tr).include? state.stage.to_s
       Timings::BetweenStages.instance(@uuid).start
-      msg = {type: 'event', subtype: 'end_stage', value: state.stage, timer: Timings.instance(@uuid).next_stamp}
-      async.publish_msg msg
+      # msg = {type: 'event', subtype: 'end_stage', value: state.stage, timer: Timings.instance(@uuid).next_stamp}
+      # async.publish_msg msg
       players.async.push_end_stage
-      async.publish :next_stage, @uuid, stage: state.stage unless state.stage == :tr
-      async.publish :ranging, @uuid, stage: state.stage if state.stage == :tr
+      publish :next_stage, @uuid, stage: state.stage unless state.stage == :tr
+      publish :ranging, @uuid, stage: state.stage if state.stage == :tr
     elsif %w(rs rw ro rt).include? state.stage.to_s
-      msg = {type: 'event', subtype: 'end_stage', value: state.stage, timer: Time.now.to_i + 1}
-      async.publish_msg msg
+      # msg = {type: 'event', subtype: 'end_stage', value: state.stage, timer: Time.now.to_i + 1}
+      # async.publish_msg msg
       players.async.push_end_stage
       async.start_stage
     elsif state.stage == :end
@@ -330,14 +359,20 @@ class Game
   def results_timeout params = {}
     state = int_state
     statements = Actor[:"statements_#{@uuid}"]
+    players = Actor[:"players_#{@uuid}"]
     Timings::Results.instance(@uuid).cancel
     if statements.check_triple_decline
       async.end_stage
     else
+      p '====================step====================', state.step, '======================'
       if state.step < state.total_steps
         state.step += 1
+        lg = Actor[:"admin_logger_#{@uuid}"]
+        info '------------------------------------44444444444---------------------------'
+        lg.next_pitcher :next_pitcher, @uuid
         async.start_step
       else
+        players = Actor[:"players_#{@uuid}"]
         async.end_stage
       end
     end
@@ -346,6 +381,7 @@ class Game
   def between_stages_timeout params = {}
     state = int_state
     players = Actor[:"players_#{@uuid}"]
+    Timings::BetweenStages.instance(@uuid).cancel
     state.stage = state.next_enum(State::STAGES, state.stage)
     state.step = 1
     state.step_status = state.first_enum(State::STEP_STATUSES)
@@ -355,20 +391,21 @@ class Game
   end
 
   def ranging_timeout params = {}
-    end_step
-    end_stage
+    Timings::Ranging.instance(@uuid).cancel
+    async.end_step
+    # end_stage
   end
 
-  def push_event event, params = {}
-    publish_msg({type: 'event', subtype: event})
-  end
+  # def push_event event, params = {}
+  #   publish_msg({type: 'event', subtype: event})
+  # end
 
   def push_state params = {}
-    state = int_state
-    players = Actor[:"players_#{@uuid}"]
-    msg = params.merge status: state.state, stage: state.stage, timeout_at: Timings::Start.instance(@uuid).at + 1500, started_at: Timings::Start.instance(@uuid).at, players: players.players.map(&:uuid), step: {total: total_steps, current: step, status: step_status}
-    # msg = params.merge status: state.state, stage: state.stage, timeout_at: alarm.next_time, started_at: alarm.start_at, players: players.players.map(&:uuid), step: {total: total_steps, current: step, status: step_status}
-    publish_msg msg
+    # state = int_state
+    # players = Actor[:"players_#{@uuid}"]
+    # msg = params.merge status: state.state, stage: state.stage, timeout_at: Timings::Start.instance(@uuid).at + 1500, started_at: Timings::Start.instance(@uuid).at, players: players.players.map(&:uuid), step: {total: total_steps, current: step, status: step_status}
+    # # msg = params.merge status: state.state, stage: state.stage, timeout_at: alarm.next_time, started_at: alarm.start_at, players: players.players.map(&:uuid), step: {total: total_steps, current: step, status: step_status}
+    # publish_msg msg
   end
 
   def stage_timeout
@@ -381,7 +418,7 @@ class Game
     players = Actor[:"players_#{@uuid}"]
     state.state = :terminated
     publish :game_terminated, @uuid
-    publish_msg({type: 'event', subtype: 'terminated'})
+    # publish_msg({type: 'event', subtype: 'terminated'})
     players.async.push_terminated
     async.stop_timers
     async.end_game

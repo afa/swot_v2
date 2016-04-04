@@ -19,8 +19,9 @@ require 'store'
 require 'center'
 if @config.has_key? :autostart
   msg = @config[:autostart]
+  p msg
   if msg && msg[:start] && msg[:start][:time]
-    msg[:start][:time] = Time.now + msg[:start][:time].to_i
+    msg[:start][:time] = Time.now.to_i + msg[:start][:time].to_i
   end
 end
 Celluloid::Actor[:center] = Center.new(@config)
