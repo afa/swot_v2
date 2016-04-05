@@ -213,6 +213,7 @@ class Game
     tm = Time.now.to_i + (state.setting[:voting_quorum_timeout] || 60)
     statement = {value: params[:value], to_replace: params[:to_replace], author: queue.pitcher.uuid, stage: state.stage, step: state.step, game_uuid: @uuid}
     errors = statements.add statement
+    publish :pitcher_pitch, queue.pitcher.uuid, state.stage
     state.step_status = state.next_enum(State::STEP_STATUSES, state.step_status)
     Timings::Pitch.instance(@uuid).cancel
     Timings::FirstPitch.instance(@uuid).cancel
@@ -229,8 +230,10 @@ class Game
     Timings::Pitch.instance(@uuid).cancel
     Timings::FirstPitch.instance(@uuid).cancel
     queue = Actor[:"queue_#{@uuid}"]
+    state = int_state
     p = queue.pitcher
     publish :pitch_timeout, @uuid, p.uuid if p && p.alive?
+    publish :pitcher_timeout, p.uuid, state.stage
     end_step(status: 'timeouted')
 
   end
@@ -239,6 +242,9 @@ class Game
     info "PASS!"
     Timings::Pitch.instance(@uuid).cancel
     Timings::FirstPitch.instance(@uuid).cancel
+    queue = Actor[:"queue_#{@uuid}"]
+    state = int_state
+    publish :pitcher_timeout, queue.pitcher.uuid, state.stage
     end_step(status: 'passed')
   end
 

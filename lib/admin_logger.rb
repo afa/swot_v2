@@ -50,6 +50,7 @@ class AdminLogger
 
   def sync_admin_log
     info 'syncing admin_log'
+
   end
 
   def publish_msg msg
