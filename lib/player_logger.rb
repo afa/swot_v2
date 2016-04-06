@@ -66,11 +66,13 @@ class PlayerLogger
 
     log_votes = statement.votes.inject({}){|r, v| r.merge v.player.to_s => statement.format_value(v.result) }
 
+    per = (statement.result*100).round
+    per = 100 - per if statement.status != 'accepted'
     rec = PlayerLogRecord.new step: state.step,
       statement: statement.value,
       stage_title: State::STAGES[state.stage][:name],
       replace: replace,
-      pro_percent: (statement.result*100).round,
+      pro_percent: per,
       player_name: queue.pitcher.uglify_name(state.stage),
       scores_deltas: players.players.inject({}){|r, p| r.merge(p.uuid => p.delta)},
       player_id: @uuid,
@@ -78,7 +80,7 @@ class PlayerLogger
     @records << rec
     player = Actor[:"player_#{@uuid}"]
     return unless player && player.alive? && player.online
-    player.async.publish_msg type: 'log', values: @records.last(12).map(&:as_json)
+    player.async.publish_msg type: 'log', values: @records.last(12).reverse.map(&:as_json)
 
   end
 

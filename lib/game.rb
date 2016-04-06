@@ -21,6 +21,7 @@ class Game
     #   @timezone = params[:start][:time_zone]
     # end
     uuid = UUID.new.generate
+    time = params[:start_at] ? params[:start_at] : params[:start] ? params[:start][:time] : Time.now.to_i + 300
 
     store = Store::Game.create({
       mongo_id: params[:id],
@@ -32,7 +33,7 @@ class Game
       industry: params[:industry],
       state: params[:state],
       time_zone: params[:time_zone],
-      start_at: params[:start][:time]
+      start_at: time
     })
 
     if params[:players]
