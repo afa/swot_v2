@@ -4,6 +4,8 @@ module Store
     include Ohm::Callbacks
 
     attribude :game_uuid
+    attribute :data, Type::Hash
+    attribute :created_at, Type::DateTime
     index :game_uuid
     
   end

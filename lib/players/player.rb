@@ -162,7 +162,7 @@ class Player
     players = Actor[:"players_#{@game_uuid}"]
     queue = Actor[:"queue_#{@game_uuid}"]
     pit = queue.pitcher.uuid == @uuid
-    msg = {type: 'event', subtype: 'ready', name: @name, start_at: Timings::Start.instance(@game_uuid).at, pitcher: pit,  timeout_at: Timings.instance(@game_uuid).stamps(%w(start).map(&:to_sym)), version: SWOT_VERSION, time: current_stamp}
+    msg = {type: 'event', subtype: 'ready', name: @name, start_at: Timings::Start.instance(@game_uuid).at, pitcher: pit,  timeout_at: Timings.instance(@game_uuid).stamps(%w(start).map(&:to_sym)), version: SWOT_VERSION, time: current_stamp, max_steps: state.total_steps}
     publish_msg msg
   end
 

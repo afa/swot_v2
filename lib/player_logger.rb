@@ -45,6 +45,12 @@ class PlayerLogger
   end
 
   def sync_player_log
+    store = Store::PlayerLog.find(game_uuid: @guid).sort(by: :created_at).to_a
+    rcrds = @records.select{|r| r.redis_id.nil? || !store.any?{|s| s.id == r.redis_id } }
+    rcrds.each do |rc|
+      r = Store::PlayerLog.create game_uuid: @guid, data: rc, created_at: rc[:created_at]
+      rc.redis_id = r.id
+    end
     info 'syncing player_log'
   end
 

@@ -244,7 +244,7 @@ class Game
     Timings::FirstPitch.instance(@uuid).cancel
     queue = Actor[:"queue_#{@uuid}"]
     state = int_state
-    publish :pitcher_timeout, queue.pitcher.uuid, state.stage
+    publish :pitcher_passed, queue.pitcher.uuid, state.stage
     publish :pitch_pass, @uuid, queue.pitcher.uuid
     end_step(status: 'passed')
   end
