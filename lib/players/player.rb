@@ -250,7 +250,6 @@ class Player
     queue = Actor[:"queue_#{@game_uuid}"]
     statements = Actor[:"statements_#{@game_uuid}"]
     stat = statements.last_stat
-    p 'send end step voting', stat
     if stat
       per = 100 * stat.result.to_f
       per = 100 - per unless stat.status == 'accepted'
@@ -325,7 +324,7 @@ class Player
       conclusion.merge!(
         value: vot.value,
         author: Actor[:"player_#{vot.author}"].uglify_name(state.stage),
-        to_replace: vot.replaces,
+        to_replace: vot.replaces.map{|r| statements.find(r) }.compact.map(&:value),
         status: vot.status,
         player_score: 0.0, #TODO fix scores
         players_voted: per
