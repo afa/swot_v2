@@ -251,7 +251,7 @@ class AdminLogger
     players = Actor[:"players_#{@guid}"]
     state = Actor[:"state_#{@guid}"]
     queue = Actor[:"queue_#{@guid}"]
-    stats_data = players.players.inject({}){|r, v| r.merge v.name => {pitcher: '%.03f' % v.pitcher_score.to_f, '%.01f' % catcher: v.catcher_score, rank: '%.03f' % v.pitcher_rank} }
+    stats_data = players.players.inject({}){|r, v| r.merge v.name => {pitcher: '%.03f' % v.pitcher_score.to_f, catcher: '%.01f' % v.catcher_score, rank: '%.03f' % v.pitcher_rank} }
     roles_data = statements.in_stage(state.stage).select{|s| s.status == 'accepted' }.inject({}){|r, v| r.merge v.value.inspect => '%.03f' % v.player_contribution }
     queue_data = queue.list.map(&:name).first(3).last(2)
     # if false && state.setting[:random_enabled]

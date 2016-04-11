@@ -295,7 +295,6 @@ class Game
       state.step_status = state.next_enum(State::STEP_STATUSES, state.step_status)
       state.step_status = state.next_enum(State::STEP_STATUSES, state.step_status) unless state.step_status == :end
       Timings::Results.instance(@uuid).start unless %w(passed timeouted).include?(params[:status])
-      p 'stat', stat
       lg = Actor[:"admin_logger_#{@uuid}"]
       queue.next!
       lg.step_results :step_results, @uuid
