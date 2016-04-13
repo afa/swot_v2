@@ -64,7 +64,7 @@ class Game
     @server_setup = params[:server_setup]
     sgame = Store::Game.find(uuid: @uuid).first
     @start_at = sgame.start_at
-    info "#{@uuid} created"
+    # info "#{@uuid} created"
     # sett = {settings: params[:settings]} if params[:settings] && !params[:settings].empty?
     # sett ||= {}
     # p 'settings', sett
@@ -159,7 +159,6 @@ class Game
     players = Actor[:"players_#{@uuid}"]
     if %w(s w o t).include? state.stage.to_s
       queue = Actor[:"queue_#{@uuid}"]
-      info "start step step = #{state.step}"
       if state.step == 1
         Timings::FirstPitch.instance(@uuid).start
       else
@@ -172,7 +171,8 @@ class Game
     # async.publish_msg(type: 'event', subtype: 'start_step')
     players.async.push_start_step
     # async.push_state
-    players.async.push_state
+    players.async.push_messages
+    # players.async.push_state
   end
 
   def stage_timeout
@@ -180,7 +180,6 @@ class Game
     players = Actor[:"players_#{@uuid}"]
     # alarms = Actor[:"alarms_#{@uuid}"]
     queue = Actor[:"queue_#{@uuid}"]
-    info "stage timeout: #{state.stage}"
     state.stage = state.next_enum(State::STAGES, state.stage)
     # msg = {type: 'event', subtype: 'end_stage', value: state.stage}
     Timings::Pitch.instance(@uuid).cancel
@@ -304,9 +303,7 @@ class Game
       # publish :next_pitcher, @uuid
       # lg.send_score :send_score, @uuid
       publish :send_score, @uuid
-      # info '------------------------------------66666666666---------------------------'
       # msg = {type: 'event', subtype: 'end_step', result: {status: params[:status], score: 0, delta: 0}, timer: Timings.instance(@uuid).next_stamp}
-      # info '------------------------------------77777777777---------------------------'
       # async.publish_msg msg
       players.async.push_end_step params
       async.results_timeout if %w(passed timeouted).include?(params[:status])
@@ -370,11 +367,9 @@ class Game
     if statements.check_triple_decline
       async.end_stage
     else
-      p '====================step====================', state.step, '======================'
       if state.step < state.total_steps
         state.step += 1
         lg = Actor[:"admin_logger_#{@uuid}"]
-        info '------------------------------------44444444444---------------------------'
         lg.next_pitcher :next_pitcher, @uuid
         async.start_step
       else
@@ -419,7 +414,6 @@ class Game
   end
 
   def terminate_timeout
-    info 'terminate_timeout'
     state = int_state
     players = Actor[:"players_#{@uuid}"]
     state.state = :terminated
@@ -468,9 +462,8 @@ class Game
         offline!
       end
     else
-      info "game #{@uuid} offline"
+      # info "game #{@uuid} offline"
     end
-    info msg.inspect
   end
 
   # def publish_msg hash
