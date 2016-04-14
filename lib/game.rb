@@ -38,7 +38,6 @@ class Game
 
     if params[:players]
       params[:players].each_with_index do |pl, i|
-        p pl
         dat = pl.merge(game_uuid: uuid, order: i + 1)
         mid = dat.delete(:id)
         dat.merge!(mongo_id: mid)
@@ -50,8 +49,26 @@ class Game
     if params[:settings]
       sett.update data: sett.data.merge(params[:settings])
     end
-
+    args = {uuid: uuid}
+    args.merge!(params[:server_setup]) if params[:server_setup].is_a?(Hash)
+    if store.start_at.to_i > Time.now.to_i
+      Center.current.to_supervise as: "game_#{uuid}", type: Game, args: [args]
+    end
     uuid
+  end
+
+  def self.results_for(id)
+    store = Store::Game.find(uuid: id).first
+    players = Store::Player.find(game_uuid: id).all.to_a
+    setting = Store::Setting.find(game_uuid: id).first
+    statements = Store::Statement.find(game_uuid: id).all.to_a
+
+    {
+      game: {name: store.name, id: store.mongo_id, uuid: store.uuid},
+      players: players.map{|p| {name: p.name, mangled_name: "Player_#{p.position}", pitcher_score: p.pitcher_score, catcher_score: p.catcher_score, uuid: p.uuid, position: p.position} },
+      settings: setting.data,
+      statements: statements.inject({s: [], w: [], o: [], t: []}){|r, s|  }
+    }
   end
 
   def int_state
@@ -103,6 +120,7 @@ class Game
     state.add_game @uuid
     subscribe :save_game_data, :save_game_data
     p players.players.map(&:uuid)
+    info "done init for #{@uuid}"
     async.run
   end
 

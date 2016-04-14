@@ -104,10 +104,13 @@ class Web < Reel::Server::HTTP
     [:ok, 'test it']
   end
 
+  def game_results(game_id)
+    res = Game.results_for(game_id)
+    [:ok, res.to_json]
+  end
+
   def create_game(params)
-    p params
     uuid = Game.build params
-    p uuid
     [:ok, {uuid: uuid}.to_json]
   end
 
