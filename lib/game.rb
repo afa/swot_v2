@@ -21,7 +21,7 @@ class Game
     #   @timezone = params[:start][:time_zone]
     # end
     uuid = UUID.new.generate
-    time = params[:start_at] ? params[:start_at] : params[:start] ? params[:start][:time] : Time.now.to_i + 300
+    time = params[:start_at] ? Time.at(params[:start_at].to_i).to_i : params[:start] ? Time.at(params[:start][:time].to_i).to_i : Time.now.to_i + 300
 
     store = Store::Game.create({
       mongo_id: params[:id],
@@ -49,8 +49,9 @@ class Game
     if params[:settings]
       sett.update data: sett.data.merge(params[:settings])
     end
-    args = {uuid: uuid}
+    args = {uuid: uuid, start_at: time}
     args.merge!(params[:server_setup]) if params[:server_setup].is_a?(Hash)
+    p 'time', time, store.start_at
     if store.start_at.to_i > Time.now.to_i
       Center.current.to_supervise as: "game_#{uuid}", type: Game, args: [args]
     end

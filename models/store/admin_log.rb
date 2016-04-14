@@ -3,9 +3,9 @@ module Store
     include Ohm::DataTypes
     include Ohm::Callbacks
 
-    attribude :game_uuid
+    attribute :game_uuid
     attribute :data, Type::Hash
-    attribute :created_at, Type::DateTime
+    attribute :created_at, Type::Timestamp
     index :game_uuid
     
   end

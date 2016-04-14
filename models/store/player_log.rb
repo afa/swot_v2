@@ -3,8 +3,8 @@ module Store
     include Ohm::DataTypes
     include Ohm::Callbacks
 
-    attribude :game_uuid
-    attribude :uuid
+    attribute :game_uuid
+    attribute :uuid
     index :game_uuid
     index :uuid
     
