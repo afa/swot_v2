@@ -135,14 +135,14 @@ class Statement
     state = Celluloid::Actor[:"state_#{@game_uuid}"]
     cfg = state.setting
     rslt = conclusion
-    catcher_zone =  if    @result < cfg[:catcher_low_border]  ; 1
+    catcher_zone =  if    @result < cfg[:catcher_low_border].to_f  ; 1
                     elsif @result <  0.5                      ; 2
-                    elsif @result < cfg[:catcher_high_border] ; 3
+                    elsif @result < cfg[:catcher_high_border].to_f ; 3
                     else                                      ; 4
                     end
     @votes.each do |vote|
       zone = "catcher_#{format_value(vote.result)}_zone_#{catcher_zone}_score"
-      delta = cfg[zone.to_sym]
+      delta = cfg[zone.to_sym].to_f
       # FIXME:  ищем плееров с ид в текущей игре.
       player = Celluloid::Actor[:"player_#{vote.player}"]
       player.async.catcher_apply_delta(delta)
