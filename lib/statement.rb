@@ -95,7 +95,7 @@ class Statement
             when 0 then cfg[:pitcher_no_replace_score]
             when 1 then cfg[:pitcher_single_replace_score]
             when 2 then cfg[:pitcher_double_replace_score]
-            end
+            end.to_f
     contributors_hash = { @author => share }
     unless replaces_amount.zero?
       statements = Celluloid::Actor[:"statements_#{@game_uuid}"]
