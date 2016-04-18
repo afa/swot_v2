@@ -100,6 +100,24 @@ class Store::Setting < Ohm::Model
     data
   end
 
+  protected
+
+  def before_create
+    %w(declined_in_row_statements terminate_timeouts ranging_timeout pitching_timeout first_pitching_timeout max_steps between_stages_timeout results_timeout voting_tail_timeout voting_quorum_timeout stage_timeout prepare_for_seconds min_games_for_benchmark max_statements max_players min_players).map(&:to_sym).each do |key|
+      next unless data.has_key?(key)
+      data[key] = data[key].to_i
+    end
+    %w(amnesty random_enabled).map(&:to_sym).each do |key|
+      next unless data.has_key?(key)
+      data[key] = data[key] == 'true'
+    end
+    %w(ranging_importance_4_score ranging_importance_3_score ranging_importance_2_score ranging_importance_1_score ranging_importance_0_score catcher_pro_zone_1_score catcher_pro_zone_2_score catcher_pro_zone_3_score catcher_pro_zone_4_score catcher_contra_zone_1_score catcher_contra_zone_2_score catcher_contra_zone_3_score catcher_contra_zone_4_score catcher_abstainer_score catcher_low_border catcher_high_border pitcher_minimum_rank pitcher_rank_multiplier_pass pitcher_rank_multiplier_disconnect pitcher_rank_multiplier_declined pitcher_rank_multiplier_accepted pitcher_no_replace_score pitcher_single_replace_score pitcher_double_replace_score).map(&:to_sym).each do |key|
+      next unless data.has_key?(key)
+      data[key] = data[key].to_f
+    end
+    true
+  end
+
   # def initialize params = {}
   #   self.game_uuid = params.delete :game_uuid
   #   self.data = Store::Setting.defaults.merge params
