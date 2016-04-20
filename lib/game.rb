@@ -295,6 +295,7 @@ class Game
     if %w(rs rw ro rt).include? state.stage.to_s
       # msg = {type: 'event', subtype: 'end_step', timer: Timings.instance(@uuid).next_stamp}
       # async.publish_msg msg
+      publish :save_game_data, @uuid
       players.async.push_end_step params
       async.end_stage
     else
@@ -322,6 +323,7 @@ class Game
       # publish :next_pitcher, @uuid
       # lg.send_score :send_score, @uuid
       publish :send_score, @uuid
+      publish :save_game_data, @uuid
       # msg = {type: 'event', subtype: 'end_step', result: {status: params[:status], score: 0, delta: 0}, timer: Timings.instance(@uuid).next_stamp}
       # async.publish_msg msg
       players.async.push_end_step params
@@ -369,7 +371,7 @@ class Game
       players.async.push_end_stage
       async.start_stage
     elsif state.stage == :end
-      async.end_game
+      Timings::AfterGame.instance(@uuid).start
     end
   end
 
@@ -430,6 +432,11 @@ class Game
 
   def stage_timeout
     async.end_stage
+  end
+
+  def after_game_timeout
+    async.stop_timers
+    async.end_game
   end
 
   def terminate_timeout

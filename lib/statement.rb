@@ -36,6 +36,10 @@ class Statement
     @status = false
   end
 
+  def to_store
+    {author: @author, game_uuid: @game_uuid, uuid: @uuid, stage: @stage, step: @step, value: @value, votes: @votes, status: @status, importances: @importances}
+  end
+
   def replaced_by! uuid
     if uuid.is_a? Statement
       self.replaced = uuid.uuid
