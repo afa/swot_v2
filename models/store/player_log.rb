@@ -5,6 +5,7 @@ module Store
 
     attribute :game_uuid
     attribute :uuid
+    attribute :data, Type::Hash
     index :game_uuid
     index :uuid
     

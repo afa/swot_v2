@@ -17,7 +17,7 @@ class Statements
 
   def save_game_data topic, game_id
     return unless game_id == @game_uuid
-    sync_statements
+    # sync_statements
     publish :game_data_saved, @game_uuid, :statements
   end
 

@@ -33,7 +33,8 @@ class PlayerLogger
     p 'player logger init', @uuid, @guid
     @records = []
     subscribe :player_log_push, :push
-    subscribe :save_game_data, :save_game_data
+    # TODO restore on fixed sync player log
+    # subscribe :save_game_data, :save_game_data
     subscribe :pitch_pass, :mklog_pass
     subscribe :pitch_timeout, :mklog_timeout
   end

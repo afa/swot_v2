@@ -53,7 +53,7 @@ class AdminLogger
     info 'syncing admin_log'
     #backup? TODO
     store = Store::AdminLog.find(game_uuid: @guid).sort(by: :created_at).to_a
-    rcrds = @records.select{|r| r.redis_id.nil? || !store.any?{|s| s.id == r.redis_id } }
+    rcrds = @records.select{|r| r[:redis_id].nil? || !store.any?{|s| s.id == r[:redis_id] } }
     rcrds.each do |rc|
       r = Store::AdminLog.create game_uuid: @guid, data: rc, created_at: rc[:created_at]
       rc[:redis_id] = r.id
