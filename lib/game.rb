@@ -263,7 +263,7 @@ class Game
     queue = Actor[:"queue_#{@uuid}"]
     state = int_state
     publish :pitcher_passed, queue.pitcher.uuid, state.stage
-    publish :pitch_pass, @uuid, queue.pitcher.uuid
+    publish :pitch_pass, @uuid, queue.pitcher_id
     end_step(status: 'passed')
   end
 

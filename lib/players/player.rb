@@ -92,8 +92,9 @@ class Player
     Timings::Pitch.instance(@game_uuid).cancel
     Timings::FirstPitch.instance(@game_uuid).cancel
     # timers.async.set_out :pitch, nil
-    players = Actor[:"players_#{@game_uuid}"]
-    game.async.end_step({status: 'passed'})
+    # players = Actor[:"players_#{@game_uuid}"]
+    game.async.pass
+    # game.async.end_step({status: 'passed'})
   end
 
   def vote params = {}

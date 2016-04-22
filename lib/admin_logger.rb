@@ -205,7 +205,6 @@ class AdminLogger
   end
 
   def statement_results topic, game_id, stat_id
-    p '-----------------------------', topic, '---------------------------------'
     return unless @guid == game_id
     statements = Actor[:"statements_#{@guid}"]
     statement = statements.find(stat_id)
@@ -218,7 +217,6 @@ class AdminLogger
       total_percents: stat_res.round(1),
       subtype: :statement_results
     }
-    p '+-----------------------------', topic, '---------------------------------'
     push msg
   end
 
@@ -245,14 +243,13 @@ class AdminLogger
   end
 
   def step_results topic, game_id, params = {}
-    p '-----------------------------', topic, '---------------------------------'
     return unless @guid == game_id
     statements = Actor[:"statements_#{@guid}"]
     players = Actor[:"players_#{@guid}"]
     state = Actor[:"state_#{@guid}"]
     queue = Actor[:"queue_#{@guid}"]
     stats_data = players.players.inject({}){|r, v| r.merge v.name => {pitcher: '%.03f' % v.pitcher_score.to_f, catcher: '%.01f' % v.catcher_score, rank: '%.03f' % v.pitcher_rank} }
-    roles_data = statements.in_stage(state.stage).select{|s| s.status == 'accepted' }.inject({}){|r, v| r.merge(v.value.inspect => (v.player_contribution.inject({}){|res, (key, val)| res.merge(key => ('%03f' % val)) } )) }
+    roles_data = statements.in_stage(state.stage).select{|s| s.status == 'accepted' }.inject({}){|r, v| r.merge(v.value.inspect => (v.player_contribution.inject({}){|res, (key, val)| res.merge(key => ('%.03f' % val)) } )) }
     queue_data = queue.list.map(&:name).first(3).last(2)
     # if false && state.setting[:random_enabled]
     #   random_summary = game.players_queue.online_shuffle.data_summary
@@ -271,9 +268,7 @@ class AdminLogger
       time_left: Timings::Stage.instance(@guid).next_time,
       last_statements_state: statements.in_stage(state.stage).last(3).map(&:status)
     }
-    p '+-----------------------------', topic, '---------------------------------'
     push msg
-    info "::::::----------------step_results---------#{msg.inspect}----::::::::::::::::"
   end
 
   def delimit topic, game_id, params = {}
@@ -285,7 +280,6 @@ class AdminLogger
   end
 
   def next_pitcher topic, game_id, params = {}
-    p '-----------------------------', topic, '---------------------------------'
     return unless @guid == game_id
     queue = Actor[:"queue_#{@guid}"]
     state = Actor[:"state_#{@guid}"]
@@ -295,7 +289,6 @@ class AdminLogger
       subtype: :next_pitcher
     }
     push msg
-    p '+-----------------------------', topic, '---------------------------------'
   end
 
   def importance_added topic, game_id, params = {}
@@ -341,7 +334,7 @@ class AdminLogger
     return unless @guid == game_id
     player = Actor[:"player_#{params[:uuid]}"]
     return unless player
-    info "----------------------player #{params[:uuid]} (#{topic}) offline----------------------------"
+    info "----------------------player #{params[:uuid]} (#{player.name}) (#{topic}) offline----------------------------"
     msg = {
       subtype: :player_disconnected,
       player: player.name

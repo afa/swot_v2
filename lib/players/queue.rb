@@ -25,8 +25,12 @@ class Queue
     fill_current
   end
 
+  def pitcher_id
+    @current.first
+  end
+
   def pitcher
-    p = @current.first
+    p = pitcher_id
     return nil unless p
     Actor[:"player_#{p}"]
   end
