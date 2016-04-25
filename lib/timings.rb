@@ -18,6 +18,7 @@ class Timings
     pitching_timeout: 20,
     ranging_timeout: 30,
     # disconnect_timeout:
+    after_game_timeout: 600,
     terminate_timeout: 10
   }
 

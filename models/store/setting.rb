@@ -21,7 +21,6 @@ class Store::Setting < Ohm::Model
       end
       st = create(game_uuid: guid, data: df.data)
     end
-    p '---sett---', st.data
     st
   end
 
@@ -83,6 +82,7 @@ class Store::Setting < Ohm::Model
       pitching_timeout: 20,
       ranging_timeout: 30,
       # disconnect_timeout:
+      after_game_timeout: 600,
       terminate_timeout: 10,
 
       amnesty: false,
@@ -103,7 +103,7 @@ class Store::Setting < Ohm::Model
   protected
 
   def before_create
-    %w(declined_in_row_statements terminate_timeouts ranging_timeout pitching_timeout first_pitching_timeout max_steps between_stages_timeout results_timeout voting_tail_timeout voting_quorum_timeout stage_timeout prepare_for_seconds min_games_for_benchmark max_statements max_players min_players).map(&:to_sym).each do |key|
+    %w(declined_in_row_statements after_game_timeout terminate_timeouts ranging_timeout pitching_timeout first_pitching_timeout max_steps between_stages_timeout results_timeout voting_tail_timeout voting_quorum_timeout stage_timeout prepare_for_seconds min_games_for_benchmark max_statements max_players min_players).map(&:to_sym).each do |key|
       next unless data.has_key?(key)
       data[key] = data[key].to_i
     end
@@ -117,10 +117,4 @@ class Store::Setting < Ohm::Model
     end
     true
   end
-
-  # def initialize params = {}
-  #   self.game_uuid = params.delete :game_uuid
-  #   self.data = Store::Setting.defaults.merge params
-  #   p '-----------------------------------', data
-  # end
 end

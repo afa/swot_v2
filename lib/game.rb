@@ -371,7 +371,9 @@ class Game
       players.async.push_end_stage
       async.start_stage
     elsif state.stage == :end
+      players.async.push_end_stage
       Timings::AfterGame.instance(@uuid).start
+      players.async.push_game_results
     end
   end
 

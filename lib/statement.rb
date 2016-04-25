@@ -122,6 +122,10 @@ class Statement
     @contribution.inject({}){|r, (k, v)| r.merge(players.find(k).name => v) }
   end
 
+  def contribution_for pl_id
+    @contribution.fetch pl_id, 0.0
+  end
+
   def count_pitcher_score
     state = Celluloid::Actor[:"state_#{@game_uuid}"]
     player = Celluloid::Actor[:"player_#{@author}"]

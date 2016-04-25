@@ -30,7 +30,6 @@ class Timings::Base
   end
 
   def start
-    # !start
     if @timer
       @timer.cancel
       @at = Time.now.to_i + @interval
@@ -42,7 +41,6 @@ class Timings::Base
   end
 
   def set_time time
-    #only start
     if time.kind_of?(Time)
       @at = time.to_i
       raise if @at < Time.now.to_i

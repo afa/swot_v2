@@ -162,6 +162,12 @@ class Players
     end
   end
 
+  def push_game_results
+    players.each do |pl|
+      pl.send_game_results
+    end
+  end
+
   def enough_players
     state = Actor[:"state_#{@game_uuid}"]
     cfg = state.setting
