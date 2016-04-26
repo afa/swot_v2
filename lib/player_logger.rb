@@ -129,7 +129,7 @@ class PlayerLogger
       scores_deltas: players.players.inject({}){|r, p| r.merge(p.uuid => '%+.1f' % p.delta)},
       player_id: @uuid,
       votes: log_votes,
-      missed_pitching: true,
+      missed_pitching: false,
       passed: false
     @records << rec
     player = Actor[:"player_#{@uuid}"]
