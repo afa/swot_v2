@@ -126,7 +126,7 @@ class PlayerLogger
       replace: replace,
       pro_percent: per,
       player_name: queue.pitcher.uglify_name(state.stage),
-      scores_deltas: players.players.inject({}){|r, p| r.merge(p.uuid => '%+d' % p.delta)},
+      scores_deltas: players.players.inject({}){|r, p| r.merge(p.uuid => '%+.1f' % p.delta)},
       player_id: @uuid,
       votes: log_votes,
       missed_pitching: true,
