@@ -11,14 +11,14 @@ class State
   # attr_accessor :guid, :game, :players, :player_channels, :setting, :prev_pitcher
   attr :saved
   STAGES = {
-    s: {beetwen: false, order: 1, name: 'Strengths', swot: :s, next: :w},
-    sw: {beetwen: true, order: 2, swot: :s, next: :w},
-    w: {beetwen: false, order: 3, name: 'Weaknesses', swot: :w, next: :o},
-    wo: {beetwen: true, order: 4, swot: :w, next: :o},
-    o: {beetwen: false, order: 5, name: 'Opportunities', swot: :o, next: :t},
-    ot: {beetwen: true, order: 6, swot: :o, next: :t},
-    t: {beetwen: false, order: 7, name: 'Threats', swot: :t, next: :rs},
-    tr: {beetwen: true, order: 8, swot: :t, next: :rs},
+    s: {beetwen: false, order: 1, name: 'Strengths', swot: :s, next: :w, prev: nil},
+    sw: {beetwen: true, order: 2, swot: :s, next: :w, prev: :s},
+    w: {beetwen: false, order: 3, name: 'Weaknesses', swot: :w, next: :o, prev: :s},
+    wo: {beetwen: true, order: 4, swot: :w, next: :o, prev: :w},
+    o: {beetwen: false, order: 5, name: 'Opportunities', swot: :o, next: :t, prev: :w},
+    ot: {beetwen: true, order: 6, swot: :o, next: :t, prev: :o},
+    t: {beetwen: false, order: 7, name: 'Threats', swot: :t, next: :rs, prev: :o},
+    tr: {beetwen: true, order: 8, swot: :t, next: :rs, prev: :t},
     rs: {beetwen: false, order: 9, swot: :s, name: 'Ranging'},
     rw: {beetwen: false, order: 10, swot: :w},
     ro: {beetwen: false, order: 11, swot: :o},
@@ -141,7 +141,7 @@ class State
   end
 
   def previous_stage_name
-
+    STAGES[STAGES.fetch(@stage, {prev: nil})[:prev] || :end]
   end
 
   def stage_name
