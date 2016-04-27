@@ -77,7 +77,7 @@ class Store::Setting < Ohm::Model
       voting_tail_timeout: 15,
       results_timeout: 5,
       between_stages_timeout: 10,
-      max_steps: 18,
+      max_steps: 60,
       first_pitching_timeout: 120,
       pitching_timeout: 20,
       ranging_timeout: 30,
