@@ -102,7 +102,9 @@ class Store::Setting < Ohm::Model
 
   protected
 
-  def before_create
+  def self.prepare_data(data)
+    data.keys.select{|k| k.is_a? String }.each{|k| data[k.to_sym] = data.delete(k) }
+
     %w(declined_in_row_statements after_game_timeout terminate_timeouts ranging_timeout pitching_timeout first_pitching_timeout max_steps between_stages_timeout results_timeout voting_tail_timeout voting_quorum_timeout stage_timeout prepare_for_seconds min_games_for_benchmark max_statements max_players min_players).map(&:to_sym).each do |key|
       next unless data.has_key?(key)
       data[key] = data[key].to_i
@@ -115,6 +117,12 @@ class Store::Setting < Ohm::Model
       next unless data.has_key?(key)
       data[key] = data[key].to_f
     end
+    data
+  end
+
+  def before_create
+    Store::Setting.prepare_data(data)
+
     true
   end
 end

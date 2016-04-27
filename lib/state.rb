@@ -67,15 +67,15 @@ class State
       player_log: false
     }
     @player_channels = {}
-    unless try_recover
+    # @setting = Store::Setting.prepare_data(Store::Setting.find(game_uuid: @guid).first.data)
+    # @setting.keys.each{|k| @setting[k.to_sym] = @setting[k] }
+    # unless try_recover
       load_default_settings
       if params[:settings]
         @setting.data = @setting.data.merge(params[:settings])
       end
       init
-    end
-    @setting = Store::Setting.find(game_uuid: @guid).first.data
-    @setting.keys.each{|k| @setting[k.to_sym] = @setting[k] }
+    # end
     p @setting
     subscribe :game_done, :game_done
     subscribe :game_data_saved, :data_saved
@@ -133,7 +133,7 @@ class State
   end
 
   def load_default_settings
-    @setting = Store::Setting.for_game(@guid)
+    @setting = Store::Setting.prepare_data(Store::Setting.for_game(@guid).data)
   end
 
   def stage
