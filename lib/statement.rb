@@ -125,7 +125,7 @@ class Statement
   def contribution_for pl_id
     @contribution.fetch pl_id, 0.0
   end
-
+.data
   def count_pitcher_score
     state = Celluloid::Actor[:"state_#{@game_uuid}"]
     player = Celluloid::Actor[:"player_#{@author}"]
@@ -160,6 +160,12 @@ class Statement
   def calc_votes
     v_count = @votes.map(&:player).uniq.size
     if v_count == 0
+      @result = 0.0
+      @status = 'no_quorum'
+      return
+    end
+    players = Celluloid::Actor[:"players_#{@game_uuid}"]
+    if v_count < players.online.size
       @result = 0.0
       @status = 'no_quorum'
       return

@@ -141,7 +141,7 @@ class State
   end
 
   def previous_stage_name
-    STAGES[STAGES.fetch(@stage, {prev: nil})[:prev] || :end]
+    STAGES[STAGES.fetch(@stage, {prev: nil})[:prev] || :end].fetch(:name, '')
   end
 
   def stage_name
