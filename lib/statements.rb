@@ -117,7 +117,8 @@ class Statements
       params[:to_replace].each{|idx| replace << @visible[idx - 1] }
     end
 
-    statement = Statement.new value: params[:value], author: queue.pitcher.uuid, replaces: replace.compact, uuid: uuid, game_uuid: @game_uuid, stage: state.stage, step: state.step
+    val = params[:value].strip
+    statement = Statement.new value: val, author: queue.pitcher.uuid, replaces: replace.compact, uuid: uuid, game_uuid: @game_uuid, stage: state.stage, step: state.step
     @statements << statement
     @current << uuid
     replace.map{|s| find s }.compact.each{|s| s.replaced_by! uuid }
