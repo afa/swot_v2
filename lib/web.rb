@@ -104,10 +104,13 @@ class Web < Reel::Server::HTTP
     [:ok, 'test it']
   end
 
+  def game_results(game_id)
+    res = Game.results_for(game_id)
+    [:ok, res.to_json]
+  end
+
   def create_game(params)
-    p params
     uuid = Game.build params
-    p uuid
     [:ok, {uuid: uuid}.to_json]
   end
 
@@ -116,7 +119,8 @@ class Web < Reel::Server::HTTP
     if game
       settings = Store::Setting.find(game_uuid: game.uuid).first.data
       players = Store::Player.find(game_uuid: game.uuid).to_a
-      [:ok, {name: game.name, settings: settings, players: players.map(&:as_json), start_at: game.start_at, time: Time.now.to_f.round(6)}.to_json]
+      statements = Store::Statement.find(game_uuid: game.uuid, status: 'accepted').to_a
+      [:ok, {name: game.name, settings: settings, players: players.map(&:as_json), statements: statements.map(&:as_json), start_at: game.start_at, time: Time.now.to_f.round(6)}.to_json]
     else
       [:not_found, {errors: ["Game with id #{id} not found in core"]}.to_json]
     end

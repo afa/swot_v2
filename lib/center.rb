@@ -69,7 +69,6 @@ class Center # < Celluloid::Supervision::Container
   end
 
   def supervision_info
-    p @config
   end
 
   def stop

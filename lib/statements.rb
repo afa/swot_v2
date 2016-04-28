@@ -17,12 +17,16 @@ class Statements
 
   def save_game_data topic, game_id
     return unless game_id == @game_uuid
-    sync_statements
+    # sync_statements
     publish :game_data_saved, @game_uuid, :statements
   end
 
   def sync_statements
     info 'syncing statements'
+    store = Store::Statement.find(game_uuid: @game_uuid).to_a
+    sts = @statements.select{|s| !Store::Statement.find(uuid: s.uuid).first }
+    sts.each{|s| Store::Statement.create(s.to_store) }
+    info "synced #{sts.size} statements" if sts.size > 0
   end
 
   def find(uuid)

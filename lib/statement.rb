@@ -36,6 +36,10 @@ class Statement
     @status = false
   end
 
+  def to_store
+    {author: @author, game_uuid: @game_uuid, uuid: @uuid, stage: @stage, step: @step, value: @value, votes: @votes, status: @status, importances: @importances}
+  end
+
   def replaced_by! uuid
     if uuid.is_a? Statement
       self.replaced = uuid.uuid
@@ -95,7 +99,7 @@ class Statement
             when 0 then cfg[:pitcher_no_replace_score]
             when 1 then cfg[:pitcher_single_replace_score]
             when 2 then cfg[:pitcher_double_replace_score]
-            end
+            end.to_f
     contributors_hash = { @author => share }
     unless replaces_amount.zero?
       statements = Celluloid::Actor[:"statements_#{@game_uuid}"]
@@ -118,6 +122,10 @@ class Statement
     @contribution.inject({}){|r, (k, v)| r.merge(players.find(k).name => v) }
   end
 
+  def contribution_for pl_id
+    @contribution.fetch pl_id, 0.0
+  end
+
   def count_pitcher_score
     state = Celluloid::Actor[:"state_#{@game_uuid}"]
     player = Celluloid::Actor[:"player_#{@author}"]
@@ -135,14 +143,14 @@ class Statement
     state = Celluloid::Actor[:"state_#{@game_uuid}"]
     cfg = state.setting
     rslt = conclusion
-    catcher_zone =  if   @result < cfg[:catcher_low_border]  ; 1
-                    elsif @result <  0.5                     ; 2
-                    elsif @result < cfg[:catcher_high_border]; 3
-                    else                                     ; 4
+    catcher_zone =  if    @result < cfg[:catcher_low_border].to_f  ; 1
+                    elsif @result <  0.5                      ; 2
+                    elsif @result < cfg[:catcher_high_border].to_f ; 3
+                    else                                      ; 4
                     end
     @votes.each do |vote|
       zone = "catcher_#{format_value(vote.result)}_zone_#{catcher_zone}_score"
-      delta = cfg[zone.to_sym]
+      delta = cfg[zone.to_sym].to_f
       # FIXME:  ищем плееров с ид в текущей игре.
       player = Celluloid::Actor[:"player_#{vote.player}"]
       player.async.catcher_apply_delta(delta)

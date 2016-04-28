@@ -15,7 +15,13 @@ class Game
   end
 
   def self.build params = {}
+    # time_params = {}
+    # if params[:start]
+    #   time_params.merge!(start: params[:start][:time].to_i) if params[:start][:time]
+    #   @timezone = params[:start][:time_zone]
+    # end
     uuid = UUID.new.generate
+    time = params[:start_at] ? Time.at(params[:start_at].to_i).to_i : params[:start] ? Time.at(params[:start][:time].to_i).to_i : Time.now.to_i + 300
 
     store = Store::Game.create({
       mongo_id: params[:id],
@@ -27,12 +33,12 @@ class Game
       industry: params[:industry],
       state: params[:state],
       time_zone: params[:time_zone],
-      start_at: params[:start_at]
+      start_at: time
     })
 
     if params[:players]
-      params[:players].each do |pl|
-        dat = pl.merge(game_uuid: uuid)
+      params[:players].each_with_index do |pl, i|
+        dat = pl.merge(game_uuid: uuid, order: i + 1)
         mid = dat.delete(:id)
         dat.merge!(mongo_id: mid)
         Player.build dat
@@ -43,8 +49,27 @@ class Game
     if params[:settings]
       sett.update data: sett.data.merge(params[:settings])
     end
-
+    args = {uuid: uuid, start_at: time}
+    args.merge!(params[:server_setup]) if params[:server_setup].is_a?(Hash)
+    p 'time', time, store.start_at
+    if store.start_at.to_i > Time.now.to_i
+      Center.current.to_supervise as: "game_#{uuid}", type: Game, args: [args]
+    end
     uuid
+  end
+
+  def self.results_for(id)
+    store = Store::Game.find(uuid: id).first
+    players = Store::Player.find(game_uuid: id).all.to_a
+    setting = Store::Setting.find(game_uuid: id).first
+    statements = Store::Statement.find(game_uuid: id).all.to_a
+
+    {
+      game: {name: store.name, id: store.mongo_id, uuid: store.uuid},
+      players: players.map{|p| {name: p.name, mangled_name: "Player_#{p.position}", pitcher_score: p.pitcher_score, catcher_score: p.catcher_score, uuid: p.uuid, position: p.position} },
+      settings: setting.data,
+      statements: statements.inject({s: [], w: [], o: [], t: []}){|r, s|  }
+    }
   end
 
   def int_state
@@ -55,37 +80,48 @@ class Game
     @online = false
     @uuid = params[:uuid]
     @server_setup = params[:server_setup]
-    info "#{@uuid} created"
-    sett = {settings: params[:settings]} if params[:settings] && !params[:settings].empty?
-    sett ||= {}
-    p 'settings', sett
+    sgame = Store::Game.find(uuid: @uuid).first
+    @start_at = sgame.start_at
+    # info "#{@uuid} created"
+    # sett = {settings: params[:settings]} if params[:settings] && !params[:settings].empty?
+    # sett ||= {}
+    # p 'settings', sett
     Center.current.to_supervise as: :"admin_logger_#{@uuid}", type: AdminLogger, args: [{game_uuid: @uuid}]
-    Center.current.to_supervise as: :"state_#{@uuid}", type: State, args: [{game_uuid: @uuid}.merge(sett)]
-    time_params = {}
-    if params[:start]
-      time_params.merge!(start: params[:start][:time].to_i) if params[:start][:time]
-      @timezone = params[:start][:time_zone]
-    end
+    Center.current.to_supervise as: :"state_#{@uuid}", type: State, args: [{game_uuid: @uuid}]
+    # Center.current.to_supervise as: :"state_#{@uuid}", type: State, args: [{game_uuid: @uuid}.merge(sett)]
       
-    self.name = params[:name]
+    self.name = sgame.name
     state = int_state
 
     Center.current.to_supervise(as: :"players_#{@uuid}", type: Players, args: [{game_uuid: @uuid}])
     players = Actor[:"players_#{@uuid}"]
-    pl_list = Store::Player.find(game_uuid: @uuid).to_a
-      pl_list.each do |p|
-        p_id = p.uuid
-        Center.current.to_supervise(as: :"player_#{p_id}", type: Player, args: [{game_uuid: @uuid, uuid: p_id}])
-        players.async.add p_id
-      end
-    timers = Center.current.to_supervise as: :"timers_#{@uuid}", type: Timings, args: [{game_uuid: @uuid}.merge(time_params)]
-    p Timings::Start.instance(@uuid).set_time params[:start][:time]
+# <<<<<<< HEAD
+    # if params[:players]
+    #   params[:players].each do |p|
+    #     p_id = UUID.new.generate
+    #   end
+    # end
+    # timers = Center.current.to_supervise as: :"timers_#{@uuid}", type: Timings, args: [{game_uuid: @uuid}.merge(time_params)]
+    timers = Center.current.to_supervise as: :"timers_#{@uuid}", type: Timings, args: [{game_uuid: @uuid}]
+    p sgame
+    Timings::Start.instance(@uuid).set_time @start_at
+# =======
+#     pl_list = Store::Player.find(game_uuid: @uuid).to_a
+#       pl_list.each do |p|
+#         p_id = p.uuid
+#         Center.current.to_supervise(as: :"player_#{p_id}", type: Player, args: [{game_uuid: @uuid, uuid: p_id}])
+#         players.async.add p_id
+#       end
+#     timers = Center.current.to_supervise as: :"timers_#{@uuid}", type: Timings, args: [{game_uuid: @uuid}.merge(time_params)]
+#     p Timings::Start.instance(@uuid).set_time params[:start][:time]
+# >>>>>>> dev
     state.state = Timings::Start.instance(@uuid).next_time ? :waiting : Timings::Start.instance(@uuid).at ? :started : :waiting
     cntrl = Control.current.publish_control( (params.has_key?(:players) ? {players: players.players.map{|p| {name: p.name, url: "#{@server_setup[:url]}/game/#{p.uuid}", uuid: p.uuid, email: p.email}}} : {}).merge(type: 'status', uuid: @uuid, replly_to: 'create'))
     Control.current.add_game(@uuid)
     state.add_game @uuid
     subscribe :save_game_data, :save_game_data
     p players.players.map(&:uuid)
+    info "done init for #{@uuid}"
     async.run
   end
 
@@ -142,7 +178,6 @@ class Game
     players = Actor[:"players_#{@uuid}"]
     if %w(s w o t).include? state.stage.to_s
       queue = Actor[:"queue_#{@uuid}"]
-      info "start step step = #{state.step}"
       if state.step == 1
         Timings::FirstPitch.instance(@uuid).start
       else
@@ -155,7 +190,8 @@ class Game
     # async.publish_msg(type: 'event', subtype: 'start_step')
     players.async.push_start_step
     # async.push_state
-    players.async.push_state
+    players.async.push_messages
+    # players.async.push_state
   end
 
   def stage_timeout
@@ -163,7 +199,6 @@ class Game
     players = Actor[:"players_#{@uuid}"]
     # alarms = Actor[:"alarms_#{@uuid}"]
     queue = Actor[:"queue_#{@uuid}"]
-    info "stage timeout: #{state.stage}"
     state.stage = state.next_enum(State::STAGES, state.stage)
     # msg = {type: 'event', subtype: 'end_stage', value: state.stage}
     Timings::Pitch.instance(@uuid).cancel
@@ -197,6 +232,7 @@ class Game
     tm = Time.now.to_i + (state.setting[:voting_quorum_timeout] || 60)
     statement = {value: params[:value], to_replace: params[:to_replace], author: queue.pitcher.uuid, stage: state.stage, step: state.step, game_uuid: @uuid}
     errors = statements.add statement
+    publish :pitcher_pitch, queue.pitcher.uuid, state.stage
     state.step_status = state.next_enum(State::STEP_STATUSES, state.step_status)
     Timings::Pitch.instance(@uuid).cancel
     Timings::FirstPitch.instance(@uuid).cancel
@@ -213,16 +249,21 @@ class Game
     Timings::Pitch.instance(@uuid).cancel
     Timings::FirstPitch.instance(@uuid).cancel
     queue = Actor[:"queue_#{@uuid}"]
+    state = int_state
     p = queue.pitcher
     publish :pitch_timeout, @uuid, p.uuid if p && p.alive?
+    publish :pitcher_timeout, p.uuid, state.stage
     end_step(status: 'timeouted')
 
   end
 
   def pass params = {}
-    info "PASS!"
     Timings::Pitch.instance(@uuid).cancel
     Timings::FirstPitch.instance(@uuid).cancel
+    queue = Actor[:"queue_#{@uuid}"]
+    state = int_state
+    publish :pitcher_passed, queue.pitcher.uuid, state.stage
+    publish :pitch_pass, @uuid, queue.pitcher_id
     end_step(status: 'passed')
   end
 
@@ -254,6 +295,7 @@ class Game
     if %w(rs rw ro rt).include? state.stage.to_s
       # msg = {type: 'event', subtype: 'end_step', timer: Timings.instance(@uuid).next_stamp}
       # async.publish_msg msg
+      publish :save_game_data, @uuid
       players.async.push_end_step params
       async.end_stage
     else
@@ -272,7 +314,6 @@ class Game
       state.step_status = state.next_enum(State::STEP_STATUSES, state.step_status)
       state.step_status = state.next_enum(State::STEP_STATUSES, state.step_status) unless state.step_status == :end
       Timings::Results.instance(@uuid).start unless %w(passed timeouted).include?(params[:status])
-      p 'stat', stat
       lg = Actor[:"admin_logger_#{@uuid}"]
       queue.next!
       lg.step_results :step_results, @uuid
@@ -282,9 +323,8 @@ class Game
       # publish :next_pitcher, @uuid
       # lg.send_score :send_score, @uuid
       publish :send_score, @uuid
-      # info '------------------------------------66666666666---------------------------'
+      publish :save_game_data, @uuid
       # msg = {type: 'event', subtype: 'end_step', result: {status: params[:status], score: 0, delta: 0}, timer: Timings.instance(@uuid).next_stamp}
-      # info '------------------------------------77777777777---------------------------'
       # async.publish_msg msg
       players.async.push_end_step params
       async.results_timeout if %w(passed timeouted).include?(params[:status])
@@ -331,7 +371,9 @@ class Game
       players.async.push_end_stage
       async.start_stage
     elsif state.stage == :end
-      async.end_game
+      players.async.push_end_stage
+      Timings::AfterGame.instance(@uuid).start
+      players.async.push_game_results
     end
   end
 
@@ -348,11 +390,9 @@ class Game
     if statements.check_triple_decline
       async.end_stage
     else
-      p '====================step====================', state.step, '======================'
       if state.step < state.total_steps
         state.step += 1
         lg = Actor[:"admin_logger_#{@uuid}"]
-        info '------------------------------------44444444444---------------------------'
         lg.next_pitcher :next_pitcher, @uuid
         async.start_step
       else
@@ -396,8 +436,12 @@ class Game
     async.end_stage
   end
 
+  def after_game_timeout
+    async.stop_timers
+    async.end_game
+  end
+
   def terminate_timeout
-    info 'terminate_timeout'
     state = int_state
     players = Actor[:"players_#{@uuid}"]
     state.state = :terminated
@@ -446,9 +490,8 @@ class Game
         offline!
       end
     else
-      info "game #{@uuid} offline"
+      # info "game #{@uuid} offline"
     end
-    info msg.inspect
   end
 
   # def publish_msg hash
