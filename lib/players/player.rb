@@ -176,7 +176,8 @@ class Player
 
   def send_saved_game_results
     game = Actor[:"game_#{@game_uuid}"]
-    hsh = {game_id: game.mongo_id}
+    sgame = Store::Game.find(uuid: @game_uuid).first
+    hsh = {game_id: sgame.mongo_id}
     statements = Actor[:"statements_#{@game_uuid}"]
     players = Actor[:"players_#{@game_uuid}"]
     stats = %w(s w o t).map(&:to_sym).inject({}) do |r, sym|
