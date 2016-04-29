@@ -171,7 +171,7 @@ class Player
     # { type: results, value: { data: { 's': { statements: [{ body: <str>, contribution: <float> }]}, 'w': { statements: [...] }, 'o': ..., 't': ... }, players: { real_name: { pitcher_score: <float>, catcher_score: <float> }, player_1: { ... }, player_3: { ... }...}}}
     msg = {type: 'results', value: { data: stats, players: ps } }
     publish_msg msg
-    async.send_saved_game_resuts
+    async.send_saved_game_results
   end
 
   def send_saved_game_results
@@ -191,8 +191,8 @@ class Player
     al = Actor[:"admin_log_#{@game_uuid}"]
     logs = al.as_json
     hsh.merge! logs: logs
-    uri = URI.parse(game.setting)
-    uri = URI('http://' + HOST + ':' + PORT.to_s + C_URI)
+    uri = URI.parse(game.setting[:game_results_callback])
+    # uri = URI('http://' + HOST + ':' + PORT.to_s + C_URI)
     req = Net::HTTP::Post.new(uri, initheader = { 'Content-Type' =>'application/json' })
     req.body = hsh.to_json
     res = Net::HTTP.start(uri.hostname, uri.port) do |http|

@@ -75,8 +75,12 @@ class Statement
   end
 
   def calc_result
+    # players = Celluloid::Actor[:"players_#{@game_uuid}"]
+    # cnt = players.online.size
     return 'no_quorum' if @votes.empty?
+    return 'no_quorum' unless quorum?
     p = @votes.map(&:result).select{|v| v == 'accepted' }.size
+    return 'no_quorum' unless quorum?
     return 'declined' if p ==0
     return 'accepted' if p == voted_count
     p.to_f / @votes.size.to_f >= 0.5 ? 'accepted' : 'declined'
@@ -125,7 +129,7 @@ class Statement
   def contribution_for pl_id
     @contribution.fetch pl_id, 0.0
   end
-.data
+
   def count_pitcher_score
     state = Celluloid::Actor[:"state_#{@game_uuid}"]
     player = Celluloid::Actor[:"player_#{@author}"]
@@ -164,8 +168,8 @@ class Statement
       @status = 'no_quorum'
       return
     end
-    players = Celluloid::Actor[:"players_#{@game_uuid}"]
-    if v_count < players.online.size
+    # players = Celluloid::Actor[:"players_#{@game_uuid}"]
+    unless quorum?
       @result = 0.0
       @status = 'no_quorum'
       return
