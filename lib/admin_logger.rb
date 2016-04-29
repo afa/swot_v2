@@ -43,6 +43,10 @@ class AdminLogger
     info 'TODO admin log restore'
   end
 
+  def as_json
+    @records.map(&:to_hash)
+  end
+
   def save_game_data topic, game_id
     return unless game_id == @guid
     sync_admin_log
