@@ -76,7 +76,6 @@ class State
       end
       init
     # end
-    p @setting
     subscribe :game_done, :game_done
     subscribe :game_data_saved, :data_saved
   end

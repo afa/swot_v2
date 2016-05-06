@@ -51,7 +51,6 @@ class Game
     end
     args = {uuid: uuid, start_at: time}
     args.merge!(params[:server_setup]) if params[:server_setup].is_a?(Hash)
-    p 'time', time, store.start_at
     if store.start_at.to_i > Time.now.to_i
       Center.current.to_supervise as: "game_#{uuid}", type: Game, args: [args]
     end
@@ -120,7 +119,6 @@ class Game
     Control.current.add_game(@uuid)
     state.add_game @uuid
     subscribe :save_game_data, :save_game_data
-    p players.players.map(&:uuid)
     info "done init for #{@uuid}"
     async.run
   end
@@ -374,6 +372,7 @@ class Game
       players.async.push_end_stage
       Timings::AfterGame.instance(@uuid).start
       players.async.push_game_results
+      async.push_saved_game_results
     end
   end
 
@@ -430,6 +429,35 @@ class Game
     # msg = params.merge status: state.state, stage: state.stage, timeout_at: Timings::Start.instance(@uuid).at + 1500, started_at: Timings::Start.instance(@uuid).at, players: players.players.map(&:uuid), step: {total: total_steps, current: step, status: step_status}
     # # msg = params.merge status: state.state, stage: state.stage, timeout_at: alarm.next_time, started_at: alarm.start_at, players: players.players.map(&:uuid), step: {total: total_steps, current: step, status: step_status}
     # publish_msg msg
+  end
+
+  def push_saved_game_results
+    # game = Actor[:"game_#{@game_uuid}"]
+    sgame = Store::Game.find(uuid: @uuid).first
+    hsh = {game_id: sgame.mongo_id}
+    statements = Actor[:"statements_#{@uuid}"]
+    state = int_state
+    players = Actor[:"players_#{@uuid}"]
+    stats = %w(s w o t).map(&:to_sym).inject({}) do |r, sym|
+      r.merge!(sym => {statements: []})
+      r[sym][:statements] += statements.visible_for_buf(statements.rebuild_visible_for(sym)).map{|s| {author: s.author, votes: s.votes, importances: s.importances, result: s.result, body: s.value, contribution: s.contribution} }
+      # r[sym][:statements] += statements.visible_for_buf(statements.rebuild_visible_for(sym)).map{|s| {body: s.value, contribution: s.contribution_for(@uuid)} }
+      r
+    end
+    pls = players.players
+    ps = pls.map{|p| { p.uglify_name(:s) => {name: p.name, pitcher_score: (p.pitcher_score), catcher_score: (p.catcher_score)} } }
+    hsh.merge! data: stats, players: ps
+    al = Actor[:"admin_logger_#{@uuid}"]
+    logs = al.as_json
+    hsh.merge! logs: logs
+    uri = URI(state.setting[:game_results_callback])
+    req = Net::HTTP::Post.new uri.request_uri
+    req.body = hsh.to_json
+    rez = Net::HTTP.start(uri.hostname, uri.port) do |http|
+      http.request(req)
+    end
+    info hsh.inspect
+    info "#{rez.inspect}"
   end
 
   def stage_timeout

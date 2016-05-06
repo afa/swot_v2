@@ -28,7 +28,6 @@ class Player
 
   def initialize params = {}
     @online = false
-    p 'player', params
     # @game_uuid = params[:game_uuid]
     if params[:uuid]
       store = Store::Player.find(uuid: params[:uuid]).first
@@ -47,7 +46,6 @@ class Player
     queue = Actor[:"queue_#{@game_uuid}"]
     queue.add @uuid
     Center.current.async.to_supervise as: "player_logger_#{@uuid}", type: PlayerLogger, args: [{player_uuid: @uuid}]
-    p queue.ids
     info "q first #{queue.first}"
     
     info store.inspect
@@ -138,10 +136,10 @@ class Player
     if @online
       ch = Actor[:"chnl_#{@uuid}"]
       if ch && ch.alive?
-        p 'chnl ok'
+        info 'chnl ok'
         ch.publish_msg msg.merge(time: current_stamp, rel: SWOT_REL, version: SWOT_VERSION).to_json
       else
-        p 'chnl down'
+        info 'chnl down'
         offline!
       end
     else
@@ -171,35 +169,6 @@ class Player
     # { type: results, value: { data: { 's': { statements: [{ body: <str>, contribution: <float> }]}, 'w': { statements: [...] }, 'o': ..., 't': ... }, players: { real_name: { pitcher_score: <float>, catcher_score: <float> }, player_1: { ... }, player_3: { ... }...}}}
     msg = {type: 'results', value: { data: stats, players: ps } }
     publish_msg msg
-    async.send_saved_game_results
-  end
-
-  def send_saved_game_results
-    game = Actor[:"game_#{@game_uuid}"]
-    sgame = Store::Game.find(uuid: @game_uuid).first
-    hsh = {game_id: sgame.mongo_id}
-    statements = Actor[:"statements_#{@game_uuid}"]
-    players = Actor[:"players_#{@game_uuid}"]
-    stats = %w(s w o t).map(&:to_sym).inject({}) do |r, sym|
-      r.merge!(sym => {statements: []})
-      r[sym][:statements] += statements.visible_for_buf(statements.rebuild_visible_for(sym)).map{|s| {body: s.value, contribution: s.contribution_for(@uuid)} }
-      r
-    end
-    hsh.merge! data: stats, players: ps
-    pls = players.players.sort{|a, b| a.uuid == b.uuid ? 0: a.uuid == @uuid ? -1 : a.uuid <=> b.uuid }
-    cur = pls.shift
-    ps = [{cur.name => {pitcher_score: cur.pitcher_score, catcher_score: cur.catcher_score}}] + pls.map{|p| { p.uglify_name(:s) => {pitcher_score: (p.pitcher_score), catcher_score: (p.catcher_score)} } }
-    al = Actor[:"admin_log_#{@game_uuid}"]
-    logs = al.as_json
-    hsh.merge! logs: logs
-    uri = URI.parse(game.setting[:game_results_callback])
-    # uri = URI('http://' + HOST + ':' + PORT.to_s + C_URI)
-    req = Net::HTTP::Post.new(uri, initheader = { 'Content-Type' =>'application/json' })
-    req.body = hsh.to_json
-    res = Net::HTTP.start(uri.hostname, uri.port) do |http|
-      http.request(req)
-    end
-    info "#{res.inspect}"
   end
 
   def send_ready params = {}
@@ -272,7 +241,6 @@ class Player
   end
 
   def send_players_score topic, guid
-    p '-----------------------------', topic, '---------------------------------'
     return unless @game_uuid == guid
     players = Actor[:"players_#{@game_uuid}"]
     dat = players.players.sort{|a, b| a.uuid == b.uuid ? 0 : a.uuid == @uuid ? -1 : a.uuid <=> b.uuid }.map{|p| {pitcher: p.pitcher_rank, catcher: p.catcher_score} }
@@ -442,7 +410,6 @@ class Player
   end
 
   def catcher_apply_delta(delta)
-    p 'catcher_apply_delta', delta, @catcher_score, @delta
     @catcher_score += delta
     @delta = delta
   end
