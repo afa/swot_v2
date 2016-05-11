@@ -75,7 +75,8 @@ class AdminLogger
     return unless @guid == game_id
     msg = {
       type: :logs,
-      values: @records[0, @last_processed]
+      values: @records
+      # values: @records[0, @last_processed]
     }
     publish_msg msg
     info msg.inspect

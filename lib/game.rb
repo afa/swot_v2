@@ -361,6 +361,7 @@ class Game
       # msg = {type: 'event', subtype: 'end_stage', value: state.stage, timer: Timings.instance(@uuid).next_stamp}
       # async.publish_msg msg
       players.async.push_end_stage
+      players.copy_half
       publish :next_stage, @uuid, stage: state.stage unless state.stage == :tr
       publish :ranging, @uuid, stage: state.stage if state.stage == :tr
     elsif %w(rs rw ro rt).include? state.stage.to_s
@@ -444,7 +445,7 @@ class Game
       # r[sym][:statements] += statements.visible_for_buf(statements.rebuild_visible_for(sym)).map{|s| {body: s.value, contribution: s.contribution_for(@uuid)} }
       r
     end
-    sts = statements.statements.as_json
+    sts = statements.statements.map(&:to_store)
     pls = players.players
     ps = pls.map{|p| { p.uglify_name(:s) => {name: p.name, pitcher_score: (p.pitcher_score), catcher_score: (p.catcher_score)} } }
     hsh.merge! data: stats, players: ps, statements: sts

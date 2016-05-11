@@ -9,7 +9,7 @@ class Player
   finalizer :finalizer
 
   attr_accessor :name, :email, :channel, :game_uuid, :uuid, :redis, :order, :score, :online
-  attr_accessor :pitcher_score, :pitcher_rank, :catcher_score, :delta
+  attr_accessor :pitcher_score, :pitcher_rank, :catcher_score, :delta, :pitcher_score_first_half, :catcher_score_first_half
 
   def self.build params = {}
     d = UUID.new.generate
@@ -314,6 +314,11 @@ class Player
           timeout_at: Timings.instance(@game_uuid).stamps([:between_stages])
         }
     publish_msg msg
+  end
+
+  def copy_half
+    catcher_score_first_half = catcher_score
+    pitcher_score_first_half = pitcher_score
   end
 
   def send_terminated

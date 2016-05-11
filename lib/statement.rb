@@ -12,6 +12,7 @@ class Statement
                 :step,
                 :votes,
                 :importances,
+                :importance_score,
                 :status,
                 :result,
                 :contribution
@@ -33,11 +34,12 @@ class Statement
     @votes = []
     @result = 0.0
     @importances = []
+    @importance_score = 0.0
     @status = false
   end
 
   def to_store
-    {author: @author, game_uuid: @game_uuid, uuid: @uuid, stage: @stage, step: @step, value: @value, votes: @votes, status: @status, importances: @importances}
+    {author: @author, game_uuid: @game_uuid, uuid: @uuid, stage: @stage, step: @step, value: @value, votes: @votes.map(&:as_json), status: @status, importances: @importances.map(&:as_json), importance_score: @importance_score}
   end
 
   def replaced_by! uuid
