@@ -440,13 +440,14 @@ class Game
     players = Actor[:"players_#{@uuid}"]
     stats = %w(s w o t).map(&:to_sym).inject({}) do |r, sym|
       r.merge!(sym => {statements: []})
-      r[sym][:statements] += statements.visible_for_buf(statements.rebuild_visible_for(sym)).map{|s| {author: s.author, votes: s.votes, importances: s.importances, result: s.result, body: s.value, contribution: s.contribution} }
+      r[sym][:statements] += statements.visible_for_buf(statements.rebuild_visible_for(sym)).map{|s| {author: s.author, votes: s.votes.as_json, importances: s.importances.as_json, result: s.result, body: s.value, contribution: s.contribution} }
       # r[sym][:statements] += statements.visible_for_buf(statements.rebuild_visible_for(sym)).map{|s| {body: s.value, contribution: s.contribution_for(@uuid)} }
       r
     end
+    sts = statements.statements.as_json
     pls = players.players
     ps = pls.map{|p| { p.uglify_name(:s) => {name: p.name, pitcher_score: (p.pitcher_score), catcher_score: (p.catcher_score)} } }
-    hsh.merge! data: stats, players: ps
+    hsh.merge! data: stats, players: ps, statements: sts
     al = Actor[:"admin_logger_#{@uuid}"]
     logs = al.as_json
     hsh.merge! logs: logs
