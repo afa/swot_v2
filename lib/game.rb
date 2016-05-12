@@ -441,7 +441,7 @@ class Game
     players = Actor[:"players_#{@uuid}"]
     stats = %w(s w o t).map(&:to_sym).inject({}) do |r, sym|
       r.merge!(sym => {statements: []})
-      r[sym][:statements] += statements.visible_for_buf(statements.rebuild_visible_for(sym)).map{|s| {author: s.author, votes: s.votes.as_json, importances: s.importances.as_json, result: s.result, body: s.value, contribution: s.contribution} }
+      r[sym][:statements] += statements.visible_for_buf(statements.rebuild_visible_for(sym)).map{|s| {author: s.author, votes: s.votes.map(&:as_json), importances: s.importances.map(&:as_json), result: s.result, body: s.value, contribution: s.contribution} }
       # r[sym][:statements] += statements.visible_for_buf(statements.rebuild_visible_for(sym)).map{|s| {body: s.value, contribution: s.contribution_for(@uuid)} }
       r
     end
