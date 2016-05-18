@@ -184,6 +184,10 @@ class Players
     players.select(&:online)
   end
 
+  def was_online
+    players.select(&:was_online)
+  end
+
   def check_min_players
     state = Actor[:"state_#{@game_uuid}"]
     if state.state == :started && %w(s sw w wo o ot t).include?(state.stage.to_s)

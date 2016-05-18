@@ -92,6 +92,18 @@ class Statements
     vis
   end
 
+  def range_auto
+    statements = Actor[:"statements_#{@game_uuid}"]
+    players = Actor[:"players_#{@game_uuid}"]
+    stmnts = %w(s w o t).map(&:to_sym).inject([]){|res, s| res + statements.visible_for_buf(statements.rebuild_visible_for(s)) }
+    # st = stmnts[params[:index].to_i - 1]
+    stmnts.each do |st|
+      players.was_online.each do |pl|
+        st.add_impo(pl.uuid, 3, true)  #, true for auto
+      end
+    end
+  end
+
   def range_for params = {}
     state = Actor[:"state_#{@game_uuid}"]
     stage_swot = State::STAGES.fetch(params[:stage], {swot: :end})[:swot]

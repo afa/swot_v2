@@ -8,7 +8,7 @@ class Player
 
   finalizer :finalizer
 
-  attr_accessor :name, :email, :channel, :game_uuid, :uuid, :redis, :order, :score, :online
+  attr_accessor :name, :email, :channel, :game_uuid, :uuid, :redis, :order, :score, :online, :was_online
   attr_accessor :pitcher_score, :pitcher_rank, :catcher_score, :delta, :pitcher_score_first_half, :catcher_score_first_half
 
   def self.build params = {}
@@ -28,6 +28,7 @@ class Player
 
   def initialize params = {}
     @online = false
+    @was_online = false
     # @game_uuid = params[:game_uuid]
     if params[:uuid]
       store = Store::Player.find(uuid: params[:uuid]).first
@@ -112,6 +113,7 @@ class Player
 
   def online!
     @online = true
+    @was_online = true
     info "#{@uuid} online"
     state = Actor[:"state_#{@game_uuid}"]
     players = Actor[:"players_#{@game_uuid}"]
@@ -160,7 +162,8 @@ class Player
     players = Actor[:"players_#{@game_uuid}"]
     stats = %w(s w o t).map(&:to_sym).inject({}) do |r, sym|
       r.merge!(sym => {statements: []})
-      r[sym][:statements] += statements.visible_for_buf(statements.rebuild_visible_for(sym)).map{|s| {body: s.value, contribution: s.contribution_for(@uuid)} }
+      # TODO check contrib
+      r[sym][:statements] += statements.visible_for_buf(statements.rebuild_visible_for(sym)).map{|s| {body: s.value, contribution: '%d%' % (100.0 * s.contribution_for(@uuid))} }
       r
     end
     pls = players.players.sort{|a, b| a.uuid == b.uuid ? 0: a.uuid == @uuid ? -1 : a.uuid <=> b.uuid }

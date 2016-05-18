@@ -363,7 +363,9 @@ class Game
       players.async.push_end_stage
       players.copy_half
       publish :next_stage, @uuid, stage: state.stage unless state.stage == :tr
-      publish :ranging, @uuid, stage: state.stage if state.stage == :tr
+      if state.stage == :tr
+        publish :ranging, @uuid, stage: state.stage
+      end
     elsif %w(rs rw ro rt).include? state.stage.to_s
       # msg = {type: 'event', subtype: 'end_stage', value: state.stage, timer: Time.now.to_i + 1}
       # async.publish_msg msg
@@ -441,13 +443,13 @@ class Game
     players = Actor[:"players_#{@uuid}"]
     stats = %w(s w o t).map(&:to_sym).inject({}) do |r, sym|
       r.merge!(sym => {statements: []})
-      r[sym][:statements] += statements.visible_for_buf(statements.rebuild_visible_for(sym)).map{|s| {author: s.author, votes: s.votes.map(&:as_json), importances: s.importances.map(&:as_json), result: s.result, body: s.value, contribution: s.contribution} }
+      r[sym][:statements] += statements.visible_for_buf(statements.rebuild_visible_for(sym)).map{|s| {author: s.author, votes: s.votes.map(&:as_json), importances: s.importances, result: s.result, body: s.value, contribution: s.contribution} }
       # r[sym][:statements] += statements.visible_for_buf(statements.rebuild_visible_for(sym)).map{|s| {body: s.value, contribution: s.contribution_for(@uuid)} }
       r
     end
     sts = statements.statements.map(&:to_store)
     pls = players.players
-    ps = pls.map{|p| { p.uglify_name(:s) => {name: p.name, pitcher_score: (p.pitcher_score), catcher_score: (p.catcher_score)} } }
+    ps = pls.map{|p| { p.uglify_name(:s) => {name: p.name, pitcher_score: (p.pitcher_score), uglify_name: p.uglify_name(:s), catcher_score: (p.catcher_score)} } }
     hsh.merge! data: stats, players: ps, statements: sts
     al = Actor[:"admin_logger_#{@uuid}"]
     logs = al.as_json
