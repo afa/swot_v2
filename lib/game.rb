@@ -449,7 +449,7 @@ class Game
     end
     sts = statements.statements.map(&:to_store)
     pls = players.players
-    ps = pls.map{|p| { p.uglify_name(:s) => {name: p.name, pitcher_score: (p.pitcher_score), uglify_name: p.uglify_name(:s), catcher_score: (p.catcher_score)} } }
+    ps = pls.map{|p| { p.uglify_name(:s) => {name: p.name, pitcher_score: (p.pitcher_score), uglify_name: p.uglify_name(:s), pitcher_score_first_half: p.pitcher_score_first_half, catcher_score_first_half: p.catcher_score_first_half, uuid: p.uuid, catcher_score: (p.catcher_score)} } }
     hsh.merge! data: stats, players: ps, statements: sts
     al = Actor[:"admin_logger_#{@uuid}"]
     logs = al.as_json

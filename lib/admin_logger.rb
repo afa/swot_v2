@@ -121,6 +121,9 @@ class AdminLogger
 
     state = Actor[:"state_#{@guid}"]
     players = Actor[:"players_#{@guid}"]
+    queue = Actor[:"queue_#{@guid}"]
+    lst = queue.list.first(3)
+    pit = lst.shift
     stats = players.online.map do |p|
       {
         name: p.name
@@ -132,6 +135,9 @@ class AdminLogger
     msg = {
       subtype: :next_stage,
       from: state.previous_stage_name,
+      pitcher: pit.name,
+      queue: lst.map(&:name),
+      time_left: Timings::Stage.instance(@guid).next_time,
       to: state.stage_name
       # stats: stats
     }
