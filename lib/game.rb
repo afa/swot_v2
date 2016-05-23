@@ -102,7 +102,7 @@ class Game
     # end
     # timers = Center.current.to_supervise as: :"timers_#{@uuid}", type: Timings, args: [{game_uuid: @uuid}.merge(time_params)]
     timers = Center.current.to_supervise as: :"timers_#{@uuid}", type: Timings, args: [{game_uuid: @uuid}]
-    p sgame
+    # p sgame
     Timings::Start.instance(@uuid).set_time @start_at
 # =======
 #     pl_list = Store::Player.find(game_uuid: @uuid).to_a
@@ -138,7 +138,7 @@ class Game
   end
 
   def run
-    p @uuid
+    # p @uuid
     puts 'ok'
   end
 
@@ -212,9 +212,9 @@ class Game
     players = Actor[:"players_#{@uuid}"]
     statements = Actor[:"statements_#{@uuid}"]
     stage_swot = State::STAGES.fetch(params[:stage], {swot: :end})[:swot]
-    p 'stswot', stage_swot, params
+    # p 'stswot', stage_swot, params
     stmnts = statements.visible_for_buf(statements.rebuild_visible_for(stage_swot))
-    p stmnts
+    # p stmnts
     st = stmnts[params[:index].to_i - 1]
     impo = { player: params[:player], value: params[:value], index: params[:index], stage: stage_swot, statement: st.value.inspect }
     statements.async.range_for(impo)
@@ -248,7 +248,7 @@ class Game
     Timings::FirstPitch.instance(@uuid).cancel
     queue = Actor[:"queue_#{@uuid}"]
     state = int_state
-    p = queue.pitcher
+    # p = queue.pitcher
     publish :pitch_timeout, @uuid, p.uuid if p && p.alive?
     publish :pitcher_timeout, p.uuid, state.stage
     end_step(status: 'timeouted')
@@ -521,10 +521,10 @@ class Game
     if @online
       ch = Actor[:"gm_chnl_#{@uuid}"]
       if ch && ch.alive?
-        p 'game chnl ok'
+        # p 'game chnl ok'
         ch.publish_msg msg.to_json
       else
-        p 'chnl down'
+        # p 'chnl down'
         offline!
       end
     else
