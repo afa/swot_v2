@@ -271,9 +271,11 @@ class Game
     # alarms = Actor[:"alarms_#{@uuid}"]
     queue = Actor[:"queue_#{@uuid}"]
     statements = Actor[:"statements_#{@uuid}"]
-    statements.voting.vote(player: params[:player], result: params[:result])
+    voting = statements.voting
+    return unless voting
+    voting.vote(player: params[:player], result: params[:result])
     publish :vote_added, @uuid, vote: {player: params[:player], result: params[:result]}
-    if statements.voting.quorum?
+    if voting.quorum?
       if Timings::VotingQuorum.instance(@uuid).next_time.to_f > state.setting[:voting_tail_timeout].to_f
         Timings.instance(@uuid).cancel(%w(voting_quorum voting_tail))
         Timings::VotingTail.instance(@uuid).start
@@ -281,9 +283,9 @@ class Game
         players.async.push_quorum
       end
     end
-    if statements.voting.voted_count == (players.online.map(&:uuid) - [statements.voting.author] ).size
+    if voting.voted_count == (players.online.map(&:uuid) - [voting.author] ).size
         Timings.instance(@uuid).cancel(%w(voting_quorum voting_tail))
-      async.end_step(status: statements.voting.calc_result)
+      async.end_step(status: voting.calc_result)
     end
   end
 
@@ -334,19 +336,23 @@ class Game
     # players = Actor[:"players_#{@uuid}"]
     # queue = Actor[:"queue_#{@uuid}"]
     statements = Actor[:"statements_#{@uuid}"]
+    voting = statements.voting
     #calc rank results
     Timings::VotingQuorum.instance(@uuid).cancel
     Timings::VotingTail.instance(@uuid).cancel
-    publish :vote_timeouts, @uuid, {statement: statements.voting.uuid}
-    end_step(status: statements.voting.conclusion)
+    return unless voting
+    publish :vote_timeouts, @uuid, {statement: voting.uuid}
+    end_step(status: voting.conclusion)
   end
 
   def voting_tail_timeout params = {}
     statements = Actor[:"statements_#{@uuid}"]
     Timings::VotingQuorum.instance(@uuid).cancel
     Timings::VotingTail.instance(@uuid).cancel
-    publish :vote_timeouts, @uuid, {statement: statements.voting.uuid}
-    end_step(status: statements.voting.conclusion)
+    voting = statements.voting
+    return unless voting
+    publish :vote_timeouts, @uuid, {statement: voting.uuid}
+    end_step(status: voting.conclusion)
   end
 
   def end_stage params = {}
