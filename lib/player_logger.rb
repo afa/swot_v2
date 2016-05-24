@@ -66,12 +66,14 @@ class PlayerLogger
     return unless guid == @guid
     state = Actor[:"state_#{@guid}"]
     queue = Actor[:"queue_#{@guid}"]
+    players = Actor[:"players_#{@guid}"]
+    pitcher = players.find(pl_id)
     rec = PlayerLogRecord.new step: state.step,
       statement: nil,
       stage_title: State::STAGES[state.stage][:name],
       replace: [],
       pro_percent: nil,
-      player_name: queue.pitcher.uglify_name(state.stage), #chng to player(pl_id)
+      player_name: pitcher.uglify_name(state.stage), #chng to player(pl_id)
       scores_deltas: nil,
       player_id: @uuid,
       votes: nil,
@@ -87,12 +89,13 @@ class PlayerLogger
     return unless guid == @guid
     state = Actor[:"state_#{@guid}"]
     queue = Actor[:"queue_#{@guid}"]
+    pitcher = players.find(pl_id)
     rec = PlayerLogRecord.new step: state.step,
       statement: nil,
       stage_title: State::STAGES[state.stage][:name],
       replace: [],
       pro_percent: nil,
-      player_name: queue.pitcher.uglify_name(state.stage), #chng to player(pl_id)
+      player_name: pitcher.uglify_name(state.stage), #chng to player(pl_id)
       scores_deltas: nil,
       player_id: @uuid,
       votes: nil,
@@ -112,6 +115,8 @@ class PlayerLogger
     state = Actor[:"state_#{@guid}"]
     queue = Actor[:"queue_#{@guid}"]
     players = Actor[:"players_#{@guid}"]
+    pitcher = players.find(statement.author)
+
     replace = statement.replaces.map do |st_id|
       statements.find(st_id).try(:value)
     end.compact.join('. ')
@@ -125,7 +130,7 @@ class PlayerLogger
       stage_title: State::STAGES[state.stage][:name],
       replace: replace,
       pro_percent: '%.1f' % per,
-      player_name: queue.pitcher.uglify_name(state.stage),
+      player_name: pitcher.uglify_name(state.stage),
       scores_deltas: players.players.inject({}){|r, p| r.merge(p.uuid => '%+.1f' % p.delta)},
       player_id: @uuid,
       votes: log_votes,
