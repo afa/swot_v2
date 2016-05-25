@@ -462,7 +462,7 @@ class Game
     hsh.merge! logs: logs
     uri = URI(state.setting[:game_results_callback])
     req = Net::HTTP::Post.new uri.request_uri
-    req.body = hsh.to_json
+    req.body = "q='hsh.to_json'"
     rez = Net::HTTP.start(uri.hostname, uri.port) do |http|
       http.request(req)
     end
