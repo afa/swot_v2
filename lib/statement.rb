@@ -13,6 +13,7 @@ class Statement
                 :votes,
                 :importances,
                 :importance_score,
+                :importance_score_raw,
                 :status,
                 :result,
                 :contribution
@@ -40,6 +41,25 @@ class Statement
 
   def to_store
     {author: @author, game_uuid: @game_uuid, uuid: @uuid, stage: @stage, step: @step, value: @value, votes: @votes.map(&:as_json), status: @status, result: @result, importances: @importances, importance_score: @importance_score, contribution: @contribution }
+  end
+
+  def update_importance_score
+    @importance_score_raw = @importances.inject(0.0){|i| score_value(i) }
+    @importance_score_raw = 1 if @importance_score_raw == 0
+
+    # apply importance multiplier to contributors share
+    # self.contributions_before_ranking.each do |x|
+    #   self.contributions_after_ranking.build player: x.player, share: x.share * self.importance_score_raw
+    # end
+  end
+
+  def score_key hsh
+    :"ranging_importance_#{hsh[:value]}_score"
+  end
+
+  def score_value hsh
+    setting = Celluloid::Actor[:"state_#{@game_uuid}"].setting
+    setting[score_key(hsh)].to_f
   end
 
   def replaced_by! uuid
