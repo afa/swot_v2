@@ -140,6 +140,9 @@ class Statements
     {}
   end
 
+  def update_importance_score
+    @statements.select{|s| s.status == 'accepted' }.each{|s| s.update_importance_score }
+  end
 
   def rescore
     s_sum = @statements.select{|s| s.status == 'accepted' }.inject(0.0){|r, s| r + s.importance_score_raw.to_f }

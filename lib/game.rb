@@ -446,6 +446,8 @@ class Game
     sgame = Store::Game.find(uuid: @uuid).first
     hsh = {game_id: sgame.mongo_id}
     statements = Actor[:"statements_#{@uuid}"]
+    statements.update_importance_score
+
     statements.rescore
     state = int_state
     players = Actor[:"players_#{@uuid}"]
