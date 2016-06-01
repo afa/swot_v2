@@ -140,6 +140,14 @@ class Statements
     {}
   end
 
+
+  def rescore
+    s_sum = @statements.select{|s| s.status == 'accepted' }.inject(0.0){|r, s| r + s.importance_score_raw }
+    @statements.select{|s| s.status == 'accepted' }.each do |s|
+      s.importance_score = s.importance_score_raw * 100.0 / s_sum
+    end
+  end
+
   def count_pitchers_score
     all_contributions = @statements.select{|s| s.status == 'accepted' }.map &:contribution
 

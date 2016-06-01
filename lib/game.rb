@@ -445,6 +445,7 @@ class Game
     sgame = Store::Game.find(uuid: @uuid).first
     hsh = {game_id: sgame.mongo_id}
     statements = Actor[:"statements_#{@uuid}"]
+    statements.rescore
     state = int_state
     players = Actor[:"players_#{@uuid}"]
     stats = %w(s w o t).map(&:to_sym).inject({}) do |r, sym|
