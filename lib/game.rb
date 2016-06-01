@@ -367,7 +367,8 @@ class Game
       # msg = {type: 'event', subtype: 'end_stage', value: state.stage, timer: Timings.instance(@uuid).next_stamp}
       # async.publish_msg msg
       players.async.push_end_stage
-      players.copy_half
+      players.copy_half if state.stage == :sw
+      players.copy_before if state.stage == :tr
       publish :next_stage, @uuid, stage: state.stage unless state.stage == :tr
       if state.stage == :tr
         publish :ranging, @uuid, stage: state.stage
@@ -455,7 +456,7 @@ class Game
     end
     sts = statements.statements.map(&:to_store)
     pls = players.players
-    ps = pls.map{|p| { p.uglify_name(:s) => {name: p.name, pitcher_score: (p.pitcher_score), uglify_name: p.uglify_name(:s), pitcher_score_first_half: p.pitcher_score_first_half, catcher_score_first_half: p.catcher_score_first_half, uuid: p.uuid, catcher_score: (p.catcher_score)} } }
+    ps = pls.map{|p| { p.uglify_name(:s) => {name: p.name, pitcher_score: (p.pitcher_score), pitcher_score_before_ranging: p.pitcher_score_before_ranging, catcher_score_before_ranging: p.catcher_score_before_ranging, uglify_name: p.uglify_name(:s), pitcher_score_first_half: p.pitcher_score_first_half, catcher_score_first_half: p.catcher_score_first_half, uuid: p.uuid, catcher_score: (p.catcher_score)} } }
     hsh.merge! data: stats, players: ps, statements: sts
     al = Actor[:"admin_logger_#{@uuid}"]
     logs = al.as_json

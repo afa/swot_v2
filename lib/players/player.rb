@@ -9,7 +9,7 @@ class Player
   finalizer :finalizer
 
   attr_accessor :name, :email, :channel, :game_uuid, :uuid, :redis, :order, :score, :online, :was_online
-  attr_accessor :pitcher_score, :pitcher_rank, :catcher_score, :delta, :pitcher_score_first_half, :catcher_score_first_half
+  attr_accessor :pitcher_score, :pitcher_rank, :catcher_score, :delta, :pitcher_score_first_half, :catcher_score_first_half, :pitcher_score_before_ranging, :catcher_score_before_ranging
 
   def self.build params = {}
     d = UUID.new.generate
@@ -320,8 +320,13 @@ class Player
   end
 
   def copy_half
-    catcher_score_first_half = catcher_score
-    pitcher_score_first_half = pitcher_score
+    @catcher_score_first_half = @catcher_score
+    @pitcher_score_first_half = @pitcher_score
+  end
+
+  def copy_before
+    @catcher_score_first_half = @catcher_score
+    @pitcher_score_first_half = @pitcher_score
   end
 
   def send_terminated

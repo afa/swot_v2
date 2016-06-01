@@ -90,6 +90,12 @@ class Players
     end
   end
 
+  def copy_before
+    players.each do |pl|
+      pl.async.copy_before
+    end
+  end
+
   def push_start_stage
     game = Actor[:"game_#{@game_uuid}"]
     players.each do |pl|
