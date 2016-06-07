@@ -16,6 +16,7 @@ class Statement
                 :importance_score_raw,
                 :status,
                 :result,
+                :contribution_before_ranking,
                 :contribution
                 # :auto
 
@@ -31,6 +32,7 @@ class Statement
     @replaced = false
     # {player: 'id', share: 'float'}
     @contribution = {}
+    @contribution_before_ranking = {}
     # [{ player: 'id', result: 'accepted | declined' }, ...]
     @votes = []
     @result = 0.0
@@ -40,7 +42,7 @@ class Statement
   end
 
   def to_store
-    {author: @author, game_uuid: @game_uuid, uuid: @uuid, stage: @stage, step: @step, value: @value, votes: @votes.map(&:as_json), status: @status, result: @result, importances: @importances, importance_score: @importance_score, importance_score_raw: @importance_score_raw, contribution: @contribution }
+    {author: @author, game_uuid: @game_uuid, uuid: @uuid, stage: @stage, step: @step, value: @value, votes: @votes.map(&:as_json), status: @status, result: @result, importances: @importances, importance_score: @importance_score, importance_score_raw: @importance_score_raw, contribution: @contribution, contribution_before_ranking: @contribution_before_ranking }
   end
 
   def update_importance_score
@@ -180,6 +182,9 @@ class Statement
     @votes.each do |vote|
       zone = "catcher_#{format_value(vote.result)}_zone_#{catcher_zone}_score"
       delta = cfg[zone.to_sym].to_f
+      if @status == 'no_quorum' && format_value(vote.result) == 'contra'
+        delta = 1.5
+      end
       # FIXME:  ищем плееров с ид в текущей игре.
       player = Celluloid::Actor[:"player_#{vote.player}"]
       player.async.catcher_apply_delta(delta)
