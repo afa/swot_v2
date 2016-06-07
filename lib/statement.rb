@@ -165,10 +165,13 @@ class Statement
     statements.count_pitchers_score
   end
 
-  def count_catchers_score
+  def count_catchers_score(declined = false)
     state = Celluloid::Actor[:"state_#{@game_uuid}"]
     cfg = state.setting
     rslt = conclusion
+    #apply voted contra when no quorum
+    non_voted_players = (Celluloid::Actor[:"players_#{@game_uuid}"].player_ids - [@author] - @votes.map(&:player)).map{|i| Celluloid::Actor[:"player_#{i}"] }.select{|p| p.alive? && p.online }
+
     catcher_zone =  if    @result < cfg[:catcher_low_border].to_f  ; 1
                     elsif @result <  0.5                      ; 2
                     elsif @result < cfg[:catcher_high_border].to_f ; 3
@@ -222,6 +225,7 @@ class Statement
   def vote_results! options={}
     if @status == 'no_quorum'
       @result = 0.0
+      count_catchers_score(true)
       decline!
     else
       @result = @votes.inject(0){|r, v| r += v.result == 'accepted' ? 1 : 0 }.to_f / @votes.size.to_f
