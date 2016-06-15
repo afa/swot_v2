@@ -11,6 +11,7 @@ class Statement
                 :stage,
                 :step,
                 :votes,
+                :visible,
                 :importances,
                 :importance_score,
                 :importance_score_raw,
@@ -39,10 +40,11 @@ class Statement
     @importances = []
     @importance_score = 0.0
     @status = false
+    @visible = false
   end
 
   def to_store
-    {author: @author, game_uuid: @game_uuid, uuid: @uuid, stage: @stage, step: @step, value: @value, votes: @votes.map(&:as_json), status: @status, result: @result, importances: @importances, importance_score: @importance_score, importance_score_raw: @importance_score_raw, contribution: @contribution, contribution_before_ranking: @contribution_before_ranking }
+    {author: @author, game_uuid: @game_uuid, uuid: @uuid, stage: @stage, step: @step, value: @value, votes: @votes.map(&:as_json), status: @status, result: @result, importances: @importances, importance_score: @importance_score, importance_score_raw: @importance_score_raw, contribution: @contribution, contribution_before_ranking: @contribution_before_ranking, visible: @visible }
   end
 
   def update_importance_score
