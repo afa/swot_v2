@@ -457,6 +457,12 @@ class Game
       # r[sym][:statements] += statements.visible_for_buf(statements.rebuild_visible_for(sym)).map{|s| {body: s.value, contribution: s.contribution_for(@uuid)} }
       r
     end
+    vis = %w(s w o t).map(&:to_sym).inject({}) do |r, sym|
+      r[sym] = []
+      r[sym] += statements.visible_for_buf(statements.rebuild_visible_for(sym)).map(&:uuid)
+      r
+    end
+    statements.statements.each{|s| s.visible = vis[s.stage.to_sym].include?(s.uuid) }
     sts = statements.statements.map(&:to_store)
     pls = players.players
     ps = pls.map{|p| { p.uglify_name(:s) => {name: p.name, pitcher_score: (p.pitcher_score), pitcher_score_before_ranging: p.pitcher_score_before_ranging, catcher_score_before_ranging: p.catcher_score_before_ranging, uglify_name: p.uglify_name(:s), pitcher_score_first_half: p.pitcher_score_first_half, catcher_score_first_half: p.catcher_score_first_half, uuid: p.uuid, catcher_score: (p.catcher_score)} } }
