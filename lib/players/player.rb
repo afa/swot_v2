@@ -147,7 +147,7 @@ class Player
     else
       info "player #{@uuid} offline"
     end
-    info msg.inspect
+    # info msg.inspect
   end
 
   def send_result params = {}
