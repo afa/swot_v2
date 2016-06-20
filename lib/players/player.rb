@@ -168,7 +168,7 @@ class Player
     end
     pls = players.players.sort{|a, b| a.uuid == b.uuid ? 0: a.uuid == @uuid ? -1 : a.uuid <=> b.uuid }
     cur = pls.shift
-    ps = [{cur.name => {pitcher_score: cur.pitcher_score, catcher_score: cur.catcher_score}}] + pls.map{|p| { p.uglify_name(:s) => {pitcher_score: (p.pitcher_score), catcher_score: (p.catcher_score)} } }
+    ps = [{cur.name => {pitcher_score: ('%.03f' % cur.pitcher_score), catcher_score: ('%.03f' % cur.catcher_score)}}] + pls.map{|p| { p.uglify_name(:s) => {pitcher_score: ('%.03f' % (p.pitcher_score)), catcher_score: ('%.03f' % (p.catcher_score))} } }
     # { type: results, value: { data: { 's': { statements: [{ body: <str>, contribution: <float> }]}, 'w': { statements: [...] }, 'o': ..., 't': ... }, players: { real_name: { pitcher_score: <float>, catcher_score: <float> }, player_1: { ... }, player_3: { ... }...}}}
     msg = {type: 'results', value: { data: stats, players: ps } }
     publish_msg msg

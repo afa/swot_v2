@@ -228,25 +228,32 @@ class Game
     queue = Actor[:"queue_#{@uuid}"]
     statements = Actor[:"statements_#{@uuid}"]
     tm = Time.now.to_i + (state.setting[:voting_quorum_timeout] || 60)
-    statement = {value: params[:value], to_replace: params[:to_replace], author: queue.pitcher.uuid, stage: state.stage, step: state.step, game_uuid: @uuid}
+    rpl = (params[:to_replace] || []).map do |r|
+      if r.is_a? Hash
+        r[:index]
+      else
+        r
+      end
+    end
+    statement = {value: params[:value], to_replace: rpl, author: queue.pitcher.uuid, stage: state.stage, step: state.step, game_uuid: @uuid}
     errors = statements.add statement
     if errors.empty?
 
-    publish :pitcher_pitch, queue.pitcher.uuid, state.stage
-    state.step_status = state.next_enum(State::STEP_STATUSES, state.step_status)
-    Timings::Pitch.instance(@uuid).cancel
-    Timings::FirstPitch.instance(@uuid).cancel
-    Timings::VotingQuorum.instance(@uuid).start
-    publish :statement_pitched, @uuid, statement: statement
-    players.push_pitch(errors.merge(value: params[:value], to_replace: params[:to_replace] || [], author: queue.pitcher.uglify_name(state.stage.to_s), timer: Timings.instance(@uuid).next_stamp))
-    # publish_msg({type: 'event', subtype: 'pitched', value: params[:value], to_replace: params[:to_replace], author: queue.pitcher.uglify_name(state.stage.to_s), timer: Timings.instance(@uuid).next_stamp}.merge(errors))
+      publish :pitcher_pitch, queue.pitcher.uuid, state.stage
+      state.step_status = state.next_enum(State::STEP_STATUSES, state.step_status)
+      Timings::Pitch.instance(@uuid).cancel
+      Timings::FirstPitch.instance(@uuid).cancel
+      Timings::VotingQuorum.instance(@uuid).start
+      publish :statement_pitched, @uuid, statement: statement
+      players.push_pitch(errors.merge(value: params[:value], to_replace: params[:to_replace] || [], author: queue.pitcher.uglify_name(state.stage.to_s), timer: Timings.instance(@uuid).next_stamp))
+      # publish_msg({type: 'event', subtype: 'pitched', value: params[:value], to_replace: params[:to_replace], author: queue.pitcher.uglify_name(state.stage.to_s), timer: Timings.instance(@uuid).next_stamp}.merge(errors))
     else
       pit = queue.pitcher
       pit.publish_msg errors
 
-    # unless errors.empty?
-    #   end_step(errors)
-    # end
+      # unless errors.empty?
+      #   end_step(errors)
+      # end
     end
   end
 
