@@ -228,18 +228,32 @@ class Game
     queue = Actor[:"queue_#{@uuid}"]
     statements = Actor[:"statements_#{@uuid}"]
     tm = Time.now.to_i + (state.setting[:voting_quorum_timeout] || 60)
-    statement = {value: params[:value], to_replace: params[:to_replace], author: queue.pitcher.uuid, stage: state.stage, step: state.step, game_uuid: @uuid}
+    rpl = (params[:to_replace] || []).map do |r|
+      if r.is_a? Hash
+        r[:index].to_i
+      else
+        r.to_i
+      end
+    end
+    statement = {value: params[:value], to_replace: rpl, author: queue.pitcher.uuid, stage: state.stage, step: state.step, game_uuid: @uuid}
     errors = statements.add statement
-    publish :pitcher_pitch, queue.pitcher.uuid, state.stage
-    state.step_status = state.next_enum(State::STEP_STATUSES, state.step_status)
-    Timings::Pitch.instance(@uuid).cancel
-    Timings::FirstPitch.instance(@uuid).cancel
-    Timings::VotingQuorum.instance(@uuid).start
-    publish :statement_pitched, @uuid, statement: statement
-    players.push_pitch(errors.merge(value: params[:value], to_replace: params[:to_replace] || [], author: queue.pitcher.uglify_name(state.stage.to_s), timer: Timings.instance(@uuid).next_stamp))
-    # publish_msg({type: 'event', subtype: 'pitched', value: params[:value], to_replace: params[:to_replace], author: queue.pitcher.uglify_name(state.stage.to_s), timer: Timings.instance(@uuid).next_stamp}.merge(errors))
-    unless errors.empty?
-      end_step(errors)
+    if errors.empty?
+
+      publish :pitcher_pitch, queue.pitcher.uuid, state.stage
+      state.step_status = state.next_enum(State::STEP_STATUSES, state.step_status)
+      Timings::Pitch.instance(@uuid).cancel
+      Timings::FirstPitch.instance(@uuid).cancel
+      Timings::VotingQuorum.instance(@uuid).start
+      publish :statement_pitched, @uuid, statement: statement
+      players.push_pitch(errors.merge(value: params[:value], to_replace: params[:to_replace] || [], author: queue.pitcher.uglify_name(state.stage.to_s), timer: Timings.instance(@uuid).next_stamp))
+      # publish_msg({type: 'event', subtype: 'pitched', value: params[:value], to_replace: params[:to_replace], author: queue.pitcher.uglify_name(state.stage.to_s), timer: Timings.instance(@uuid).next_stamp}.merge(errors))
+    else
+      pit = queue.pitcher
+      pit.publish_msg errors
+
+      # unless errors.empty?
+      #   end_step(errors)
+      # end
     end
   end
 
@@ -457,6 +471,12 @@ class Game
       # r[sym][:statements] += statements.visible_for_buf(statements.rebuild_visible_for(sym)).map{|s| {body: s.value, contribution: s.contribution_for(@uuid)} }
       r
     end
+    vis = %w(s w o t).map(&:to_sym).inject({}) do |r, sym|
+      r[sym] = []
+      r[sym] += statements.visible_for_buf(statements.rebuild_visible_for(sym)).map(&:uuid)
+      r
+    end
+    statements.statements.each{|s| s.visible = vis[s.stage.to_sym].include?(s.uuid) }
     sts = statements.statements.map(&:to_store)
     pls = players.players
     ps = pls.map{|p| { p.uglify_name(:s) => {name: p.name, pitcher_score: (p.pitcher_score), pitcher_score_before_ranging: p.pitcher_score_before_ranging, catcher_score_before_ranging: p.catcher_score_before_ranging, uglify_name: p.uglify_name(:s), pitcher_score_first_half: p.pitcher_score_first_half, catcher_score_first_half: p.catcher_score_first_half, uuid: p.uuid, catcher_score: (p.catcher_score)} } }

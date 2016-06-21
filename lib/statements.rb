@@ -56,16 +56,16 @@ class Statements
   def validate_statement params = {}
     repl_count = params.has_key?(:to_replace) && params[:to_replace] ? params[:to_replace].size : 0
     if @visible.size - repl_count > 6
-      return { error: 'to_many' }
+      return { type: 'error', value: 'to_many' }
     end
     if @current.detect{|s| params[:value] == find(s).value }
-      return { error: 'duplicate' }
+      return { type: 'error', value: 'duplicate' }
     end
     if params[:value].force_encoding('UTF-8').size > 75
-      return { error: 'too_long' }
+      return { type: 'error', value: 'too_long' }
     end
     if params[:value].strip.size == 0
-      return { error: 'empty' }
+      return { type: 'error', value: 'empty' }
     end
     {}
   end

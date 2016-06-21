@@ -11,11 +11,13 @@ class Statement
                 :stage,
                 :step,
                 :votes,
+                :visible,
                 :importances,
                 :importance_score,
                 :importance_score_raw,
                 :status,
                 :result,
+                :contribution_before_ranking,
                 :contribution
                 # :auto
 
@@ -31,16 +33,18 @@ class Statement
     @replaced = false
     # {player: 'id', share: 'float'}
     @contribution = {}
+    @contribution_before_ranking = {}
     # [{ player: 'id', result: 'accepted | declined' }, ...]
     @votes = []
     @result = 0.0
     @importances = []
     @importance_score = 0.0
     @status = false
+    @visible = false
   end
 
   def to_store
-    {author: @author, game_uuid: @game_uuid, uuid: @uuid, stage: @stage, step: @step, value: @value, votes: @votes.map(&:as_json), status: @status, result: @result, importances: @importances, importance_score: @importance_score, importance_score_raw: @importance_score_raw, contribution: @contribution }
+    {author: @author, game_uuid: @game_uuid, uuid: @uuid, stage: @stage, step: @step, value: @value, votes: @votes.map(&:as_json), status: @status, result: @result, importances: @importances, importance_score: @importance_score, importance_score_raw: @importance_score_raw, contribution: @contribution, contribution_before_ranking: @contribution_before_ranking, visible: @visible }
   end
 
   def update_importance_score
@@ -165,10 +169,13 @@ class Statement
     statements.count_pitchers_score
   end
 
-  def count_catchers_score
+  def count_catchers_score(declined = false)
     state = Celluloid::Actor[:"state_#{@game_uuid}"]
     cfg = state.setting
     rslt = conclusion
+    #apply voted contra when no quorum
+    non_voted_players = (Celluloid::Actor[:"players_#{@game_uuid}"].player_ids - [@author] - @votes.map(&:player)).map{|i| Celluloid::Actor[:"player_#{i}"] }.select{|p| p.alive? && p.online }
+
     catcher_zone =  if    @result < cfg[:catcher_low_border].to_f  ; 1
                     elsif @result <  0.5                      ; 2
                     elsif @result < cfg[:catcher_high_border].to_f ; 3
@@ -177,6 +184,9 @@ class Statement
     @votes.each do |vote|
       zone = "catcher_#{format_value(vote.result)}_zone_#{catcher_zone}_score"
       delta = cfg[zone.to_sym].to_f
+      if @status == 'no_quorum' && format_value(vote.result) == 'contra'
+        delta = 1.5
+      end
       # FIXME:  ищем плееров с ид в текущей игре.
       player = Celluloid::Actor[:"player_#{vote.player}"]
       player.async.catcher_apply_delta(delta)
@@ -222,6 +232,7 @@ class Statement
   def vote_results! options={}
     if @status == 'no_quorum'
       @result = 0.0
+      count_catchers_score(true)
       decline!
     else
       @result = @votes.inject(0){|r, v| r += v.result == 'accepted' ? 1 : 0 }.to_f / @votes.size.to_f

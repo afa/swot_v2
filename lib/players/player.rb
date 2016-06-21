@@ -147,7 +147,7 @@ class Player
     else
       info "player #{@uuid} offline"
     end
-    info msg.inspect
+    # info msg.inspect
   end
 
   def send_result params = {}
@@ -168,7 +168,7 @@ class Player
     end
     pls = players.players.sort{|a, b| a.uuid == b.uuid ? 0: a.uuid == @uuid ? -1 : a.uuid <=> b.uuid }
     cur = pls.shift
-    ps = [{cur.name => {pitcher_score: cur.pitcher_score, catcher_score: cur.catcher_score}}] + pls.map{|p| { p.uglify_name(:s) => {pitcher_score: (p.pitcher_score), catcher_score: (p.catcher_score)} } }
+    ps = [{cur.name => {pitcher_score: ('%.03f' % cur.pitcher_score), catcher_score: ('%.03f' % cur.catcher_score)}}] + pls.map{|p| { p.uglify_name(:s) => {pitcher_score: ('%.03f' % (p.pitcher_score)), catcher_score: ('%.03f' % (p.catcher_score))} } }
     # { type: results, value: { data: { 's': { statements: [{ body: <str>, contribution: <float> }]}, 'w': { statements: [...] }, 'o': ..., 't': ... }, players: { real_name: { pitcher_score: <float>, catcher_score: <float> }, player_1: { ... }, player_3: { ... }...}}}
     msg = {type: 'results', value: { data: stats, players: ps } }
     publish_msg msg
@@ -200,8 +200,7 @@ class Player
     queue = Actor[:"queue_#{@game_uuid}"]
     statements = Actor[:"statements_#{@game_uuid}"]
     sts = statements.visible
-    rpl = params[:to_replace].map{|p| p.to_i < 1 || p.to_i > sts.size ? nil : sts[p.to_i - 1].value }.compact
-    msg = {type: 'event', subtype: 'pitched', value: params[:value], to_replace: rpl, author: queue.pitcher.uglify_name(state.stage), timeout_at: Timings.instance(@game_uuid).stamps(%w(stage voting_quorum voting_tail).map(&:to_sym)), time: current_stamp, step: {status: state.step_status} }
+    msg = {type: 'event', subtype: 'pitched', value: params[:value], to_replace: (params[:to_replace] || []), author: queue.pitcher.uglify_name(state.stage), timeout_at: Timings.instance(@game_uuid).stamps(%w(stage voting_quorum voting_tail).map(&:to_sym)), time: current_stamp, step: {status: state.step_status} }
     publish_msg msg
   end
 
