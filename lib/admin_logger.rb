@@ -28,6 +28,7 @@ class AdminLogger
     subscribe :game_terminated, :game_terminated
     subscribe :admin_log_push, :admin_log_push
     subscribe :save_game_data, :save_game_data
+    # subscribe :sync_admin_log, :save_game_data
   end
 
   def push hash
@@ -44,7 +45,11 @@ class AdminLogger
   end
 
   def as_json
-    @records.map(&:to_hash)
+    sync_admin_log
+    store = Store::AdminLog.find(game_uuid: @guid).sort(by: :created_at).to_a
+    store.map(&:data)
+
+    # @records.map(&:to_hash)
   end
 
   def save_game_data topic, game_id
@@ -79,7 +84,7 @@ class AdminLogger
       # values: @records[0, @last_processed]
     }
     publish_msg msg
-    info msg.inspect
+    # info msg.inspect
   end
 
   def admin_log_push topic, game_id
@@ -96,6 +101,10 @@ class AdminLogger
       publish_msg rcrd
     end
     @last_processed += cnt
+  end
+
+  def prepare_saved_logs
+    #TODO !!!!!!!!!!!!!!!!!!!!!!!!
   end
 
   def game_started topic, game_id, params = {}
