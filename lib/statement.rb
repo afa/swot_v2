@@ -142,7 +142,8 @@ class Statement
       replaced.each do |statement|
         statement.contribution.each do |player, share|
           player_share = contributors_hash.fetch player, 0.0
-          contributors_hash[player] = player_share + share * others_share_part
+          contributors_hash[player] = player_share * others_share_part
+          # contributors_hash[player] = player_share + share * others_share_part
         end
       end
     end
