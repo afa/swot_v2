@@ -82,6 +82,7 @@ class Statement
   end
 
   def vote params = {}
+    unless @votes.detect{|v| v.player == params[:player] }
     @votes << Vote.new(player: params[:player], result: params[:result], active: true)
   end
 
@@ -125,11 +126,12 @@ class Statement
     cfg = state.setting
     replaces_amount = @replaces.size
     raise ArgumentError, 'to much replaces (> 2)' unless (0..2).include?(replaces_amount)
-    share = case replaces_amount
-            when 0 then cfg[:pitcher_no_replace_score]
-            when 1 then cfg[:pitcher_single_replace_score]
-            when 2 then cfg[:pitcher_double_replace_score]
-            end.to_f
+    share = cfg[:"pitcher_#{%w(no single double)[replaces_amount]}_replace_score"].to_f
+    # share = case replaces_amount
+    #         when 0 then cfg[:pitcher_no_replace_score]
+    #         when 1 then cfg[:pitcher_single_replace_score]
+    #         when 2 then cfg[:pitcher_double_replace_score]
+    #         end.to_f
     contributors_hash = { @author => share }
     unless replaces_amount.zero?
       statements = Celluloid::Actor[:"statements_#{@game_uuid}"]
@@ -176,11 +178,12 @@ class Statement
     #apply voted contra when no quorum
     non_voted_players = (Celluloid::Actor[:"players_#{@game_uuid}"].player_ids - [@author] - @votes.map(&:player)).map{|i| Celluloid::Actor[:"player_#{i}"] }.select{|p| p.alive? && p.online }
 
-    catcher_zone =  if    @result < cfg[:catcher_low_border].to_f  ; 1
-                    elsif @result <  0.5                      ; 2
-                    elsif @result < cfg[:catcher_high_border].to_f ; 3
-                    else                                      ; 4
-                    end
+    catcher_zone = [cfg[:catcher_low_border].to_f, 0.5, cfg[:catcher_high_border].to_f].select{|i| @result >= i }.size + 1 
+    # catcher_zone =  if    @result < cfg[:catcher_low_border].to_f  ; 1
+    #                 elsif @result <  0.5                      ; 2
+    #                 elsif @result < cfg[:catcher_high_border].to_f ; 3
+    #                 else                                      ; 4
+    #                 end
     @votes.each do |vote|
       zone = "catcher_#{format_value(vote.result)}_zone_#{catcher_zone}_score"
       delta = cfg[zone.to_sym].to_f
