@@ -192,7 +192,6 @@ class Statements
 
   def active
     visible
-    # mapped_current.select(&:visible?)
   end
 
   def all
