@@ -200,8 +200,7 @@ class Player
     queue = Actor[:"queue_#{@game_uuid}"]
     statements = Actor[:"statements_#{@game_uuid}"]
     sts = statements.visible
-    rpl = params[:to_replace].map{|p| p.to_i < 1 || p.to_i > sts.size ? nil : sts[p.to_i - 1].value }.compact
-    msg = {type: 'event', subtype: 'pitched', value: params[:value], to_replace: rpl, author: queue.pitcher.uglify_name(state.stage), timeout_at: Timings.instance(@game_uuid).stamps(%w(stage voting_quorum voting_tail).map(&:to_sym)), time: current_stamp, step: {status: state.step_status} }
+    msg = {type: 'event', subtype: 'pitched', value: params[:value], to_replace: (params[:to_replace] || []), author: queue.pitcher.uglify_name(state.stage), timeout_at: Timings.instance(@game_uuid).stamps(%w(stage voting_quorum voting_tail).map(&:to_sym)), time: current_stamp, step: {status: state.step_status} }
     publish_msg msg
   end
 

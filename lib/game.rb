@@ -230,9 +230,9 @@ class Game
     tm = Time.now.to_i + (state.setting[:voting_quorum_timeout] || 60)
     rpl = (params[:to_replace] || []).map do |r|
       if r.is_a? Hash
-        r[:index]
+        r[:index].to_i
       else
-        r
+        r.to_i
       end
     end
     statement = {value: params[:value], to_replace: rpl, author: queue.pitcher.uuid, stage: state.stage, step: state.step, game_uuid: @uuid}
