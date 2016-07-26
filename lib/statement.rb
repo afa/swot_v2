@@ -82,7 +82,7 @@ class Statement
   end
 
   def vote params = {}
-    unless @votes.detect{|v| v.player == params[:player] }
+    return unless @votes.detect{|v| v.player == params[:player] }
     @votes << Vote.new(player: params[:player], result: params[:result], active: true)
   end
 
