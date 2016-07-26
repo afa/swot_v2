@@ -11,9 +11,13 @@ class Statement
                 :stage,
                 :step,
                 :votes,
+                :visible,
                 :importances,
+                :importance_score,
+                :importance_score_raw,
                 :status,
                 :result,
+                :contribution_before_ranking,
                 :contribution
                 # :auto
 
@@ -29,11 +33,37 @@ class Statement
     @replaced = false
     # {player: 'id', share: 'float'}
     @contribution = {}
+    @contribution_before_ranking = {}
     # [{ player: 'id', result: 'accepted | declined' }, ...]
     @votes = []
     @result = 0.0
     @importances = []
+    @importance_score = 0.0
     @status = false
+    @visible = false
+  end
+
+  def to_store
+    {author: @author, game_uuid: @game_uuid, uuid: @uuid, stage: @stage, step: @step, value: @value, votes: @votes.map(&:as_json), status: @status, result: @result, importances: @importances, importance_score: @importance_score, importance_score_raw: @importance_score_raw, contribution: @contribution, contribution_before_ranking: @contribution_before_ranking, visible: @visible }
+  end
+
+  def update_importance_score
+    @importance_score_raw = @importances.inject(0.0){|r, i| r + score_value(i) }
+    @importance_score_raw = 1 if @importance_score_raw == 0
+
+    # apply importance multiplier to contributors share
+    # self.contributions_before_ranking.each do |x|
+    #   self.contributions_after_ranking.build player: x.player, share: x.share * self.importance_score_raw
+    # end
+  end
+
+  def score_key hsh
+    :"ranging_importance_#{hsh[:value]}_score"
+  end
+
+  def score_value hsh
+    setting = Celluloid::Actor[:"state_#{@game_uuid}"].setting
+    setting[score_key(hsh)].to_f
   end
 
   def replaced_by! uuid
@@ -52,6 +82,7 @@ class Statement
   end
 
   def vote params = {}
+    return if @votes.detect{|v| v.player == params[:player] }
     @votes << Vote.new(player: params[:player], result: params[:result], active: true)
   end
 
@@ -71,8 +102,12 @@ class Statement
   end
 
   def calc_result
+    # players = Celluloid::Actor[:"players_#{@game_uuid}"]
+    # cnt = players.online.size
     return 'no_quorum' if @votes.empty?
+    return 'no_quorum' unless quorum?
     p = @votes.map(&:result).select{|v| v == 'accepted' }.size
+    return 'no_quorum' unless quorum?
     return 'declined' if p ==0
     return 'accepted' if p == voted_count
     p.to_f / @votes.size.to_f >= 0.5 ? 'accepted' : 'declined'
@@ -91,11 +126,12 @@ class Statement
     cfg = state.setting
     replaces_amount = @replaces.size
     raise ArgumentError, 'to much replaces (> 2)' unless (0..2).include?(replaces_amount)
-    share = case replaces_amount
-            when 0 then cfg[:pitcher_no_replace_score]
-            when 1 then cfg[:pitcher_single_replace_score]
-            when 2 then cfg[:pitcher_double_replace_score]
-            end
+    share = cfg[:"pitcher_#{%w(no single double)[replaces_amount]}_replace_score"].to_f
+    # share = case replaces_amount
+    #         when 0 then cfg[:pitcher_no_replace_score]
+    #         when 1 then cfg[:pitcher_single_replace_score]
+    #         when 2 then cfg[:pitcher_double_replace_score]
+    #         end.to_f
     contributors_hash = { @author => share }
     unless replaces_amount.zero?
       statements = Celluloid::Actor[:"statements_#{@game_uuid}"]
@@ -106,7 +142,8 @@ class Statement
       replaced.each do |statement|
         statement.contribution.each do |player, share|
           player_share = contributors_hash.fetch player, 0.0
-          contributors_hash[player] = player_share + share * others_share_part
+          contributors_hash[player] = player_share * others_share_part
+          # contributors_hash[player] = player_share + share * others_share_part
         end
       end
     end
@@ -116,6 +153,10 @@ class Statement
   def player_contribution
     players = Celluloid::Actor[:"players_#{@game_uuid}"]
     @contribution.inject({}){|r, (k, v)| r.merge(players.find(k).name => v) }
+  end
+
+  def contribution_for pl_id
+    @contribution.fetch pl_id, 0.0
   end
 
   def count_pitcher_score
@@ -131,18 +172,25 @@ class Statement
     statements.count_pitchers_score
   end
 
-  def count_catchers_score
+  def count_catchers_score(declined = false)
     state = Celluloid::Actor[:"state_#{@game_uuid}"]
     cfg = state.setting
     rslt = conclusion
-    catcher_zone =  if   @result < cfg[:catcher_low_border]  ; 1
-                    elsif @result <  0.5                     ; 2
-                    elsif @result < cfg[:catcher_high_border]; 3
-                    else                                     ; 4
-                    end
+    #apply voted contra when no quorum
+    non_voted_players = (Celluloid::Actor[:"players_#{@game_uuid}"].player_ids - [@author] - @votes.map(&:player)).map{|i| Celluloid::Actor[:"player_#{i}"] }.select{|p| p.alive? && p.online }
+
+    catcher_zone = [cfg[:catcher_low_border].to_f, 0.5, cfg[:catcher_high_border].to_f].select{|i| @result >= i }.size + 1 
+    # catcher_zone =  if    @result < cfg[:catcher_low_border].to_f  ; 1
+    #                 elsif @result <  0.5                      ; 2
+    #                 elsif @result < cfg[:catcher_high_border].to_f ; 3
+    #                 else                                      ; 4
+    #                 end
     @votes.each do |vote|
       zone = "catcher_#{format_value(vote.result)}_zone_#{catcher_zone}_score"
-      delta = cfg[zone.to_sym]
+      delta = cfg[zone.to_sym].to_f
+      if @status == 'no_quorum' && format_value(vote.result) == 'contra'
+        delta = 1.5
+      end
       # FIXME:  ищем плееров с ид в текущей игре.
       player = Celluloid::Actor[:"player_#{vote.player}"]
       player.async.catcher_apply_delta(delta)
@@ -152,6 +200,12 @@ class Statement
   def calc_votes
     v_count = @votes.map(&:player).uniq.size
     if v_count == 0
+      @result = 0.0
+      @status = 'no_quorum'
+      return
+    end
+    # players = Celluloid::Actor[:"players_#{@game_uuid}"]
+    unless quorum?
       @result = 0.0
       @status = 'no_quorum'
       return
@@ -182,6 +236,7 @@ class Statement
   def vote_results! options={}
     if @status == 'no_quorum'
       @result = 0.0
+      count_catchers_score(true)
       decline!
     else
       @result = @votes.inject(0){|r, v| r += v.result == 'accepted' ? 1 : 0 }.to_f / @votes.size.to_f

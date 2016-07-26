@@ -17,12 +17,16 @@ class Statements
 
   def save_game_data topic, game_id
     return unless game_id == @game_uuid
-    sync_statements
+    # sync_statements
     publish :game_data_saved, @game_uuid, :statements
   end
 
   def sync_statements
     info 'syncing statements'
+    store = Store::Statement.find(game_uuid: @game_uuid).to_a
+    sts = @statements.select{|s| !Store::Statement.find(uuid: s.uuid).first }
+    sts.each{|s| Store::Statement.create(s.to_store) }
+    info "synced #{sts.size} statements" if sts.size > 0
   end
 
   def find(uuid)
@@ -52,16 +56,16 @@ class Statements
   def validate_statement params = {}
     repl_count = params.has_key?(:to_replace) && params[:to_replace] ? params[:to_replace].size : 0
     if @visible.size - repl_count > 6
-      return { error: 'to_many' }
+      return { type: 'error', value: 'to_many' }
     end
     if @current.detect{|s| params[:value] == find(s).value }
-      return { error: 'duplicate' }
+      return { type: 'error', value: 'duplicate' }
     end
     if params[:value].force_encoding('UTF-8').size > 75
-      return { error: 'too_long' }
+      return { type: 'error', value: 'too_long' }
     end
     if params[:value].strip.size == 0
-      return { error: 'empty' }
+      return { type: 'error', value: 'empty' }
     end
     {}
   end
@@ -86,6 +90,18 @@ class Statements
       vis << s.uuid
     end
     vis
+  end
+
+  def range_auto
+    statements = Actor[:"statements_#{@game_uuid}"]
+    players = Actor[:"players_#{@game_uuid}"]
+    stmnts = %w(s w o t).map(&:to_sym).inject([]){|res, s| res + statements.visible_for_buf(statements.rebuild_visible_for(s)) }
+    # st = stmnts[params[:index].to_i - 1]
+    stmnts.each do |st|
+      players.was_online.each do |pl|
+        st.add_impo(pl.uuid, 3, true)  #, true for auto
+      end
+    end
   end
 
   def range_for params = {}
@@ -113,7 +129,8 @@ class Statements
       params[:to_replace].each{|idx| replace << @visible[idx - 1] }
     end
 
-    statement = Statement.new value: params[:value], author: queue.pitcher.uuid, replaces: replace.compact, uuid: uuid, game_uuid: @game_uuid, stage: state.stage, step: state.step
+    val = params[:value].strip
+    statement = Statement.new value: val, author: queue.pitcher.uuid, replaces: replace.compact, uuid: uuid, game_uuid: @game_uuid, stage: state.stage, step: state.step
     @statements << statement
     @current << uuid
     replace.map{|s| find s }.compact.each{|s| s.replaced_by! uuid }
@@ -121,6 +138,18 @@ class Statements
     statement.set_contribution
     @voting = uuid
     {}
+  end
+
+  def update_importance_score
+    @statements.select{|s| s.status == 'accepted' }.each{|s| s.update_importance_score }
+  end
+
+  def rescore
+    s_sum = @statements.select{|s| s.status == 'accepted' }.inject(0.0){|r, s| r + s.importance_score_raw.to_f }
+    s_sum = 1.0 if s_sum.to_f == 0.0
+    @statements.select{|s| s.status == 'accepted' }.each do |s|
+      s.importance_score = s.importance_score_raw * 100.0 / s_sum
+    end
   end
 
   def count_pitchers_score
@@ -163,7 +192,6 @@ class Statements
 
   def active
     visible
-    # mapped_current.select(&:visible?)
   end
 
   def all

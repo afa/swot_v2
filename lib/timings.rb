@@ -18,6 +18,7 @@ class Timings
     pitching_timeout: 20,
     ranging_timeout: 30,
     # disconnect_timeout:
+    after_game_timeout: 600,
     terminate_timeout: 10
   }
 
@@ -111,3 +112,4 @@ require 'timers/results'
 require 'timers/between_stages'
 require 'timers/ranging'
 require 'timers/terminate'
+require 'timers/after_game'

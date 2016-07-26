@@ -25,8 +25,12 @@ class Queue
     fill_current
   end
 
+  def pitcher_id
+    @current.first
+  end
+
   def pitcher
-    p = @current.first
+    p = pitcher_id
     return nil unless p
     Actor[:"player_#{p}"]
   end
@@ -81,24 +85,24 @@ class Queue
   def rebuild_tail
     players = Actor[:"players_#{@game_uuid}"]
     lst = players.players.sort_by(&:order)
-    p 'pl list before', lst.map(&:uuid)
+    # p 'pl list before', lst.map(&:uuid)
     @tail = []
     last_order = Actor[:"player_#{@current.last}"].try(:order)
     last_order ||= 0
     p 'cleanup', ids, lst.delete_if{|l| self.ids.include?(l.uuid) || l.order.to_i < 1 }
-    p 'pl list after', lst.map(&:uuid)
+    # p 'pl list after', lst.map(&:uuid)
     idx = lst.index{|l| l.order > last_order }
-    p 'pos for last order', last_order, idx
+    # p 'pos for last order', last_order, idx
     if idx
       @tail += lst[idx..-1].map(&:uuid)
       lst = lst[0, idx]
-      p '@tail', @tail
+      # p '@tail', @tail
       @tail += lst.map(&:uuid)
       # @tail += lst[idx..-1].map(&:uuid)
     else
       @tail = lst.map(&:uuid)
     end
-    p 'queues and size', @current, @tail, (@current + @tail).size
+    # p 'queues and size', @current, @tail, (@current + @tail).size
 
 
     # (@current + @tail).each{|i| list.delete_if{|s| s.uuid == i } }

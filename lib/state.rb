@@ -7,17 +7,18 @@ class State
   include Celluloid::Notifications
   include Celluloid::Internals::Logger
   attr_accessor :state, :step, :total_steps, :step_status, :stage
-  attr_accessor :guid, :game, :players, :player_channels, :setting, :prev_pitcher
+  attr_accessor :guid, :game, :player_channels, :setting, :prev_pitcher
+  # attr_accessor :guid, :game, :players, :player_channels, :setting, :prev_pitcher
   attr :saved
   STAGES = {
-    s: {beetwen: false, order: 1, name: 'Strengths', swot: :s, next: :w},
-    sw: {beetwen: true, order: 2, swot: :s, next: :w},
-    w: {beetwen: false, order: 3, name: 'Weaknesses', swot: :w, next: :o},
-    wo: {beetwen: true, order: 4, swot: :w, next: :o},
-    o: {beetwen: false, order: 5, name: 'Opportunities', swot: :o, next: :t},
-    ot: {beetwen: true, order: 6, swot: :o, next: :t},
-    t: {beetwen: false, order: 7, name: 'Threats', swot: :t, next: :rs},
-    tr: {beetwen: true, order: 8, swot: :t, next: :rs},
+    s: {beetwen: false, order: 1, name: 'Strengths', swot: :s, next: :w, prev: nil},
+    sw: {beetwen: true, order: 2, swot: :s, next: :w, prev: :s},
+    w: {beetwen: false, order: 3, name: 'Weaknesses', swot: :w, next: :o, prev: :s},
+    wo: {beetwen: true, order: 4, swot: :w, next: :o, prev: :w},
+    o: {beetwen: false, order: 5, name: 'Opportunities', swot: :o, next: :t, prev: :w},
+    ot: {beetwen: true, order: 6, swot: :o, next: :t, prev: :o},
+    t: {beetwen: false, order: 7, name: 'Threats', swot: :t, next: :rs, prev: :o},
+    tr: {beetwen: true, order: 8, swot: :t, next: :rs, prev: :t},
     rs: {beetwen: false, order: 9, swot: :s, name: 'Ranging'},
     rw: {beetwen: false, order: 10, swot: :w},
     ro: {beetwen: false, order: 11, swot: :o},
@@ -56,7 +57,7 @@ class State
     @guid = params[:game_uuid]
     info "state init for #{@guid}"
     @game = {}
-    @players = {}
+    # @players = {}
     @stage = nil
     @saved = {
       game: false,
@@ -66,16 +67,15 @@ class State
       player_log: false
     }
     @player_channels = {}
-    unless try_recover
+    # @setting = Store::Setting.prepare_data(Store::Setting.find(game_uuid: @guid).first.data)
+    # @setting.keys.each{|k| @setting[k.to_sym] = @setting[k] }
+    # unless try_recover
       load_default_settings
       if params[:settings]
         @setting.data = @setting.data.merge(params[:settings])
       end
       init
-    end
-    @setting = Store::Setting.find(game_uuid: @guid).first.data
-    @setting.keys.each{|k| @setting[k.to_sym] = @setting[k] }
-    p @setting
+    # end
     subscribe :game_done, :game_done
     subscribe :game_data_saved, :data_saved
   end
@@ -124,7 +124,7 @@ class State
     end
     statements = Actor[:"statements_#{@guid}"]
     @step = 1
-    @total_steps = @setting[:max_steps] || 18
+    @total_steps = @setting[:max_steps] # || 18
     @step_status = first_enum(STEP_STATUSES)
     statements.clean_current
 
@@ -132,7 +132,7 @@ class State
   end
 
   def load_default_settings
-    @setting = Store::Setting.for_game(@guid)
+    @setting = Store::Setting.prepare_data(Store::Setting.for_game(@guid).data)
   end
 
   def stage
@@ -140,7 +140,7 @@ class State
   end
 
   def previous_stage_name
-
+    STAGES[STAGES.fetch(@stage, {prev: nil})[:prev] || :end].fetch(:name, '')
   end
 
   def stage_name
@@ -154,12 +154,12 @@ class State
     statements.clear_current
   end
 
-  def store_player id
-    pl = Actor[:"player_#{id}"]
-    if pl && pl.alive?
-      @players[id] = pl.as_json
-    end
-  end
+  # def store_player id
+  #   pl = Actor[:"player_#{id}"]
+  #   if pl && pl.alive?
+  #     @players[id] = pl.as_json
+  #   end
+  # end
 
   def add_game id
   end
