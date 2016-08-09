@@ -9,4 +9,4 @@ control
 
 ## Как запустить эту балалайку?
 
- А вот так: jruby --server -U -J-Dfile.encoding=UTF-8 -- boot.rb
+ А вот так: ENV=staging jruby -J-Xmx1024m -U --server -J-Dfile.encoding=UTF-8 -- boot.rb
