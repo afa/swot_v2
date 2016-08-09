@@ -126,7 +126,7 @@ class Statement
     contribution_hash = {@author => share}
     other_share = (1.0 - share) / cnt
     statements = Celluloid::Actor[:"statements_#{@game_uuid}"]
-    @replaces.map{|u| statements.find(u) }.compact.select{|s| s.stage == state.to_swot(state.stage) },each do |repl|
+    @replaces.map{|u| statements.find(u) }.compact.select{|s| s.stage == state.to_swot(state.stage) }.each do |repl|
       repl.contribution.keys.each do |pl|
         contribution_hash[pl] = contribution_hash.fetch(pl, 0.0) + (other_share * repl.contribution.delete(pl).to_f)
       end
@@ -145,9 +145,9 @@ class Statement
     raise ArgumentError, 'to much replaces (> 2)' unless (0..2).include?(replaces_amount)
     share = cfg[:"pitcher_#{%w(no single double)[replaces_amount]}_replace_score"].to_f
     case replaces_amount
-    when 0 calc_contribution_no(share)
-    when 1 calc_contribution_share(share, 1)
-    when 2 calc_contribution_share(share, 2)
+    when 0 then calc_contribution_no(share)
+    when 1 then calc_contribution_share(share, 1)
+    when 2 then calc_contribution_share(share, 2)
     end
   end
 
