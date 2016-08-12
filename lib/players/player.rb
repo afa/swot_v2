@@ -73,6 +73,8 @@ class Player
   end
 
   def pitch params = {}
+    queue = Actor[:"queue_#{@game_uuid}"]
+    return unless queue.pitcher_id == @uuid
     # timers = Actor[:"alarms_#{@game_uuid}"]
     # timers.async.set_out :pitch, nil
     Timings::Pitch.instance(@game_uuid).cancel
@@ -86,6 +88,8 @@ class Player
 
   def pass params = {}
     info 'start player.pass'
+    queue = Actor[:"queue_#{@game_uuid}"]
+    return unless queue.pitcher_id == @uuid
     game = Actor[:"game_#{@game_uuid}"]
     # timers = Actor[:"alarms_#{@game_uuid}"]
     Timings::Pitch.instance(@game_uuid).cancel
