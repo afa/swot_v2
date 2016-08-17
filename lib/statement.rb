@@ -121,12 +121,44 @@ class Statement
     @status = 'declined'
   end
 
-  def set_contribution
+  def calc_contribution_share(share, cnt)
+    state = Celluloid::Actor[:"state_#{@game_uuid}"]
+    contribution_hash = {@author => share}
+    other_share = (1.0 - share) / cnt
+    statements = Celluloid::Actor[:"statements_#{@game_uuid}"]
+    @replaces.map{|u| statements.find(u) }.compact.select{|s| s.stage == state.to_swot(state.stage) }.each do |repl|
+      repl.contribution.keys.each do |pl|
+        contribution_hash[pl] = contribution_hash.fetch(pl, 0.0) + (other_share * repl.contribution.delete(pl).to_f)
+      end
+    end
+    @contribution = contribution_hash
+  end
+
+  def calc_contribution_no(share)
+    @contribution = { @author => share }
+  end
+
+  def calc_contribution
     state = Celluloid::Actor[:"state_#{@game_uuid}"]
     cfg = state.setting
     replaces_amount = @replaces.size
     raise ArgumentError, 'to much replaces (> 2)' unless (0..2).include?(replaces_amount)
     share = cfg[:"pitcher_#{%w(no single double)[replaces_amount]}_replace_score"].to_f
+    case replaces_amount
+    when 0 then calc_contribution_no(share)
+    when 1 then calc_contribution_share(share, 1)
+    when 2 then calc_contribution_share(share, 2)
+    end
+  end
+
+  def set_contribution
+    return calc_contribution
+    state = Celluloid::Actor[:"state_#{@game_uuid}"]
+    cfg = state.setting
+    replaces_amount = @replaces.size
+    raise ArgumentError, 'to much replaces (> 2)' unless (0..2).include?(replaces_amount)
+    share = cfg[:"pitcher_#{%w(no single double)[replaces_amount]}_replace_score"].to_f
+    max_share = cfg[:"pitcher_no_replace_score"].to_f
     # share = case replaces_amount
     #         when 0 then cfg[:pitcher_no_replace_score]
     #         when 1 then cfg[:pitcher_single_replace_score]
@@ -142,8 +174,8 @@ class Statement
       replaced.each do |statement|
         statement.contribution.each do |player, share|
           player_share = contributors_hash.fetch player, 0.0
-          contributors_hash[player] = player_share * others_share_part
-          # contributors_hash[player] = player_share + share * others_share_part
+          player_share -= max_share if player_share > 0.0 #TODO!!!!!!!!!!!
+          contributors_hash[player] = player_share + share * others_share_part
         end
       end
     end

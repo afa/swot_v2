@@ -20,7 +20,7 @@ module Message
       def process
         super
         pl = Celluloid::Actor[:"player_#{@uuid}"]
-        p 'pass to', pl.uuid
+        info "pass to #{pl.uuid}"
         pl.async.pass(@data)
       end
     end
