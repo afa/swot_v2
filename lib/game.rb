@@ -385,6 +385,8 @@ class Game
       players.copy_before if state.stage == :tr
       publish :next_stage, @uuid, stage: state.stage unless state.stage == :tr
       if state.stage == :tr
+        statements = Actor[:"statements_#{@uuid}"]
+        statements.init_importances
         publish :ranging, @uuid, stage: state.stage
       end
     elsif %w(rs rw ro rt).include? state.stage.to_s

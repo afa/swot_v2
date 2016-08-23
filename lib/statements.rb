@@ -140,6 +140,14 @@ class Statements
     {}
   end
 
+  def init_importances
+    players = Actor[:"players_#{@game_uuid}"]
+    pl_ids = players.players.select(&:was_online).map(&:uuid)
+    @statements.each do |st|
+      pl_ids.each{|p| st.add_impo(p, 3, true) }
+    end
+  end
+
   def update_importance_score
     @statements.select{|s| s.status == 'accepted' }.each{|s| s.update_importance_score }
   end
