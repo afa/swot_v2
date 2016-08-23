@@ -483,7 +483,7 @@ class Game
     hsh.merge! data: stats, players: ps, statements: sts
     al = Actor[:"admin_logger_#{@uuid}"]
     logs = al.as_json
-    hsh.merge! logs: logs.sort_by{|l| l[:created_at] }
+    hsh.merge! logs: logs.sort_by{|l| l.has_key?(:created_at) ? l[:created_at] : l['created_at'] }
     uri = URI(state.setting[:game_results_callback])
     req = Net::HTTP::Post.new uri.request_uri
     req.body = "q='#{hsh.to_json}'"

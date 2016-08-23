@@ -212,7 +212,7 @@ class Statement
     non_voted_players = (Celluloid::Actor[:"players_#{@game_uuid}"].player_ids - [@author] - @votes.map(&:player)).map{|i| Celluloid::Actor[:"player_#{i}"] }.select{|p| p.alive? && p.online }
 
     catcher_zone = [0.5, cfg[:catcher_high_border].to_f].select{|i| @result >= i }.size + 2
-    catcher_zone = 1 if cfg[:catcher_low_border].to_f <= @result
+    catcher_zone = 1 if @result <= cfg[:catcher_low_border].to_f
     # уродство. меньше или = 25% -- дельта -1.5
     # catcher_zone =  if    @result < cfg[:catcher_low_border].to_f  ; 1
     #                 elsif @result <  0.5                      ; 2
