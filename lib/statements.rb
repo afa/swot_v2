@@ -143,7 +143,8 @@ class Statements
   def init_importances
     players = Actor[:"players_#{@game_uuid}"]
     pl_ids = players.players.select(&:was_online).map(&:uuid)
-    @statements.each do |st|
+    stmnts = %w(s w o t).map(&:to_sym).inject([]){|res, s| res + visible_for_buf(rebuild_visible_for(s)) }
+    stmnts.each do |st|
       pl_ids.each{|p| st.add_impo(p, 3, true) }
     end
   end
