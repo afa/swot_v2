@@ -121,13 +121,14 @@ class PlayerLogger
 
     log_votes = statement.votes.inject({}){|r, v| r.merge v.player.to_s => statement.format_value(v.result) }
 
-    per = (statement.result*100)
+    pc = per = (statement.result*100)
     per = 100.0 - per if statement.status != 'accepted'
     rec = PlayerLogRecord.new step: state.step,
       statement: statement.value,
       stage_title: State::STAGES[state.stage][:name],
       replace: replace,
-      pro_percent: '%.1f' % per,
+      pro_percent: '%.1f' % pc,
+      percent: '%.1f' % per,
       player_name: pitcher.uglify_name(state.stage),
       scores_deltas: players.players.inject({}){|r, p| r.merge(p.uuid => '%+.1f' % p.delta)},
       player_id: @uuid,
