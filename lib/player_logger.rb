@@ -30,7 +30,6 @@ class PlayerLogger
     sleep 1
     player = Actor[:"player_#{@uuid}"]
     @guid = player.game_uuid
-    p 'player logger init', @uuid, @guid
     @records = []
     subscribe :player_log_push, :push
     # TODO restore on fixed sync player log
@@ -56,7 +55,6 @@ class PlayerLogger
   end
 
   def push topic, game_id, statement_id
-    p 'push player log', topic, game_id, statement_id
     return unless game_id == @guid
     mklog(statement_id)
 
