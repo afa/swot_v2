@@ -144,6 +144,7 @@ class Game
 
   def start
     state = int_state
+    state.clean_state
     players = Actor[:"players_#{@uuid}"]
     players.async.build_queue # TODO move to create
     if %w(waiting started).map(&:to_sym).include? state.state
@@ -173,6 +174,7 @@ class Game
 
   def start_step
     state = int_state
+    state.clean_state
     players = Actor[:"players_#{@uuid}"]
     if %w(s w o t).include? state.stage.to_s
       queue = Actor[:"queue_#{@uuid}"]
@@ -226,6 +228,8 @@ class Game
     players = Actor[:"players_#{@uuid}"]
     # alarms = Actor[:"alarms_#{@uuid}"]
     queue = Actor[:"queue_#{@uuid}"]
+    return unless state.check_state :pitch, queue.pitcher.uuid
+    state.set_state :pitch, queue.pitcher.uuid
     statements = Actor[:"statements_#{@uuid}"]
     tm = Time.now.to_i + (state.setting[:voting_quorum_timeout] || 60)
     rpl = (params[:to_replace] || []).map do |r|
@@ -263,6 +267,7 @@ class Game
     queue = Actor[:"queue_#{@uuid}"]
     state = int_state
     p = queue.pitcher
+    state.set_state :pitch_end, p.uuid
     publish :pitch_timeout, @uuid, p.uuid if p && p.alive?
     publish :pitcher_timeout, p.uuid, state.stage
     end_step(status: 'timeouted')
@@ -274,6 +279,7 @@ class Game
     Timings::FirstPitch.instance(@uuid).cancel
     queue = Actor[:"queue_#{@uuid}"]
     state = int_state
+    state.set_state :pass, queue.pitcher.uuid
     publish :pitcher_passed, queue.pitcher.uuid, state.stage
     publish :pitch_pass, @uuid, queue.pitcher_id
     end_step(status: 'passed')

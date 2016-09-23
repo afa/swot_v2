@@ -8,6 +8,7 @@ class State
   include Celluloid::Internals::Logger
   attr_accessor :state, :step, :total_steps, :step_status, :stage
   attr_accessor :guid, :game, :player_channels, :setting, :prev_pitcher
+  attr_accessor :act, :act_user
   # attr_accessor :guid, :game, :players, :player_channels, :setting, :prev_pitcher
   attr :saved
   STAGES = {
@@ -78,6 +79,20 @@ class State
     # end
     subscribe :game_done, :game_done
     subscribe :game_data_saved, :data_saved
+  end
+
+  def check_state action, user
+    return true unless @act || @act_user
+    false
+  end
+
+  def clean_state
+    @act = @act_user = nil
+  end
+
+  def set_state action, user
+    @act = action
+    @act_user = user
   end
 
   def game_done topic, game_id
