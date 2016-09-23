@@ -262,12 +262,13 @@ class Game
   end
 
   def pitch_timeout params = {}
-    Timings::Pitch.instance(@uuid).cancel
-    Timings::FirstPitch.instance(@uuid).cancel
     queue = Actor[:"queue_#{@uuid}"]
     state = int_state
     p = queue.pitcher
+    return unless state.check_state :pitch_end, p.uuid
     state.set_state :pitch_end, p.uuid
+    Timings::Pitch.instance(@uuid).cancel
+    Timings::FirstPitch.instance(@uuid).cancel
     publish :pitch_timeout, @uuid, p.uuid if p && p.alive?
     publish :pitcher_timeout, p.uuid, state.stage
     end_step(status: 'timeouted')
@@ -275,11 +276,12 @@ class Game
   end
 
   def pass params = {}
-    Timings::Pitch.instance(@uuid).cancel
-    Timings::FirstPitch.instance(@uuid).cancel
     queue = Actor[:"queue_#{@uuid}"]
     state = int_state
+    return unless state.check_state :pass, queue.pitcher.uuid
     state.set_state :pass, queue.pitcher.uuid
+    Timings::Pitch.instance(@uuid).cancel
+    Timings::FirstPitch.instance(@uuid).cancel
     publish :pitcher_passed, queue.pitcher.uuid, state.stage
     publish :pitch_pass, @uuid, queue.pitcher_id
     end_step(status: 'passed')
