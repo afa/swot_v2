@@ -265,7 +265,7 @@ class Game
     queue = Actor[:"queue_#{@uuid}"]
     state = int_state
     p = queue.pitcher
-    return unless state.check_state :pitch_end, p.uuid
+    # return unless state.check_state :pitch_end, p.uuid
     state.set_state :pitch_end, p.uuid
     Timings::Pitch.instance(@uuid).cancel
     Timings::FirstPitch.instance(@uuid).cancel
