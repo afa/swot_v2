@@ -48,7 +48,7 @@ class Statement
   end
 
   def update_importance_score
-    @importance_score_raw = @importances.inject(0.0){|r, i| r + score_value(i) }
+    @importance_score_raw = @importances.inject(0.0){|r, i| r + score_value(i) } / (@importances.map{|i| i[:player] }.compact.uniq.size)
     @importance_score_raw = 1 if @importance_score_raw == 0
 
     # apply importance multiplier to contributors share
