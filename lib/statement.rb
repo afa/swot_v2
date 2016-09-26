@@ -48,7 +48,7 @@ class Statement
   end
 
   def update_importance_score
-    @importance_score_raw = @importances.inject(0.0){|r, i| r + score_value(i.to_i - 1) }
+    @importance_score_raw = @importances.inject(0.0){|r, i| r + score_value(i) }
     @importance_score_raw = 1 if @importance_score_raw == 0
 
     # apply importance multiplier to contributors share
@@ -58,7 +58,7 @@ class Statement
   end
 
   def score_key hsh
-    :"ranging_importance_#{hsh[:value]}_score"
+    :"ranging_importance_#{hsh[:value].to_i - 1}_score"
   end
 
   def score_value hsh
