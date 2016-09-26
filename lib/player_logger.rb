@@ -87,6 +87,7 @@ class PlayerLogger
     return unless guid == @guid
     state = Actor[:"state_#{@guid}"]
     queue = Actor[:"queue_#{@guid}"]
+    players = Actor[:"players_#{@guid}"]
     pitcher = players.find(pl_id)
     rec = PlayerLogRecord.new step: state.step,
       statement: nil,
