@@ -48,6 +48,10 @@ class Statement
   end
 
   def update_importance_score
+    if @importances.nil? || @importances.empty?
+      @importance_score_raw = 1
+      return
+    end
     @importance_score_raw = @importances.inject(0.0){|r, i| r + score_value(i) } / (@importances.map{|i| i[:player] }.compact.uniq.size)
     @importance_score_raw = 1 if @importance_score_raw == 0
 
