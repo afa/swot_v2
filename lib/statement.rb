@@ -18,7 +18,8 @@ class Statement
                 :status,
                 :result,
                 :contribution_before_ranking,
-                :contribution
+                :contribution,
+                :non_voted
                 # :auto
 
   def initialize params = {}
@@ -211,9 +212,10 @@ class Statement
   def count_catchers_score(declined = false)
     state = Celluloid::Actor[:"state_#{@game_uuid}"]
     cfg = state.setting
+    non_voted_players = (Celluloid::Actor[:"players_#{@game_uuid}"].player_ids - [@author] - @votes.map(&:player)).map{|i| Celluloid::Actor[:"player_#{i}"] }.select{|p| p.alive? && p.online }
+    @non_voted = non_voted_players.size
     rslt = conclusion
     #apply voted contra when no quorum
-    non_voted_players = (Celluloid::Actor[:"players_#{@game_uuid}"].player_ids - [@author] - @votes.map(&:player)).map{|i| Celluloid::Actor[:"player_#{i}"] }.select{|p| p.alive? && p.online }
 
     catcher_zone = [0.5, cfg[:catcher_high_border].to_f].select{|i| @result >= i }.size + 2
     catcher_zone = 1 if @result <= cfg[:catcher_low_border].to_f
@@ -267,7 +269,7 @@ class Statement
     contra = grouped_hash[false] || []
     # return 'accepted' if pro && !contra
     # return 'declined' if contra && !pro
-    @result = pro.size.to_f / (contra + pro).size.to_f
+    @result = pro.size.to_f / (contra + pro).size.to_f + (@status == 'no_quorum' ? @non_voted : 0.0)
     @result >= 0.5 ? 'accepted' : 'declined'
   end
 
