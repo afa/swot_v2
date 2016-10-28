@@ -381,6 +381,7 @@ class Game
   def end_stage params = {}
     state = int_state
     players = Actor[:"players_#{@uuid}"]
+    statements = Actor[:"statements_#{@uuid}"]
     # queue = Actor[:"queue_#{@uuid}"]
     # statements = Actor[:"statements_#{@uuid}"]
     state.stage = state.next_enum(State::STAGES, state.stage)
@@ -392,6 +393,7 @@ class Game
       players.async.push_end_stage
       players.copy_half if state.stage == :sw
       players.copy_before if state.stage == :tr
+      statements.copy_before if state.stage == :tr
       publish :next_stage, @uuid, stage: state.stage unless state.stage == :tr
       if state.stage == :tr
         statements = Actor[:"statements_#{@uuid}"]

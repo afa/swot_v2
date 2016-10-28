@@ -149,6 +149,10 @@ class Statements
     end
   end
 
+  def copy_before
+    @statements.each{|s| s.copy_before }
+  end
+
   def update_importance_score
     @statements.select{|s| s.status == 'accepted' }.each{|s| s.update_importance_score }
   end

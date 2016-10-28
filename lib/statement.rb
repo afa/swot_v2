@@ -50,6 +50,10 @@ class Statement
     {author: @author, game_uuid: @game_uuid, uuid: @uuid, stage: @stage, step: @step, value: @value, votes: @votes.map(&:as_json), status: @status, result: @result, importances: @importances, importance_score: @importance_score, importance_score_raw: @importance_score_raw, contribution: @contribution, contribution_before_ranking: @contribution_before_ranking, visible: @visible }
   end
 
+  def copy_before
+    @contribution_before_ranking = @contribution.dup
+  end
+
   def update_importance_score
     if @importances.nil? || @importances.empty?
       @importance_score_raw = 1
