@@ -231,6 +231,7 @@ class Statement
     @votes.each do |vote|
       zone = "catcher_#{format_value(vote.result)}_zone_#{catcher_zone}_score"
       delta = cfg[zone.to_sym].to_f
+      delta = -(delta.abs) if [3,4].include?(catcher_zone) && @status == 'no_quorum'
       if @status == 'no_quorum' && format_value(vote.result) == 'contra'
         delta = 1.5
       end
