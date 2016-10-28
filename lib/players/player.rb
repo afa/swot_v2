@@ -328,8 +328,8 @@ class Player
   end
 
   def copy_before
-    @catcher_score_first_half = @catcher_score
-    @pitcher_score_first_half = @pitcher_score
+    @catcher_score_before_ranging = @catcher_score
+    @pitcher_score_before_ranging = @pitcher_score
   end
 
   def send_terminated
