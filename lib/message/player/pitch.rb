@@ -17,7 +17,7 @@ module Message
       end
 
       def process
-        info "process pitch"
+        # info "process pitch"
         super
         pl = Celluloid::Actor[:"player_#{@uuid}"]
         pl.pitch(@data)

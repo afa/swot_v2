@@ -44,6 +44,7 @@ class Statement
     @status = false
     @unquorumed = false
     @visible = false
+    @non_voted = 0
   end
 
   def to_store
@@ -234,6 +235,7 @@ class Statement
     @votes.each do |vote|
       zone = "catcher_#{format_value(vote.result)}_zone_#{catcher_zone}_score"
       delta = cfg[zone.to_sym].to_f
+      delta = -(delta.abs) if [3,4].include?(catcher_zone) && @status == 'no_quorum'
       if @status == 'no_quorum' && format_value(vote.result) == 'contra'
         delta = 1.5
       end
@@ -243,16 +245,28 @@ class Statement
     end
   end
 
-  def calc_votes
+  def calc_result
     v_count = @votes.map(&:player).uniq.size
     if v_count == 0
       @result = 0.0
+      return @result
+    end
+    pro = @votes.select{|v| v.result == 'accepted' }.map(&:player).uniq.size
+    @result = pro.to_f / v_count.to_f
+    @result
+  end
+
+  def calc_votes
+    res = calc_result
+    v_count = @votes.map(&:player).uniq.size
+    if v_count == 0
+      # @result = 0.0
       @status = 'no_quorum'
       return
     end
     # players = Celluloid::Actor[:"players_#{@game_uuid}"]
     unless quorum?
-      @result = 0.0
+      # @result = 0.0
       @status = 'no_quorum'
       @unquorumed = true
       return
@@ -277,7 +291,8 @@ class Statement
     contra = grouped_hash[false] || []
     # return 'accepted' if pro && !contra
     # return 'declined' if contra && !pro
-    @result = pro.size.to_f / (contra + pro).size.to_f + (@status == 'no_quorum' ? @non_voted : 0.0)
+    # @result = pro.size.to_f / (contra + pro).size.to_f + (@status == 'no_quorum' ? @non_voted : 0.0)
+    calc_result
     @result >= 0.5 ? 'accepted' : 'declined'
   end
 
