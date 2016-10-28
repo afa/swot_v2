@@ -42,6 +42,7 @@ class Statement
     @importance_score = 0.0
     @status = false
     @visible = false
+    @non_voted = 0
   end
 
   def to_store
