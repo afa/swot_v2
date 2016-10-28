@@ -129,7 +129,7 @@ class PlayerLogger
       stage_title: State::STAGES[state.stage][:name],
       replace: replace,
       pro_percent: '%.1f' % pc,
-      percent: '%.1f' % per,
+      percent: statement.status != 'accepted' && statement.unquorumed ? 'no quorum' : '%.1f' % per,
       player_name: pitcher.uglify_name(state.stage),
       scores_deltas: players.players.inject({}){|r, p| r.merge(p.uuid => '%+.1f' % p.delta)},
       player_id: @uuid,

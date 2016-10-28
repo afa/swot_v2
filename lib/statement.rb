@@ -19,6 +19,7 @@ class Statement
                 :result,
                 :contribution_before_ranking,
                 :contribution,
+                :unquorumed,
                 :non_voted
                 # :auto
 
@@ -41,6 +42,7 @@ class Statement
     @importances = []
     @importance_score = 0.0
     @status = false
+    @unquorumed = false
     @visible = false
   end
 
@@ -248,6 +250,7 @@ class Statement
     unless quorum?
       @result = 0.0
       @status = 'no_quorum'
+      @unquorumed = true
       return
     end
     pro = @votes.select{|v| v.result == 'accepted' }.map(&:player).uniq.size
@@ -256,6 +259,7 @@ class Statement
     if pro >= contra
       accept!
     else
+      @unquorumed = false
       decline!
     end
   end
@@ -275,10 +279,12 @@ class Statement
 
   def vote_results! options={}
     if @status == 'no_quorum'
+      @unquorumed = true
       @result = 0.0
       count_catchers_score(true)
       decline!
     else
+      @unquorumed = false
       @result = @votes.inject(0){|r, v| r += v.result == 'accepted' ? 1 : 0 }.to_f / @votes.size.to_f
       @result >= 0.5 ? accept! : decline!
       count_catchers_score
