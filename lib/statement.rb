@@ -109,7 +109,7 @@ class Statement
   def quorum?
     players = Celluloid::Actor[:"players_#{@game_uuid}"]
     queue = Celluloid::Actor[:"queue_#{@game_uuid}"]
-    (voted_count.to_f * 2) > (players.players.select(&:online) - [queue.pitcher]).size
+    (voted_count.to_f * 2) >= (players.players.select(&:online) - [queue.pitcher]).size
     #TODO ??
   end
 
@@ -235,9 +235,11 @@ class Statement
     @votes.each do |vote|
       zone = "catcher_#{format_value(vote.result)}_zone_#{catcher_zone}_score"
       delta = cfg[zone.to_sym].to_f
-      delta = -(delta.abs) if [3,4].include?(catcher_zone) && @status == 'no_quorum'
-      if @status == 'no_quorum' && format_value(vote.result) == 'contra'
-        delta = 1.5
+      # delta = -(delta.abs) if [3,4].include?(catcher_zone) && @status == 'no_quorum'
+      # if @status == 'no_quorum' && format_value(vote.result) == 'contra'
+        # delta = 1.5
+      if @status == 'no_quorum'
+        delta = 0.0
       end
       # FIXME:  ищем плееров с ид в текущей игре.
       player = Celluloid::Actor[:"player_#{vote.player}"]
