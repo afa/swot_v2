@@ -180,4 +180,4 @@ staging:
   <<: *default
   default_url_host:
     type: String
-    val: 'swot-s.dev.techranch.ru'
+    val: 'swot-rs.dev.techranch.ru'
