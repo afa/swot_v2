@@ -221,6 +221,9 @@ class Statement
     cfg = state.setting
     non_voted_players = (Celluloid::Actor[:"players_#{@game_uuid}"].player_ids - [@author] - @votes.map(&:player)).map{|i| Celluloid::Actor[:"player_#{i}"] }.select{|p| p.alive? && p.online }
     @non_voted = non_voted_players.size
+    non_voted_players.each do |p|
+      p.async.catcher_apply_delta(0.0)
+    end
     rslt = conclusion
     #apply voted contra when no quorum
 
