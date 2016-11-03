@@ -148,7 +148,8 @@
     "url": "http://swot-rs.dev.techranch.ru",
     "host": "127.0.0.1",
     "port": 3010,
-    "redis_db": "redis://127.0.0.1:6379/4"
+    "redis_db": "redis://127.0.0.1:6379/4",
+    "game_results_callback": "http://swot-rs.dev.techranch.ru/results_callback"
   },
   "test": {
     "redis_db": "redis://127.0.0.1:6379/9",
