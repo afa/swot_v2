@@ -156,7 +156,7 @@ class Player
 
   def send_result params = {}
     state = Actor[:"state_#{@game_uuid}"]
-    intervals = params[:intervals].map(&:to_sym)
+    intervals = params.fetch(:intervals, []).map(&:to_sym)
     msg = {type: 'event', subtype: 'result',  timeout_at: Timings.instance(@game_uuid).stamps(intervals), time: current_stamp}
     publish_msg msg
   end
