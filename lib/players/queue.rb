@@ -62,11 +62,6 @@ class Queue
     else
       @tail = []
     end
-    # (3 - @current.size).times do
-    #   next if @current.size >= 3
-    #   p = @tail.shift
-    #   @current << p if p
-    # end
   end
 
   def ids
@@ -79,26 +74,28 @@ class Queue
   end
 
   def first
-    @current.first # || @tail.first
+    @current.first
+  end
+
+  def random_rebuild_tail
   end
 
   def rebuild_tail
+    state = Actor[:"state_#{@game_uuid}"]
+    setting = state.setting
+    return random_rebuild_tail if setting[:random_enabled]
     players = Actor[:"players_#{@game_uuid}"]
     lst = players.players.sort_by(&:order)
     # p 'pl list before', lst.map(&:uuid)
     @tail = []
     last_order = Actor[:"player_#{@current.last}"].try(:order)
     last_order ||= 0
-    p 'cleanup', ids, lst.delete_if{|l| self.ids.include?(l.uuid) || l.order.to_i < 1 }
-    # p 'pl list after', lst.map(&:uuid)
+    lst.delete_if{|l| self.ids.include?(l.uuid) || l.order.to_i < 1 }
     idx = lst.index{|l| l.order > last_order }
-    # p 'pos for last order', last_order, idx
     if idx
       @tail += lst[idx..-1].map(&:uuid)
       lst = lst[0, idx]
-      # p '@tail', @tail
       @tail += lst.map(&:uuid)
-      # @tail += lst[idx..-1].map(&:uuid)
     else
       @tail = lst.map(&:uuid)
     end
