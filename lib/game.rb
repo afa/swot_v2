@@ -329,6 +329,7 @@ class Game
       if stat
         stat.calc_votes
         stat.vote_results!
+        stat.set_contribution if stat.status == 'accepted'
         publish :player_log_push, @uuid, stat.uuid
       end
       statements.update_visible

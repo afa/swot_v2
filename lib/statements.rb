@@ -135,7 +135,7 @@ class Statements
     @current << uuid
     replace.map{|s| find s }.compact.each{|s| s.replaced_by! uuid }
     active.each_with_index{|s, i| s.position = i + 1 }
-    statement.set_contribution
+    # statement.set_contribution ??? nahua?
     @voting = uuid
     {}
   end
