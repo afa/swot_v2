@@ -78,6 +78,9 @@ class Queue
   end
 
   def random_rebuild_tail
+    players = Actor[:"players_#{@game_uuid}"]
+    lst = players.players.sort_by(&:order)
+
   end
 
   def rebuild_tail

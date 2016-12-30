@@ -100,6 +100,17 @@ class Player
     # game.async.end_step({status: 'passed'})
   end
 
+  def count_pitcher_score typ
+    state = Actor[:"state_#{@game_uuid}"]
+    cfg = state.setting
+    mult = cfg[:"pitcher_rank_multiplier_#{typ}"].to_f
+    rank = self.pitcher_rank
+    rank *= mult
+    self.pitcher_rank = [rank, cfg[:pitcher_minimum_rank].to_f].max
+    statements = Actor[:"statements_#{@game_uuid}"]
+    statements.count_pitchers_score
+  end
+
   def vote params = {}
     players = Actor[:"players_#{@game_uuid}"]
     game = Actor[:"game_#{@game_uuid}"]
