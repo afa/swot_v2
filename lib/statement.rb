@@ -204,16 +204,9 @@ class Statement
   end
 
   def count_pitcher_score
-    state = Celluloid::Actor[:"state_#{@game_uuid}"]
     player = Celluloid::Actor[:"player_#{@author}"]
-    cfg = state.setting
     typ = @status
-    mult = cfg[:"pitcher_rank_multiplier_#{typ}"].to_f
-    rank = player.pitcher_rank
-    rank *= mult
-    player.pitcher_rank = [rank, cfg[:pitcher_minimum_rank].to_f].max
-    statements = Celluloid::Actor[:"statements_#{@game_uuid}"]
-    statements.count_pitchers_score
+    player.count_pitcher_score(typ)
   end
 
   def count_catchers_score(declined = false)
