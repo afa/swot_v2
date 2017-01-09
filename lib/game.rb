@@ -333,7 +333,7 @@ class Game
         publish :player_log_push, @uuid, stat.uuid
       else
         if %w(passed timeouted).include? params[:status]
-          queue.pitcher.count_pitcher_score(params[:status])
+          queue.pitcher.count_pitcher_score(params[:status] == 'passed' ? 'pass' : params[:status])
         end
       end
       statements.update_visible
