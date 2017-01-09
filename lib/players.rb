@@ -80,7 +80,6 @@ class Players
     @players << pl_id
     queue.add pl_id
     Control.current.add_player(@game_uuid, pl_id)
-    # p 'player add', pl_id
     # state.async
   end
 

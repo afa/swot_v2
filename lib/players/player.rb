@@ -206,7 +206,6 @@ class Player
   #     subtype: ev, time: current_stamp, time: current_stamp,
   #     timeout_at: Timings.instance(@game_uuid).next_stamp
   #   }.merge params
-  #   p @uuid, state.player_channels.keys
   #   publish_msg msg
   # end
 
@@ -295,7 +294,6 @@ class Player
       end
       msg = {type: 'event', subtype: 'end_step', result: {status: (stat.unquorumed ? 'no_quorum' : stat.status), players_voted: per}.merge(rnk), timeout_at: Timings.instance(@game_uuid).stamps(%w(stage results between_stages).map(&:to_sym)), time: current_stamp}
       # msg = {type: 'event', subtype: 'end_step', result: {status: params[:status], players_voted: per}.merge(rnk), timeout_at: Timings.instance(@game_uuid).stamps(%w(stage results between_stages).map(&:to_sym)), time: current_stamp}
-    # p 'endstep result msg pitcherscore', msg, @pitcher_rank
     else
       if queue.prev_pitcher == @uuid
         rnk = {rank: @pitcher_rank}

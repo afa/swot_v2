@@ -47,7 +47,7 @@ class AdminLogger
   def as_json
     sync_admin_log
     store = Store::AdminLog.find(game_uuid: @guid).to_a
-    store.map(&:data).tap{|x| p x }
+    store.map(&:data)
 
     # @records.map(&:to_hash)
   end
