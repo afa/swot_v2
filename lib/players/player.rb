@@ -102,13 +102,13 @@ class Player
 
   def count_pitcher_score typ
     state = Actor[:"state_#{@game_uuid}"]
+    statements = Actor[:"statements_#{@game_uuid}"]
     cfg = state.setting
     mult = cfg[:"pitcher_rank_multiplier_#{typ}"].to_f
     rank = self.pitcher_rank
-    rank *= mult
+    rank *= mult if mult > 0.0
     self.pitcher_rank = [rank, cfg[:pitcher_minimum_rank].to_f].max
-    statements = Actor[:"statements_#{@game_uuid}"]
-    statements.count_pitchers_score
+    self.pitcher_score = statements.count_single_score(self)
   end
 
   def vote params = {}
