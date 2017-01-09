@@ -331,10 +331,9 @@ class Game
         stat.vote_results!
         stat.set_contribution if stat.status == 'accepted'
         publish :player_log_push, @uuid, stat.uuid
-      else
-        if %w(passed timeouted).include? params[:status]
-          queue.pitcher.count_pitcher_score(params[:status] == 'passed' ? 'pass' : params[:status])
-        end
+      end
+      if %w(passed timeouted).include? params[:status]
+        queue.pitcher.count_pitcher_score(params[:status] == 'passed' ? 'pass' : params[:status])
       end
       statements.update_visible
       # async.push_state
@@ -343,7 +342,7 @@ class Game
       state.step_status = state.next_enum(State::STEP_STATUSES, state.step_status) unless state.step_status == :end
       Timings::Results.instance(@uuid).start unless %w(passed timeouted).include?(params[:status])
       lg = Actor[:"admin_logger_#{@uuid}"]
-      queue.next!
+      queue.next
       lg.step_results :step_results, @uuid
       # publish :step_results, @uuid
       lg.statement_results :statement_results, @uuid, stat.uuid if stat
@@ -352,8 +351,6 @@ class Game
       # lg.send_score :send_score, @uuid
       publish :send_score, @uuid
       publish :save_game_data, @uuid
-      # msg = {type: 'event', subtype: 'end_step', result: {status: params[:status], score: 0, delta: 0}, timer: Timings.instance(@uuid).next_stamp}
-      # async.publish_msg msg
       players.async.push_end_step params
       async.results_timeout if %w(passed timeouted).include?(params[:status])
     end

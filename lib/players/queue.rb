@@ -40,16 +40,16 @@ class Queue
     Actor[:"player_#{@prev_pitcher}"]
   end
 
-  def next!
-    skip!
+  def next
+    skip
     while pitcher && pitcher.alive? && !pitcher.online
-      skip!
+      skip
     end
     rebuild_tail
     fill_current
   end
 
-  def skip!
+  def skip
     @prev_pither = @current.shift
     fill_current
   end
