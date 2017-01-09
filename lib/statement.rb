@@ -294,7 +294,7 @@ class Statement
     @result >= 0.5 ? 'accepted' : 'declined'
   end
 
-  def vote_results! options={}
+  def vote_results options={}
     if @status == 'no_quorum'
       @unquorumed = true
       @result = 0.0

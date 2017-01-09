@@ -107,8 +107,8 @@ class Player
     mult = cfg[:"pitcher_rank_multiplier_#{typ}"].to_f
     rank = self.pitcher_rank
     rank *= mult if mult > 0.0
-    self.pitcher_rank = [rank, cfg[:pitcher_minimum_rank].to_f].max
-    self.pitcher_score = statements.count_single_score(self)
+    @pitcher_rank = [rank, cfg[:pitcher_minimum_rank].to_f].max
+    @pitcher_score = statements.count_single_score(self)
   end
 
   def vote params = {}
