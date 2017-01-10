@@ -165,6 +165,11 @@ class Statements
     end
   end
 
+  def count_single_score player
+    all_contributions = @statements.select{|s| s.status == 'accepted' }.map &:contribution
+    all_contributions.inject(0.0){|r, x| r + x[player.uuid.to_s].to_f }
+  end
+
   def count_pitchers_score
     all_contributions = @statements.select{|s| s.status == 'accepted' }.map &:contribution
 

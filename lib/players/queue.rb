@@ -40,16 +40,16 @@ class Queue
     Actor[:"player_#{@prev_pitcher}"]
   end
 
-  def next!
-    skip!
+  def next
+    skip
     while pitcher && pitcher.alive? && !pitcher.online
-      skip!
+      skip
     end
     rebuild_tail
     fill_current
   end
 
-  def skip!
+  def skip
     @prev_pither = @current.shift
     fill_current
   end
@@ -89,7 +89,6 @@ class Queue
     return random_rebuild_tail if setting[:random_enabled]
     players = Actor[:"players_#{@game_uuid}"]
     lst = players.players.sort_by(&:order)
-    # p 'pl list before', lst.map(&:uuid)
     @tail = []
     last_order = Actor[:"player_#{@current.last}"].try(:order)
     last_order ||= 0
@@ -102,7 +101,6 @@ class Queue
     else
       @tail = lst.map(&:uuid)
     end
-    # p 'queues and size', @current, @tail, (@current + @tail).size
 
 
     # (@current + @tail).each{|i| list.delete_if{|s| s.uuid == i } }

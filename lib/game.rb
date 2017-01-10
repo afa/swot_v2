@@ -84,7 +84,6 @@ class Game
     # info "#{@uuid} created"
     # sett = {settings: params[:settings]} if params[:settings] && !params[:settings].empty?
     # sett ||= {}
-    # p 'settings', sett
     Center.current.to_supervise as: :"admin_logger_#{@uuid}", type: AdminLogger, args: [{game_uuid: @uuid}]
     Center.current.to_supervise as: :"state_#{@uuid}", type: State, args: [{game_uuid: @uuid}]
     # Center.current.to_supervise as: :"state_#{@uuid}", type: State, args: [{game_uuid: @uuid}.merge(sett)]
@@ -102,7 +101,6 @@ class Game
     # end
     # timers = Center.current.to_supervise as: :"timers_#{@uuid}", type: Timings, args: [{game_uuid: @uuid}.merge(time_params)]
     timers = Center.current.to_supervise as: :"timers_#{@uuid}", type: Timings, args: [{game_uuid: @uuid}]
-    # p sgame
     Timings::Start.instance(@uuid).set_time @start_at
 # =======
 #     pl_list = Store::Player.find(game_uuid: @uuid).to_a
@@ -112,7 +110,6 @@ class Game
 #         players.async.add p_id
 #       end
 #     timers = Center.current.to_supervise as: :"timers_#{@uuid}", type: Timings, args: [{game_uuid: @uuid}.merge(time_params)]
-#     p Timings::Start.instance(@uuid).set_time params[:start][:time]
 # >>>>>>> dev
     state.state = Timings::Start.instance(@uuid).next_time ? :waiting : Timings::Start.instance(@uuid).at ? :started : :waiting
     cntrl = Control.current.publish_control( (params.has_key?(:players) ? {players: players.players.map{|p| {name: p.name, url: "#{@server_setup[:url]}/game/#{p.uuid}", uuid: p.uuid, email: p.email}}} : {}).merge(type: 'status', uuid: @uuid, replly_to: 'create'))
@@ -138,7 +135,6 @@ class Game
   end
 
   def run
-    # p @uuid
     puts 'ok'
   end
 
@@ -214,9 +210,7 @@ class Game
     players = Actor[:"players_#{@uuid}"]
     statements = Actor[:"statements_#{@uuid}"]
     stage_swot = State::STAGES.fetch(params[:stage], {swot: :end})[:swot]
-    # p 'stswot', stage_swot, params
     stmnts = statements.visible_for_buf(statements.rebuild_visible_for(stage_swot))
-    # p stmnts
     st = stmnts[params[:index].to_i - 1]
     impo = { player: params[:player], value: params[:value], index: params[:index], stage: stage_swot, statement: st.value.inspect }
     statements.async.range_for(impo)
@@ -328,13 +322,13 @@ class Game
       stat = statements.voting
       if stat
         stat.calc_votes
-        stat.vote_results!
+        stat.vote_results
         stat.set_contribution if stat.status == 'accepted'
+        stat.count_pitcher_score
         publish :player_log_push, @uuid, stat.uuid
-      else
-        if %w(passed timeouted).include? params[:status]
-          queue.pitcher.count_pitcher_score(params[:status])
-        end
+      end
+      if %w(passed timeouted).include? params[:status]
+        queue.pitcher.count_pitcher_score(params[:status] == 'passed' ? 'pass' : params[:status])
       end
       statements.update_visible
       # async.push_state
@@ -343,7 +337,7 @@ class Game
       state.step_status = state.next_enum(State::STEP_STATUSES, state.step_status) unless state.step_status == :end
       Timings::Results.instance(@uuid).start unless %w(passed timeouted).include?(params[:status])
       lg = Actor[:"admin_logger_#{@uuid}"]
-      queue.next!
+      queue.next
       lg.step_results :step_results, @uuid
       # publish :step_results, @uuid
       lg.statement_results :statement_results, @uuid, stat.uuid if stat
@@ -352,8 +346,6 @@ class Game
       # lg.send_score :send_score, @uuid
       publish :send_score, @uuid
       publish :save_game_data, @uuid
-      # msg = {type: 'event', subtype: 'end_step', result: {status: params[:status], score: 0, delta: 0}, timer: Timings.instance(@uuid).next_stamp}
-      # async.publish_msg msg
       players.async.push_end_step params
       async.results_timeout if %w(passed timeouted).include?(params[:status])
     end
@@ -563,10 +555,8 @@ class Game
     if @online
       ch = Actor[:"gm_chnl_#{@uuid}"]
       if ch && ch.alive?
-        # p 'game chnl ok'
         ch.publish_msg msg.to_json
       else
-        # p 'chnl down'
         offline!
       end
     else

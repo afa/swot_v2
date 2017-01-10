@@ -294,7 +294,7 @@ class Statement
     @result >= 0.5 ? 'accepted' : 'declined'
   end
 
-  def vote_results! options={}
+  def vote_results options={}
     if @status == 'no_quorum'
       @unquorumed = true
       @result = 0.0
@@ -306,7 +306,7 @@ class Statement
       @result >= 0.5 ? accept! : decline!
       count_catchers_score
     end
-    count_pitcher_score
+    # count_pitcher_score
   end
 
   def add_impo(pl_id, val, auto = false)
