@@ -1,5 +1,6 @@
 source "https://rubygems.org"
 # gem 'hiredis'
+gem 'rake'
 gem 'ohm'
 gem 'ohm-contrib'
 gem 'nio4r'
@@ -13,6 +14,10 @@ gem 'celluloid-io'
 # gem 'march_hare' #, '= 1.7.1'
 gem 'reel'
 gem 'websocket-driver'
+group :development do
+  gem 'reek'
+  gem 'rubocop'
+end
 
 gem 'rspec'
 gem 'uuid'

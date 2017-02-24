@@ -92,7 +92,7 @@ class Game
     state = int_state
 
     Center.current.to_supervise(as: :"players_#{@uuid}", type: Players, args: [{game_uuid: @uuid}])
-    players = Actor[:"players_#{@uuid}"]
+    # players = Actor[:"players_#{@uuid}"]
 # <<<<<<< HEAD
     # if params[:players]
     #   params[:players].each do |p|
@@ -100,7 +100,7 @@ class Game
     #   end
     # end
     # timers = Center.current.to_supervise as: :"timers_#{@uuid}", type: Timings, args: [{game_uuid: @uuid}.merge(time_params)]
-    timers = Center.current.to_supervise as: :"timers_#{@uuid}", type: Timings, args: [{game_uuid: @uuid}]
+    # timers = Center.current.to_supervise as: :"timers_#{@uuid}", type: Timings, args: [{game_uuid: @uuid}]
     Timings::Start.instance(@uuid).set_time @start_at
 # =======
 #     pl_list = Store::Player.find(game_uuid: @uuid).to_a
@@ -112,7 +112,7 @@ class Game
 #     timers = Center.current.to_supervise as: :"timers_#{@uuid}", type: Timings, args: [{game_uuid: @uuid}.merge(time_params)]
 # >>>>>>> dev
     state.state = Timings::Start.instance(@uuid).next_time ? :waiting : Timings::Start.instance(@uuid).at ? :started : :waiting
-    cntrl = Control.current.publish_control( (params.has_key?(:players) ? {players: players.players.map{|p| {name: p.name, url: "#{@server_setup[:url]}/game/#{p.uuid}", uuid: p.uuid, email: p.email}}} : {}).merge(type: 'status', uuid: @uuid, replly_to: 'create'))
+    # cntrl = Control.current.publish_control( (params.has_key?(:players) ? {players: players.players.map{|p| {name: p.name, url: "#{@server_setup[:url]}/game/#{p.uuid}", uuid: p.uuid, email: p.email}}} : {}).merge(type: 'status', uuid: @uuid, replly_to: 'create'))
     Control.current.add_game(@uuid)
     state.add_game @uuid
     subscribe :save_game_data, :save_game_data
@@ -156,10 +156,10 @@ class Game
   end
 
   def start_stage #whats?
-    state = int_state
+    # state = int_state
     players = Actor[:"players_#{@uuid}"]
     # alarms = Actor[:"alarms_#{@uuid}"]
-    queue = Actor[:"queue_#{@uuid}"]
+    # queue = Actor[:"queue_#{@uuid}"]
     statements = Actor[:"statements_#{@uuid}"]
     Timings::Stage.instance(@uuid).start
     statements.clean_current
@@ -173,7 +173,7 @@ class Game
     state.clean_state
     players = Actor[:"players_#{@uuid}"]
     if %w(s w o t).include? state.stage.to_s
-      queue = Actor[:"queue_#{@uuid}"]
+      # queue = Actor[:"queue_#{@uuid}"]
       if state.step == 1
         Timings::FirstPitch.instance(@uuid).start
       else
@@ -194,7 +194,7 @@ class Game
     state = int_state
     players = Actor[:"players_#{@uuid}"]
     # alarms = Actor[:"alarms_#{@uuid}"]
-    queue = Actor[:"queue_#{@uuid}"]
+    # queue = Actor[:"queue_#{@uuid}"]
     state.stage = state.next_enum(State::STAGES, state.stage)
     # msg = {type: 'event', subtype: 'end_stage', value: state.stage}
     Timings::Pitch.instance(@uuid).cancel
@@ -206,8 +206,8 @@ class Game
 
   def ranging params = {}
     # value index player
-    state = int_state
-    players = Actor[:"players_#{@uuid}"]
+    # state = int_state
+    # players = Actor[:"players_#{@uuid}"]
     statements = Actor[:"statements_#{@uuid}"]
     stage_swot = State::STAGES.fetch(params[:stage], {swot: :end})[:swot]
     stmnts = statements.visible_for_buf(statements.rebuild_visible_for(stage_swot))
@@ -225,7 +225,7 @@ class Game
     return unless state.check_state :pitch, queue.pitcher.uuid
     state.set_state :pitch, queue.pitcher.uuid
     statements = Actor[:"statements_#{@uuid}"]
-    tm = Time.now.to_i + (state.setting[:voting_quorum_timeout] || 60)
+    # tm = Time.now.to_i + (state.setting[:voting_quorum_timeout] || 60)
     rpl = (params[:to_replace] || []).map do |r|
       if r.is_a? Hash
         r[:index].to_i
@@ -267,10 +267,9 @@ class Game
     publish :pitch_timeout, @uuid, p.uuid if p && p.alive?
     publish :pitcher_timeout, p.uuid, state.stage
     end_step(status: 'timeouted')
-
   end
 
-  def pass params = {}
+  def pass(params = {})
     queue = Actor[:"queue_#{@uuid}"]
     state = int_state
     return unless state.check_state :pass, queue.pitcher.uuid
@@ -282,11 +281,11 @@ class Game
     end_step(status: 'passed')
   end
 
-  def vote params = {}
+  def vote(params = {})
     state = int_state
     players = Actor[:"players_#{@uuid}"]
     # alarms = Actor[:"alarms_#{@uuid}"]
-    queue = Actor[:"queue_#{@uuid}"]
+    # queue = Actor[:"queue_#{@uuid}"]
     statements = Actor[:"statements_#{@uuid}"]
     voting = statements.voting
     return unless voting
@@ -300,8 +299,8 @@ class Game
         players.async.push_quorum
       end
     end
-    if voting.voted_count == (players.online.map(&:uuid) - [voting.author] ).size
-        Timings.instance(@uuid).cancel(%w(voting_quorum voting_tail))
+    if voting.voted_count == (players.online.map(&:uuid) - [voting.author]).size
+      Timings.instance(@uuid).cancel(%w(voting_quorum voting_tail))
       async.end_step(status: voting.calc_result)
     end
   end
@@ -437,7 +436,7 @@ class Game
 
   def between_stages_timeout params = {}
     state = int_state
-    players = Actor[:"players_#{@uuid}"]
+    # players = Actor[:"players_#{@uuid}"]
     Timings::BetweenStages.instance(@uuid).cancel
     state.stage = state.next_enum(State::STAGES, state.stage)
     state.step = 1

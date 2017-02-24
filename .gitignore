@@ -2,3 +2,4 @@
 .*.swo
 .rspec
 *.log
+.bundle

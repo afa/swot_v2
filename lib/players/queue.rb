@@ -8,7 +8,7 @@ class Queue
     @current = []
     @tail = []
     game = Actor[:"game_#{@game_uuid}"]
-    players = Actor[:"players_#{@game_uuid}"]
+    # players = Actor[:"players_#{@game_uuid}"]
     if game.try(:alive?)
       rebuild_tail
       fill_current
@@ -84,9 +84,9 @@ class Queue
   end
 
   def rebuild_tail
-    state = Actor[:"state_#{@game_uuid}"]
-    setting = state.setting
-    return random_rebuild_tail if setting[:random_enabled]
+    # state = Actor[:"state_#{@game_uuid}"]
+    # setting = state.setting
+    # return random_rebuild_tail if setting[:random_enabled]
     players = Actor[:"players_#{@game_uuid}"]
     lst = players.players.sort_by(&:order)
     @tail = []
