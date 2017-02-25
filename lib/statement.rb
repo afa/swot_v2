@@ -1,3 +1,4 @@
+# хранилище и воркур выражений
 class Statement
   include Celluloid::Internals::Logger
 
@@ -23,12 +24,13 @@ class Statement
                 :non_voted
                 # :auto
 
-  def initialize params = {}
+  def initialize(params = {})
+    pos = params[:position]
     @value = params[:value]
     @author = params[:author]
     @replaces = params[:replaces] || []
     @uuid = params[:uuid]
-    @position = params[:position] if params[:position]
+    @position = pos if pos
     @game_uuid = params[:game_uuid]
     @stage = params[:stage]
     @step = params[:step]
@@ -48,7 +50,11 @@ class Statement
   end
 
   def to_store
-    {author: @author, game_uuid: @game_uuid, uuid: @uuid, stage: @stage, step: @step, value: @value, votes: @votes.map(&:as_json), status: @status, result: @result, importances: @importances, importance_score: @importance_score, importance_score_raw: @importance_score_raw, contribution: @contribution, contribution_before_ranking: @contribution_before_ranking, visible: @visible }
+    { author: @author, game_uuid: @game_uuid, uuid: @uuid, stage: @stage, step: @step, value: @value,
+      votes: @votes.map(&:as_json), status: @status, result: @result, importances: @importances,
+      importance_score: @importance_score, importance_score_raw: @importance_score_raw,
+      contribution: @contribution, contribution_before_ranking: @contribution_before_ranking,
+      visible: @visible }
   end
 
   def copy_before
@@ -60,7 +66,8 @@ class Statement
       @importance_score_raw = 1
       return
     end
-    @importance_score_raw = @importances.inject(0.0){|r, i| r + score_value(i) } / (@importances.map{|i| i[:player] }.compact.uniq.size)
+    @importance_score_raw = @importances.inject(0.0) { |res, imp| res + score_value(imp) } /
+                            @importances.map { |imp| imp[:player] }.compact.uniq.size
     @importance_score_raw = 1 if @importance_score_raw == 0
 
     # apply importance multiplier to contributors share
@@ -69,32 +76,28 @@ class Statement
     # end
   end
 
-  def score_key hsh
-    :"ranging_importance_#{hsh[:value].to_i - 1}_score"
-  end
-
-  def score_value hsh
+  def score_value(hsh)
     setting = Celluloid::Actor[:"state_#{@game_uuid}"].setting
-    setting[score_key(hsh)].to_f
+    setting[:"ranging_importance_#{hsh[:value].to_i - 1}_score"].to_f
   end
 
-  def replaced_by! uuid
-    if uuid.is_a? Statement
-      self.replaced = uuid.uuid
-    else
-      self.replaced = uuid
-    end
+  def replaced_by!(uuid)
+    self.replaced = if uuid.is_a? Statement
+                      uuid.uuid
+                    else
+                      uuid
+                    end
   end
 
-  def as_json player_id = nil
+  def as_json(player_id = nil)
     # author = Celluloid::Actor[:"player_#{@author}"]
     # player = Celluloid::Actor[:"player_#{player_id}"]
     score = score_for(player_id)
-    { index: @position, body: @value, score: score, player_id: player_id, author: @author}
+    { index: @position, body: @value, score: score, player_id: player_id, author: @author }
   end
 
-  def vote params = {}
-    return if @votes.detect{|v| v.player == params[:player] }
+  def vote(params = {})
+    return if @votes.detect { |vote| vote.player == params[:player] }
     @votes << Vote.new(player: params[:player], result: params[:result], active: true)
   end
 
@@ -110,7 +113,7 @@ class Statement
     players = Celluloid::Actor[:"players_#{@game_uuid}"]
     queue = Celluloid::Actor[:"queue_#{@game_uuid}"]
     (voted_count.to_f * 2) >= (players.players.select(&:online) - [queue.pitcher]).size
-    #TODO ??
+    # TODO: ??
   end
 
   def calc_result
@@ -118,11 +121,10 @@ class Statement
     # cnt = players.online.size
     return 'no_quorum' if @votes.empty?
     return 'no_quorum' unless quorum?
-    p = @votes.map(&:result).select{|v| v == 'accepted' }.size
-    return 'no_quorum' unless quorum?
-    return 'declined' if p ==0
-    return 'accepted' if p == voted_count
-    p.to_f / @votes.size.to_f >= 0.5 ? 'accepted' : 'declined'
+    probab = @votes.map(&:result).select { |vote| vote == 'accepted' }.size
+    return 'declined' if probab == 0
+    return 'accepted' if probab == voted_count
+    probab.to_f / @votes.size.to_f >= 0.5 ? 'accepted' : 'declined'
   end
 
   def accept!
@@ -135,10 +137,10 @@ class Statement
 
   def calc_contribution_share(share, cnt)
     state = Celluloid::Actor[:"state_#{@game_uuid}"]
-    contribution_hash = {@author => share}
+    contribution_hash = { @author => share }
     other_share = (1.0 - share) / cnt
     statements = Celluloid::Actor[:"statements_#{@game_uuid}"]
-    @replaces.map{|u| statements.find(u) }.compact.select{|s| s.stage == state.to_swot(state.stage) }.each do |repl|
+    @replaces.map { |u| statements.find(u) }.compact.select { |s| s.stage == state.to_swot(state.stage) }.each do |repl|
       repl.contribution.keys.each do |pl|
         contribution_hash[pl] = contribution_hash.fetch(pl, 0.0) + (other_share * repl.contribution.delete(pl).to_f)
       end
@@ -154,7 +156,7 @@ class Statement
     state = Celluloid::Actor[:"state_#{@game_uuid}"]
     cfg = state.setting
     replaces_amount = @replaces.size
-    raise ArgumentError, 'to much replaces (> 2)' unless (0..2).include?(replaces_amount)
+    raise ArgumentError, 'to much replaces (> 2)' unless (0..2).cover?(replaces_amount)
     share = cfg[:"pitcher_#{%w(no single double)[replaces_amount]}_replace_score"].to_f
     case replaces_amount
     when 0 then calc_contribution_no(share)
@@ -165,33 +167,35 @@ class Statement
 
   def set_contribution
     return calc_contribution
-    state = Celluloid::Actor[:"state_#{@game_uuid}"]
-    cfg = state.setting
-    replaces_amount = @replaces.size
-    raise ArgumentError, 'to much replaces (> 2)' unless (0..2).include?(replaces_amount)
-    share = cfg[:"pitcher_#{%w(no single double)[replaces_amount]}_replace_score"].to_f
-    max_share = cfg[:"pitcher_no_replace_score"].to_f
-    # share = case replaces_amount
-    #         when 0 then cfg[:pitcher_no_replace_score]
-    #         when 1 then cfg[:pitcher_single_replace_score]
-    #         when 2 then cfg[:pitcher_double_replace_score]
-    #         end.to_f
-    contributors_hash = { @author => share }
-    unless replaces_amount.zero?
-      statements = Celluloid::Actor[:"statements_#{@game_uuid}"]
-      others_share_part = ( 1 - share ).to_f / replaces_amount
-      # FIXME: найти утвержения с текущим стеджом в текущей игре с ид в массиве @replaces
-      replaced = @replaces.map{|r| statements.find(r) }.compact.select{|s| s.stage == state.to_swot(state.stage) }
+    # state = Celluloid::Actor[:"state_#{@game_uuid}"]
+    # cfg = state.setting
+    # replaces_amount = @replaces.size
+    # raise ArgumentError, 'to much replaces (> 2)' unless (0..2).include?(replaces_amount)
+    # share = cfg[:"pitcher_#{%w(no single double)[replaces_amount]}_replace_score"].to_f
+    # max_share = cfg[:"pitcher_no_replace_score"].to_f
+    # # share = case replaces_amount
+    # #         when 0 then cfg[:pitcher_no_replace_score]
+    # #         when 1 then cfg[:pitcher_single_replace_score]
+    # #         when 2 then cfg[:pitcher_double_replace_score]
+    # #         end.to_f
+    # contributors_hash = { @author => share }
+    # unless replaces_amount.zero?
+    #   statements = Celluloid::Actor[:"statements_#{@game_uuid}"]
+    #   others_share_part = (1 - share).to_f / replaces_amount
+    #   # FIXME: найти утвержения с текущим стеджом в текущей игре с ид в массиве @replaces
+    #   replaced = @replaces.map { |replace| statements.find(replace) }.compact.select do |stat|
+    #     stat.stage == state.to_swot(state.stage)
+    #   end
 
-      replaced.each do |statement|
-        statement.contribution.each do |player, share|
-          player_share = contributors_hash.fetch player, 0.0
-          player_share -= max_share if player_share > 0.0 #TODO!!!!!!!!!!!
-          contributors_hash[player] = player_share + share * others_share_part
-        end
-      end
-    end
-    @contribution = contributors_hash
+    #   replaced.each do |statement|
+    #     statement.contribution.each do |player, share|
+    #       player_share = contributors_hash.fetch player, 0.0
+    #       player_share -= max_share if player_share > 0.0 # TODO!!!!!!!!!!!
+    #       contributors_hash[player] = player_share + share * others_share_part
+    #     end
+    #   end
+    # end
+    # @contribution = contributors_hash
   end
 
   def player_contribution

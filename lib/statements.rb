@@ -1,3 +1,4 @@
+# хранилище списка сообщений
 class Statements
   include Celluloid
   include Celluloid::IO
@@ -6,7 +7,7 @@ class Statements
 
   attr_accessor :statements, :current, :game_uuid
   attr :voting, :last_stat
-  def initialize params = {}
+  def initialize(params = {})
     @game_uuid = params[:game_uuid]
     @statements = []
     @current = []
@@ -15,22 +16,21 @@ class Statements
     subscribe :save_game_data, :save_game_data
   end
 
-  def save_game_data topic, game_id
-    return unless game_id == @game_uuid
+  def save_game_data(_topic, game_id)
     # sync_statements
-    publish :game_data_saved, @game_uuid, :statements
+    publish :game_data_saved, @game_uuid, :statements if game_id == @game_uuid
   end
 
   def sync_statements
     info 'syncing statements'
-    store = Store::Statement.find(game_uuid: @game_uuid).to_a
-    sts = @statements.select{|s| !Store::Statement.find(uuid: s.uuid).first }
-    sts.each{|s| Store::Statement.create(s.to_store) }
-    info "synced #{sts.size} statements" if sts.size > 0
+    # store = Store::Statement.find(game_uuid: @game_uuid).to_a
+    sts = @statements.select { |stat| !Store::Statement.find(uuid: stat.uuid).first }
+    sts.each { |stat| Store::Statement.create(stat.to_store) }
+    info "synced #{sts.size} statements" unless sts.empty?
   end
 
   def find(uuid)
-    @statements.detect{|s| s.uuid == uuid }
+    @statements.detect { |stat| stat.uuid == uuid }
   end
 
   def voting
@@ -44,29 +44,24 @@ class Statements
   end
 
   def visible_for_buf(arr = @visible)
-    v = arr.map{|s| find s }
-    v.each_with_index{|s, i| s.position = i + 1 }
-    v
+    vis = arr.map { |stat| find stat }
+    vis.each_with_index { |stat, idx| stat.position = idx + 1 }
+    vis
   end
 
   def visible
     visible_for_buf
   end
 
-  def validate_statement params = {}
-    repl_count = params.has_key?(:to_replace) && params[:to_replace] ? params[:to_replace].size : 0
+  def validate_statement(params = {})
+    repl_count = params.fetch(:to_replace, []).size
+    val = params[:value]
     if @visible.size - repl_count > 6
       return { type: 'error', value: 'to_many' }
     end
-    if @current.detect{|s| params[:value] == find(s).value }
-      return { type: 'error', value: 'duplicate' }
-    end
-    if params[:value].force_encoding('UTF-8').size > 75
-      return { type: 'error', value: 'too_long' }
-    end
-    if params[:value].strip.size == 0
-      return { type: 'error', value: 'empty' }
-    end
+    return { type: 'error', value: 'duplicate' } if @current.detect { |stat| val == find(stat).value }
+    return { type: 'error', value: 'too_long' } if val.force_encoding('UTF-8').size > 75
+    return { type: 'error', value: 'empty' } if val.strip.size == 0
     {}
   end
 
