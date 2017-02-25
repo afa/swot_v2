@@ -48,7 +48,7 @@ class Game
     params.fetch(:players, []).each_with_index do |pl, idx|
       dat = pl.merge(game_uuid: uuid, order: idx + 1)
       mid = dat.delete(:id)
-      dat[mongo_id] = mid
+      dat[:mongo_id] = mid
       Player.build dat
     end
 
