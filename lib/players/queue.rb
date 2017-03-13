@@ -18,9 +18,9 @@ class Queue
   end
 
   def add(pl)
-    # players = Actor[:"players_#{@game_uuid}"]
-    # pl_id = pl.is_a?(String) ? pl : pl.uuid
-    # players.player_ids << pl_id unless players.player_ids.include?(pl_id)
+    players = Actor[:"players_#{@game_uuid}"]
+    pl_id = pl.is_a?(String) ? pl : pl.uuid
+    players.push_id(pl_id) unless players.player_ids.include?(pl_id)
     rebuild_tail
     fill_current
   end
@@ -78,8 +78,8 @@ class Queue
   end
 
   def random_rebuild_tail
-    players = Actor[:"players_#{@game_uuid}"]
-    lst = players.players.sort_by(&:order)
+    # players = Actor[:"players_#{@game_uuid}"]
+    # lst = players.players.sort_by(&:order)
 
   end
 

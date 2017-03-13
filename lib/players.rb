@@ -31,6 +31,10 @@ class Players
     Center.current.to_supervise as: :"queue_#{@game_uuid}", type: Queue, args: [{game_uuid: @game_uuid}]
   end
 
+  def push_id(pl_id)
+    @players << pl_id
+  end
+
   def mk_players
     splayers = Store::Player.find(game_uuid: @game_uuid).to_a.sort_by(&:order)
     splayers.each do |pl|
