@@ -90,6 +90,7 @@ class Queue
     # return random_rebuild_tail if setting[:random_enabled]
     players = Actor[:"players_#{@game_uuid}"]
     lst = players.players.sort_by(&:order)
+    p 'lst', lst
     @tail = []
     last_order = Actor[:"player_#{@current.last}"].try(:order)
     last_order ||= 0
@@ -102,6 +103,7 @@ class Queue
     else
       @tail = lst.map(&:uuid)
     end
+    p @tail
 
 
     # (@current + @tail).each{|i| list.delete_if{|s| s.uuid == i } }
