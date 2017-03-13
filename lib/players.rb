@@ -75,7 +75,6 @@ class Players
     ord = players.inject(0){|r, p| r >= p.order.to_i ? r : p.order.to_i }
     pl_id = player.is_a?(String) ? player : player.uuid
     Actor[:"player_#{pl_id}"].order = ord + 1
-    state = Actor[:"state_#{@game_uuid}"]
     info "add pl_id #{pl_id.inspect}"
     @players << pl_id
     queue.add pl_id
@@ -96,7 +95,6 @@ class Players
   end
 
   def push_start_stage
-    game = Actor[:"game_#{@game_uuid}"]
     players.each do |pl|
       info "send start stage to #{pl.uuid}"
       pl.send_start_stage
@@ -104,8 +102,6 @@ class Players
   end
 
   def push_start_step
-    game = Actor[:"game_#{@game_uuid}"]
-    queue = Actor[:"queue_#{@game_uuid}"]
     players.each do |pl|
       info "send start step to #{pl.uuid}"
       pl.catcher_apply_delta(0.0)
@@ -116,7 +112,6 @@ class Players
   end
 
   def push_end_step params = {}
-    game = Actor[:"game_#{@game_uuid}"]
     players.each do |pl|
       info "send end step to #{pl.uuid}"
       pl.async.send_end_step params
@@ -124,7 +119,6 @@ class Players
   end
 
   def push_end_stage
-    # game = Actor[:"game_#{@game_uuid}"]
     info "send end stage for #{players.map(&:uuid).inspect}"
     players.each do |pl|
       info "send end stage to #{pl.uuid}"

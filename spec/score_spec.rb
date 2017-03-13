@@ -9,16 +9,13 @@ require 'state'
 describe Statement do
   before do
     # @author = instance_double(Player, name: 'aa', uuid: 'aa')
-    @author = Player.new name: 'aa', uuid: 'aa'
+    @author = Player.build name: 'aa', uuid: 'aa'
     @statement = Statement.new value: 'asd', author: @author.uuid
   end
-  it "should be live" do
-    expect{ @author.gen_state }.not_to raise_error
-
-
+  it 'should be live' do
+    expect { @author.gen_state }.not_to raise_error
   end
 end
-
 
   # def send_start_step
   #   game = Actor[:"game_#{@game_uuid}"]

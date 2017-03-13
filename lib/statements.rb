@@ -160,21 +160,6 @@ class Statements
     end
   end
 
-  def count_single_score player
-    all_contributions = @statements.select{|s| s.status == 'accepted' }.map &:contribution
-    all_contributions.inject(0.0){|r, x| r + x[player.uuid.to_s].to_f }
-  end
-
-  def count_pitchers_score
-    all_contributions = @statements.select{|s| s.status == 'accepted' }.map &:contribution
-
-    players = Actor[:"players_#{@game_uuid}"]
-    players.players.each do |player|
-      # player.score.pitcher_before_ranging = player.score.pitcher if opts[:save_before]
-      player.pitcher_score = all_contributions.inject(0.0){|r, x| r + x[player.uuid.to_s].to_f }
-    end
-  end
-
   def update_visible
     return unless @voting
     s = find(@voting)

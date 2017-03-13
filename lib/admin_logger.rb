@@ -52,7 +52,7 @@ class AdminLogger
     # @records.map(&:to_hash)
   end
 
-  def save_game_data topic, game_id
+  def save_game_data _topic, game_id
     return unless game_id == @guid
     sync_admin_log
     publish :game_data_saved, @guid, :admin_log
@@ -60,9 +60,9 @@ class AdminLogger
 
   def sync_admin_log
     info 'syncing admin_log'
-    #backup? TODO
+    # TODO: backup?
     store = Store::AdminLog.find(game_uuid: @guid).sort(by: :created_at).to_a
-    rcrds = @records.select{|r| r[:redis_id].nil? || !store.any?{|s| s.id == r[:redis_id] } }
+    rcrds = @records.select { |r| r[:redis_id].nil? || !store.any? { |s| s.id == r[:redis_id] } }
     rcrds.each do |rc|
       r = Store::AdminLog.create game_uuid: @guid, data: rc, created_at: rc[:created_at]
       rc[:redis_id] = r.id
@@ -71,30 +71,26 @@ class AdminLogger
 
   def publish_msg msg
     ch = Actor[:"gm_chnl_#{@guid}"]
-    if ch && ch.alive?
-      ch.publish_msg msg.to_json
-    end
+    return unless ch && ch.alive?
+    ch.publish_msg msg.to_json
   end
 
-  def resend_log topic, game_id
+  def resend_log _topic, game_id
     return unless @guid == game_id
     msg = {
       type: :logs,
       values: @records
-      # values: @records[0, @last_processed]
     }
     publish_msg msg
-    # info msg.inspect
   end
 
-  def admin_log_push topic, game_id
+  def admin_log_push _topic, game_id
     return unless @guid == game_id
     cnt = @records.size - @last_processed
     return if 0 == cnt
     game = Actor[:"game_#{@guid}"]
     unless game && game.alive? && game.online
-      info "admin_log_push TODO game offline"
-      
+      info 'admin_log_push TODO game offline'
       return
     end
     @records[-cnt..-1].each do |rcrd|
@@ -104,13 +100,12 @@ class AdminLogger
   end
 
   def prepare_saved_logs
-    #TODO !!!!!!!!!!!!!!!!!!!!!!!!
+    # TODO: !!!!!!!!!!!!!!!!!!!!!!!!
   end
 
-  def game_started topic, game_id, params = {}
-    # TODO fix rescue and game methods
+  def game_started _topic, game_id, _params = {}
+    # TODO: fix rescue and game methods
     return unless @guid == game_id
-    state = Actor[:"state_#{@guid}"]
     queue = Actor[:"queue_#{@guid}"]
     lst = queue.list.first(3)
     pit = lst.shift
@@ -123,9 +118,9 @@ class AdminLogger
     push msg
   end
 
-  def next_stage topic, game_id, params = {}
+  def next_stage(_topic, game_id, _params = {})
     return unless @guid == game_id
-    # TODO statistics
+    # TODO: statistics
     # stage: sym
 
     state = Actor[:"state_#{@guid}"]
@@ -153,12 +148,10 @@ class AdminLogger
     push msg
   end
 
-  
-  def ranging topic, game_id, params = {}
+  def ranging(_topic, game_id, params = {})
     return unless @guid == game_id
     state = Actor[:"state_#{@guid}"]
-    players = Actor[:"players_#{@guid}"]
-    # TODO restore when calc online statistics done
+    # TODO: restore when calc online statistics done
     # totals = players.players.select(&:online).map do |p|
     #   { name: p.name }.merge(p.stats_total.raw_counters)
     # end

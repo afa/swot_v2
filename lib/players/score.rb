@@ -12,7 +12,7 @@
 # field :pitcher_before_ranging, type: BigDecimal, default: 0
 # field :catcher_first_half, type: BigDecimal, default: 0
 #===============================================================================#
-class Score
+class Score__
   attr_accessor :catcher, :pitcher
 
   def initialize(pitcher = 1, catcher = 0)
