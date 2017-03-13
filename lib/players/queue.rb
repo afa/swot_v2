@@ -23,6 +23,7 @@ class Queue
     players.push_id(pl_id) unless players.player_ids.include?(pl_id)
     rebuild_tail
     fill_current
+    p @current, @tail
   end
 
   def pitcher_id
