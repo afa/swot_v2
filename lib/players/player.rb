@@ -20,20 +20,22 @@ class Player
   end
 
   def initialize(params = {})
+    p params
     @online = false
-    @scores = ::Score.new(self)
     @was_online = false
     if params[:uuid]
       store = Store::Player.find(uuid: params[:uuid]).first
       p store
       warn "player #{params.inspect} invalid" unless store
-      uuid = store.uuid
+      @uuid = store.uuid
       @game_uuid = store.game_uuid
       @name = store.name
       @email = store.email
       @score = store.score
     end
+    @scores = ::Score.new(self)
     queue = Actor[:"queue_#{game_uuid}"]
+    p 'uuid', uuid
     queue.add uuid
     Center.current.async.to_supervise as: "player_logger_#{uuid}", type: PlayerLogger, args: [{ player_uuid: uuid }]
     info "q first #{queue.first}"
