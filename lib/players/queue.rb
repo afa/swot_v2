@@ -21,6 +21,7 @@ class Queue
     players = Actor[:"players_#{@game_uuid}"]
     pl_id = pl.is_a?(String) ? pl : pl.uuid
     players.push_id(pl_id) unless players.player_ids.include?(pl_id)
+    p 'players', players.players
     rebuild_tail
     fill_current
     p @current, @tail
