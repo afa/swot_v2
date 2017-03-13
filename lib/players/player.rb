@@ -181,6 +181,7 @@ class Player
   def send_ready(_params = {})
     state = Actor[:"state_#{game_uuid}"]
     queue = Actor[:"queue_#{game_uuid}"]
+    p queue
     pit = queue.pitcher.uuid == uuid
     msg = { type: 'event', subtype: 'ready', name: name, start_at: Timings::Start.instance(game_uuid).at,
             pitcher: pit, timeout_at: Timings.instance(game_uuid).stamps(%w(start).map(&:to_sym)),
