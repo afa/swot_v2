@@ -44,7 +44,7 @@ class Player
   end
 
   def guid?(guid)
-    game_uuid == guid
+    @game_uuid == guid
   end
 
   def current_stamp
@@ -184,7 +184,7 @@ class Player
     state = Actor[:"state_#{game_uuid}"]
     queue = Actor[:"queue_#{game_uuid}"]
     p queue
-    pit = queue.pitcher.uuid == uuid
+    pit = queue.pitcher.uuid == @uuid
     msg = { type: 'event', subtype: 'ready', name: name, start_at: Timings::Start.instance(game_uuid).at,
             pitcher: pit, timeout_at: Timings.instance(game_uuid).stamps(%w(start).map(&:to_sym)),
             version: SWOT_VERSION, time: current_stamp, max_steps: state.total_steps }
