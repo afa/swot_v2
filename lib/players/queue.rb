@@ -21,10 +21,8 @@ class Queue
     players = Actor[:"players_#{@game_uuid}"]
     pl_id = pl.is_a?(String) ? pl : pl.uuid
     players.push_id(pl_id) unless players.player_ids.include?(pl_id)
-    p 'players', players.players
     rebuild_tail
     fill_current
-    p @current, @tail
   end
 
   def pitcher_id
@@ -91,7 +89,6 @@ class Queue
     # return random_rebuild_tail if setting[:random_enabled]
     players = Actor[:"players_#{@game_uuid}"]
     lst = players.players.sort_by(&:order)
-    p 'lst', lst
     @tail = []
     last_order = Actor[:"player_#{@current.last}"].try(:order)
     last_order ||= 0
@@ -104,7 +101,6 @@ class Queue
     else
       @tail = lst.map(&:uuid)
     end
-    p @tail
 
 
     # (@current + @tail).each{|i| list.delete_if{|s| s.uuid == i } }
