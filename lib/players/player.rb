@@ -416,6 +416,7 @@ class Player
   # conclusion = [accepted, declined, pass, disconnected]
   # !!!! move to score
   def pitcher_update(conclusion)
+    scores.pitcher_update(conclusion)
     state = Celluloid::Actor[:"state_#{game_uuid}"]
     cfg = state.setting
     mult = cfg[:"pitcher_rank_multiplier_#{conclusion}".to_sym]
@@ -427,8 +428,7 @@ class Player
 
   # !!!! move to score
   def catcher_apply_delta(delta)
-    scores.catcher_score += delta
-    scores.delta = delta
+    scores.catcher_apply_delta(delta)
   end
 
   def finalizer; end

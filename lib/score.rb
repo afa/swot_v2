@@ -42,6 +42,21 @@ class Score
     end
   end
 
+  def catcher_apply_delta(delta)
+    @catcher_score += delta
+    @delta = delta
+  end
+
+  def pitcher_update(conclusion)
+    state = Celluloid::Actor[:"state_#{game_uuid}"]
+    cfg = state.setting
+    mult = cfg[:"pitcher_rank_multiplier_#{conclusion}".to_sym]
+    min = cfg[:pitcher_minimum_rank]
+    raise "pitcher_rank_multiplier_#{conclusion} not in Settings" unless mult && min
+    temp = pitcher_rank * mult
+    @pitcher_rank = [temp, min].max
+  end
+
   def copy_half
     self.catcher_score_first_half = catcher_score
     self.pitcher_score_first_half = pitcher_score
