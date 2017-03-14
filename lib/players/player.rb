@@ -9,6 +9,7 @@ class Player
 
   attr_reader :name, :email, :channel, :game_uuid, :uuid, :redis, :score, :online, :was_online
   attr_reader :scores
+  # :reek:Attribute
   attr_accessor :order
 
   def self.build(params = {})
@@ -410,7 +411,7 @@ class Player
 
   def send_state(_params = {})
     info "send_state #{uuid}"
-    publish_msg gen_state(params)
+    publish_msg gen_state(_params)
   end
 
   # conclusion = [accepted, declined, pass, disconnected]
