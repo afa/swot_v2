@@ -417,13 +417,6 @@ class Player
   # !!!! move to score
   def pitcher_update(conclusion)
     scores.pitcher_update(conclusion)
-    state = Celluloid::Actor[:"state_#{game_uuid}"]
-    cfg = state.setting
-    mult = cfg[:"pitcher_rank_multiplier_#{conclusion}".to_sym]
-    min = cfg[:pitcher_minimum_rank]
-    raise "pitcher_rank_multiplier_#{conclusion} not in Settings" unless mult && min
-    temp = scores.pitcher_rank * mult
-    scores.pitcher_rank = [temp, min].max
   end
 
   # !!!! move to score

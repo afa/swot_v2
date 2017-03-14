@@ -35,7 +35,7 @@ class Score
                              .select { |stat| stat.status == 'accepted' }
                              .map { |stat| stat.score.contribution }
 
-    players = Celluloid::Actor[:"players_#{@guid}"]
+    players = Celluloid::Actor[:"players_#{guid}"]
     players.players.each do |player|
       # player.score.pitcher_before_ranging = player.score.pitcher if opts[:save_before]
       player.scores.pitcher_score = all_contributions.inject(0.0) {|r, x| r + x[player.uuid.to_s].to_f }
@@ -48,7 +48,7 @@ class Score
   end
 
   def pitcher_update(conclusion)
-    state = Celluloid::Actor[:"state_#{game_uuid}"]
+    state = Celluloid::Actor[:"state_#{guid}"]
     cfg = state.setting
     mult = cfg[:"pitcher_rank_multiplier_#{conclusion}".to_sym]
     min = cfg[:pitcher_minimum_rank]
