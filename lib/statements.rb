@@ -158,21 +158,26 @@ class Statements
   end
 
   def rescore
-    s_sum = @statements.select{|s| s.status == 'accepted' }.inject(0.0){|r, s| r + s.importance_score_raw.to_f }
+    accepted = @statements.select { |stat| stat.status == 'accepted' }
+    s_sum = accepted.inject(0.0) { |r, stt| r + stt.importance_score_raw.to_f }
     s_sum = 1.0 if s_sum.to_f == 0.0
-    @statements.select{|s| s.status == 'accepted' }.each do |s|
-      s.importance_score = s.importance_score_raw * 100.0 / s_sum
+    accepted.each do |st|
+      st.importance_score = st.importance_score_raw * 100.0 / s_sum
     end
   end
 
   def count_pitchers_score
-    all_contributions = @statements.select{|s| s.status == 'accepted' }.map &:contribution
 
     players = Actor[:"players_#{@game_uuid}"]
     players.players.each do |player|
       # player.score.pitcher_before_ranging = player.score.pitcher if opts[:save_before]
-      player.pitcher_score = all_contributions.inject(0.0){|r, x| r + x[player.uuid.to_s].to_f }
+      player.pitcher_score = pitcher_score_for(player)
     end
+  end
+
+  def pitcher_score_for(player)
+    all_contributions = @statements.select { |stat| stat.status == 'accepted' }.map(&:contribution)
+    all_contributions.inject(0.0) { |rez, xtr| rez + xtr[player.uuid.to_s].to_f }
   end
 
   def update_visible

@@ -14,6 +14,9 @@ gem 'celluloid-io'
 gem 'reel'
 gem 'websocket-driver'
 
+gem 'reek'
+gem 'rubocop'
+
 gem 'rspec'
 gem 'uuid'
 
