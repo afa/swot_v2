@@ -328,14 +328,13 @@ class Game
       stat = statements.voting
       if stat
         stat.calc_votes
-        stat.vote_results!
         stat.set_contribution if stat.status == 'accepted'
+        stat.vote_results!
         publish :player_log_push, @uuid, stat.uuid
-      else
-        if %w(passed timeouted).include? params[:status]
-          # queue.pitcher.count_pitcher_score(%w(passed timeouted).include?(params[:status]) ? 'pass' : params[:status])
-          queue.pitcher.count_pitcher_score('pass')
-        end
+      elsif %w(passed timeouted).include? params[:status]
+        # queue.pitcher.count_pitcher_score(%w(passed timeouted).include?(params[:status]) ? 'pass' : params[:status])
+        # не таймаута/пасса нет
+        queue.pitcher.count_pitcher_score('pass')
       end
       statements.update_visible
       # async.push_state
