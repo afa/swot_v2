@@ -178,12 +178,12 @@ class Player
     stats = %w(s w o t).map(&:to_sym).inject({}) do |r, sym|
       r.merge!(sym => {statements: []})
       # TODO check contrib
-      r[sym][:statements] += statements.visible_for_buf(statements.rebuild_visible_for(sym)).map{|s| {body: s.value, contribution: '%d%' % (100.0 * s.contribution_for(@uuid))} }
+      r[sym][:statements] += statements.visible_for_buf(statements.rebuild_visible_for(sym)).map{|s| {body: s.value, contribution: format('%d%', (100.0 * s.contribution_for(@uuid)))} }
       r
     end
     pls = players.players.sort{|a, b| a.uuid == b.uuid ? 0: a.uuid == @uuid ? -1 : a.uuid <=> b.uuid }
     cur = pls.shift
-    ps = [{cur.name => {pitcher_score: ('%.03f' % cur.pitcher_score), catcher_score: ('%.03f' % cur.catcher_score)}}] + pls.map{|p| { p.uglify_name(:s) => {pitcher_score: ('%.03f' % (p.pitcher_score)), catcher_score: ('%.03f' % (p.catcher_score))} } }
+    ps = [{cur.name => {pitcher_score: (format('%.03f', cur.pitcher_score)), catcher_score: format('%.03f', cur.catcher_score)}}] + pls.map{|p| { p.uglify_name(:s) => {pitcher_score: format('%.03f', (p.pitcher_score)), catcher_score: format('%.03f', (p.catcher_score))} } }
     # { type: results, value: { data: { 's': { statements: [{ body: <str>, contribution: <float> }]}, 'w': { statements: [...] }, 'o': ..., 't': ... }, players: { real_name: { pitcher_score: <float>, catcher_score: <float> }, player_1: { ... }, player_3: { ... }...}}}
     msg = {type: 'results', value: { data: stats, players: ps } }
     publish_msg msg
@@ -289,18 +289,16 @@ class Player
       per = 100 - per unless stat.status == 'accepted'
       per = stat.status != 'accepted' && stat.unquorumed ? 'no_quorum' : per.round(1)
       if stat.author != @uuid
-        rnk = {score: @catcher_score, delta: '%+.1f' % @delta}
+        rnk = {score: @catcher_score, delta: format('%+.1f', @delta)}
       else 
         rnk = {score: @pitcher_rank}
       end
       msg = {type: 'event', subtype: 'end_step', result: {status: (stat.unquorumed ? 'no_quorum' : stat.status), players_voted: per}.merge(rnk), timeout_at: Timings.instance(@game_uuid).stamps(%w(stage results between_stages).map(&:to_sym)), time: current_stamp}
-      # msg = {type: 'event', subtype: 'end_step', result: {status: params[:status], players_voted: per}.merge(rnk), timeout_at: Timings.instance(@game_uuid).stamps(%w(stage results between_stages).map(&:to_sym)), time: current_stamp}
-    # p 'endstep result msg pitcherscore', msg, @pitcher_rank
     else
       if queue.prev_pitcher == @uuid
-        rnk = {rank: @pitcher_rank}
+        rnk = { rank: @pitcher_rank }
       else
-        rnk = {score: @catcher_score, delta: '%+.1f' % @delta}
+        rnk = { score: @catcher_score, delta: format('%+.1f', @delta) }
       end
       msg = {type: 'event', subtype: 'end_step', result: {status: params[:status]}.merge(rnk), timeout_at: Timings.instance(@game_uuid).stamps(%w(stage results between_stages).map(&:to_sym)), time: current_stamp}
     end
@@ -427,15 +425,15 @@ class Player
   end
 
   # conclusion = [accepted, declined, pass, disconnected]
-  def pitcher_update(conclusion)
-    state = Celluloid::Actor[:"state_#{@game_uuid}"]
-    cfg = state.setting
-    mult = cfg[:"pitcher_rank_multiplier_#{conclusion}".to_sym]
-    min = cfg[:pitcher_minimum_rank]
-    raise "pitcher_rank_multiplier_#{conclusion} not in Settings" unless (mult && min)
-    temp = @pitcher_rank * mult
-    @pitcher_rank = [temp, min].max
-  end
+  # def pitcher_update(conclusion)
+  #   state = Celluloid::Actor[:"state_#{@game_uuid}"]
+  #   cfg = state.setting
+  #   mult = cfg[:"pitcher_rank_multiplier_#{conclusion}".to_sym]
+  #   min = cfg[:pitcher_minimum_rank]
+  #   raise "pitcher_rank_multiplier_#{conclusion} not in Settings" unless (mult && min)
+  #   temp = @pitcher_rank * mult
+  #   @pitcher_rank = [temp, min].max
+  # end
 
   def catcher_apply_delta(delta)
     @catcher_score += delta

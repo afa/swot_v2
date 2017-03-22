@@ -1,0 +1,10 @@
+LongParameterList:
+  max_params: 4
+TooManyStatements:
+  max_statements: 12
+"app/helpers":
+  UtilityFunction:
+    enabled: false
+exclude_paths:
+  - db
+  - config/environments

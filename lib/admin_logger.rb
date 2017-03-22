@@ -269,9 +269,9 @@ class AdminLogger
     players = Actor[:"players_#{@guid}"]
     state = Actor[:"state_#{@guid}"]
     queue = Actor[:"queue_#{@guid}"]
-    stats_data = players.players.inject({}){|r, v| r.merge v.name => {pitcher: '%.03f' % v.pitcher_score.to_f, catcher: '%.01f' % v.catcher_score, rank: '%.03f' % v.pitcher_rank} }
-    roles_data = statements.visible_for_buf(statements.rebuild_visible_for(state.stage)).inject({}){|r, v| r.merge(v.value.inspect => (v.player_contribution.inject({}){|res, (key, val)| res.merge(key => ('%.03f' % val)) } )) }
-    # roles_data = statements.in_stage(state.stage).select{|s| s.status == 'accepted' }.inject({}){|r, v| r.merge(v.value.inspect => (v.player_contribution.inject({}){|res, (key, val)| res.merge(key => ('%.03f' % val)) } )) }
+    stats_data = players.players.inject({}){|r, v| r.merge v.name => {pitcher: format('%.03f', v.pitcher_score.to_f), catcher: format('%.01f', v.catcher_score), rank: format('%.03f', v.pitcher_rank) } }
+    roles_data = statements.visible_for_buf(statements.rebuild_visible_for(state.stage)).inject({}){|r, v| r.merge(v.value.inspect => (v.player_contribution.inject({}){|res, (key, val)| res.merge(key => format('%.03f', val)) } )) }
+    # roles_data = statements.in_stage(state.stage).select{|s| s.status == 'accepted' }.inject({}){|r, v| r.merge(v.value.inspect => (v.player_contribution.inject({}){|res, (key, val)| res.merge(key => format('%.03f', val)) } )) }
     queue_data = queue.list.map(&:name).first(2)
     # queue_data = queue.list.map(&:name).first(3).last(2) ## CHECK спешка очереди на 1
     # if false && state.setting[:random_enabled]

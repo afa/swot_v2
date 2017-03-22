@@ -1,0 +1,14 @@
+Metrics/LineLength:
+  Max: 120
+Style/FrozenStringLiteralComment:
+  Enabled: false
+Style/AsciiComments:
+  Enabled: false
+AllCops:
+  Exclude:
+    - 'db/**/*'
+    - 'config/**/*'
+    - 'script/**/*'
+    - 'bin/**/*'
+    - 'Gemfile'
+    - 'vendor/**/*'
