@@ -11,8 +11,6 @@ class Players
   include Celluloid::Internals::Logger
 
   attr :players
-  # attr_accessor :players
-  # def_delegators :@players, :<<, :+
 
   def initialize params = {}
     @players = []

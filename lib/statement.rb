@@ -1,6 +1,7 @@
 class Statement
   include Celluloid::Internals::Logger
 
+  attr_reader   :votable
   attr_accessor :value,
                 :author,
                 :replaces,
@@ -19,7 +20,6 @@ class Statement
                 :result,
                 :contribution_before_ranking,
                 :contribution,
-                :unquorumed,
                 :non_voted
                 # :auto
 
@@ -42,9 +42,16 @@ class Statement
     @importances = []
     @importance_score = 0.0
     @status = false
-    @unquorumed = false
     @visible = false
     @non_voted = 0
+    @votable = []
+    async.update_quorum
+  end
+
+  def update_quorum
+    players = Celluloid::Actor[:"players_#{@game_uuid}"]
+    ids = players.players.select { |pl| pl&.online }.map(&:uuid).uniq.sort - [@author]
+    @votable |= ids
   end
 
   def to_store
@@ -95,6 +102,7 @@ class Statement
 
   def vote params = {}
     return if @votes.detect{|v| v.player == params[:player] }
+    update_quorum
     @votes << Vote.new(player: params[:player], result: params[:result], active: true)
   end
 
@@ -107,9 +115,8 @@ class Statement
   end
 
   def quorum?
-    players = Celluloid::Actor[:"players_#{@game_uuid}"]
-    queue = Celluloid::Actor[:"queue_#{@game_uuid}"]
-    (voted_count.to_f * 2) >= (players.players.select(&:online) - [queue.pitcher]).size
+    # кворум постоянно пересчитывается (на момент начала голосования ака создания сообщения и с каждым голосом)
+    (voted_count.to_i * 2) >= @votable.size
     #TODO ??
   end
 
@@ -117,7 +124,7 @@ class Statement
     # players = Celluloid::Actor[:"players_#{@game_uuid}"]
     # cnt = players.online.size
     return 'no_quorum' if @votes.empty?
-    return 'no_quorum' if @unquorumed
+    return 'no_quorum' unless quorum?
     p = @votes.map(&:result).select{|v| v == 'accepted' }.size
     return 'no_quorum' unless quorum?
     return 'declined' if p ==0
@@ -212,7 +219,7 @@ class Statement
   def count_catchers_score(declined = false)
     state = Celluloid::Actor[:"state_#{@game_uuid}"]
     cfg = state.setting
-    non_voted_players = (Celluloid::Actor[:"players_#{@game_uuid}"].player_ids - [@author] - @votes.map(&:player)).map{|i| Celluloid::Actor[:"player_#{i}"] }.select{|p| p.alive? && p.online }
+    non_voted_players = ((Celluloid::Actor[:"players_#{@game_uuid}"].player_ids - [@author] - @votes.map(&:player)) & @votable).map{|i| Celluloid::Actor[:"player_#{i}"] }
     @non_voted = non_voted_players.size
     non_voted_players.each do |p|
       p.async.catcher_apply_delta(0.0)
@@ -257,14 +264,13 @@ class Statement
   def calc_votes
     res = calc_result
     v_count = @votes.map(&:player).uniq.size
-    if v_count == 0
+    unless quorum?
       @status = 'no_quorum'
       return
     end
     # players = Celluloid::Actor[:"players_#{@game_uuid}"]
     unless quorum?
       @status = 'no_quorum'
-      @unquorumed = true
       return
     end
     pro = @votes.select{|v| v.result == 'accepted' }.map(&:player).uniq.size
@@ -273,7 +279,6 @@ class Statement
     if pro >= contra
       accept!
     else
-      @unquorumed = false
       decline!
     end
   end
@@ -290,14 +295,12 @@ class Statement
   end
 
   def vote_results! options={}
-    if @status == 'no_quorum'
-      @unquorumed = true
+    if !quorum?
       @result = 0.0
       count_catchers_score(true)
       decline!
     else
-      @unquorumed = false
-      @result = @votes.inject(0){|r, v| r += v.result == 'accepted' ? 1 : 0 }.to_f / @votes.size.to_f
+      @result = @votes.inject(0) { |r, v| r += v.result == 'accepted' ? 1 : 0 }.to_f / @votes.size.to_f
       @result >= 0.5 ? accept! : decline!
       count_catchers_score
     end

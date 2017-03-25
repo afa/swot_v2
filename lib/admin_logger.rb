@@ -234,7 +234,7 @@ class AdminLogger
       statement: statement.value.inspect,
       result: statement.status,
       # result: statement.format_value(statement.status),
-      total_percents: statement.status != 'accepted' && statement.unquorumed ? 'no quorum' : stat_res.round(1),
+      total_percents: statement.status != 'accepted' && statement.quorum? ? stat_res.round(1) : 'no quorum',
       # total_percents: stat_res.round(1),
       subtype: :statement_results
     }

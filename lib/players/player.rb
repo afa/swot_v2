@@ -287,13 +287,13 @@ class Player
     if stat
       per = 100 * stat.result.to_f
       per = 100 - per unless stat.status == 'accepted'
-      per = stat.status != 'accepted' && stat.unquorumed ? 'no_quorum' : per.round(1)
+      per = stat.status != 'accepted' && stat.quorum? ? per.round(1) : 'no_quorum'
       if stat.author != @uuid
         rnk = {score: @catcher_score, delta: format('%+.1f', @delta)}
       else 
         rnk = {score: @pitcher_rank}
       end
-      msg = {type: 'event', subtype: 'end_step', result: {status: (stat.unquorumed ? 'no_quorum' : stat.status), players_voted: per}.merge(rnk), timeout_at: Timings.instance(@game_uuid).stamps(%w(stage results between_stages).map(&:to_sym)), time: current_stamp}
+      msg = {type: 'event', subtype: 'end_step', result: {status: (stat.quorum? ? stat.status : 'no_quorum'), players_voted: per}.merge(rnk), timeout_at: Timings.instance(@game_uuid).stamps(%w(stage results between_stages).map(&:to_sym)), time: current_stamp}
     else
       if queue.prev_pitcher == @uuid
         rnk = { rank: @pitcher_rank }
