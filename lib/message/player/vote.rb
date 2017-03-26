@@ -8,7 +8,6 @@ module Message
         return nil unless ch =~ /\A\/player\//
         # Celluloid::Internals::Logger.info "pitch #{ch.inspect} #{hsh.inspect}"
         new ch, hsh
-        # super.tap{|x| p x }
       end
 
       def initialize ch, hash = {}

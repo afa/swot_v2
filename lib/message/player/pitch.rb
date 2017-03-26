@@ -7,7 +7,6 @@ module Message
         return nil unless hsh[:type] == 'pitch'
         return nil unless ch =~ /\A\/player\//
         new ch, hsh
-        # super.tap{|x| p x }
       end
 
       def initialize ch, hash = {}

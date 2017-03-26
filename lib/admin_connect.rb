@@ -29,7 +29,6 @@ class AdminConnect
     if @ok
       begin
         @sock.write msg
-        p msg
       rescue EOFError => e
         off
         @sock.close
@@ -51,7 +50,6 @@ class AdminConnect
   def run
     begin
       msg = @sock.read
-      p 'receive game', @uuid, msg
     rescue EOFError => e
       off
       @sock.close

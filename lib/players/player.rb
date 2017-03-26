@@ -206,7 +206,6 @@ class Player
   #     subtype: ev, time: current_stamp, time: current_stamp,
   #     timeout_at: Timings.instance(@game_uuid).next_stamp
   #   }.merge params
-  #   p @uuid, state.player_channels.keys
   #   publish_msg msg
   # end
 

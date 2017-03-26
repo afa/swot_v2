@@ -25,7 +25,6 @@ class PlayerConnect
     if @ok
       begin
         @sock.write msg
-        p msg
       rescue EOFError => e
         off
         @sock.close
@@ -47,7 +46,6 @@ class PlayerConnect
   def run
     begin
       msg = @sock.read
-      p 'receive', @uuid, msg
     rescue EOFError => e
       off
       @sock.close

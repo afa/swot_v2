@@ -3,7 +3,6 @@ module Message
     attr_accessor :at
     include Celluloid::Internals::Logger
     def self.try_load(ch, hsh)
-      p 'try_load', ch, hash
       new ch, hsh
     end
 

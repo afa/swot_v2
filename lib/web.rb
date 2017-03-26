@@ -9,7 +9,6 @@ class ReelRouter
   def self.parse_post_params(env)
     lst = MultiJson.load(env.body.to_s)
     # lst = env.body.to_s.split("\n").map(&:chomp).map{|s| s.split('&') }.flatten.map{|s| s.split('=') }.inject({}){|r, a| r.merge(a.first => a.last) }
-    p lst
     lst
   end
 
@@ -132,7 +131,6 @@ class Web < Reel::Server::HTTP
     elsif socket.url =~ /\/game\//
       AdminConnect.create(socket, socket.url)
     elsif socket.url == '/swot/control'
-      p 'control channel TODO'
       # ClientConnect(socket)
     end
   end
