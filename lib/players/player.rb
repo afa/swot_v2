@@ -286,7 +286,7 @@ class Player
     if stat
       per = 100 * stat.result.to_f
       per = 100 - per unless stat.status == 'accepted'
-      per = stat.status != 'accepted' && stat.quorum? ? per.round(1) : 'no_quorum'
+      per = stat.quorum? ? per.round(1) : 'no_quorum'
       if stat.author != @uuid
         rnk = {score: @catcher_score, delta: format('%+.1f', @delta)}
       else 
