@@ -212,7 +212,7 @@ class Statement
 
   def count_pitcher_score
     player = Celluloid::Actor[:"player_#{@author}"]
-    typ = @status
+    typ = quorum? ? @status : 'no_quorum'
     player.count_pitcher_score(typ)
   end
 
