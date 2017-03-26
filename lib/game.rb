@@ -297,16 +297,15 @@ class Game
     voting = statements.voting
     return unless voting
     voting.vote(player: params[:player], result: params[:result])
-    publish :vote_added, @uuid, vote: {player: params[:player], result: params[:result]}
+    publish :vote_added, @uuid, vote: { player: params[:player], result: params[:result] }
     if voting.quorum?
       if Timings::VotingQuorum.instance(@uuid).next_time.to_f > state.setting[:voting_tail_timeout].to_f
         Timings.instance(@uuid).cancel(%w(voting_quorum voting_tail))
         Timings::VotingTail.instance(@uuid).start
-        # async.publish_msg(type: 'event', subtype: 'quorum', timeout_at: Timings.instance(@uuid).next_stamp)
         players.async.push_quorum
       end
     end
-    if voting.voted_count == (players.online.map(&:uuid) - [voting.author] ).size
+    if voting.voted_count == voting.votable.size
         Timings.instance(@uuid).cancel(%w(voting_quorum voting_tail))
       async.end_step(status: voting.calc_result)
     end

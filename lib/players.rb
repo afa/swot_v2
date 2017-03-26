@@ -18,9 +18,6 @@ class Players
       @game_uuid = params[:game_uuid]
       async.mk_queue
       async.mk_players
-
-      # state = Actor[:"state_#{params[:game_uuid]}"]
-      # state.players.each{|i| add(i) }
     end
     subscribe :save_game_data, :save_game_data
   end
@@ -78,8 +75,6 @@ class Players
     @players << pl_id
     queue.add pl_id
     Control.current.add_player(@game_uuid, pl_id)
-    # p 'player add', pl_id
-    # state.async
   end
 
   def copy_half
@@ -106,27 +101,21 @@ class Players
     game = Actor[:"game_#{@game_uuid}"]
     queue = Actor[:"queue_#{@game_uuid}"]
     players.each do |pl|
-      info "send start step to #{pl.uuid}"
       pl.catcher_apply_delta(0.0)
       pl.send_start_step
       pl.send_state
-      # push_event(:start_step, turn_in: queue.ids.index(@uuid), pitcher_name: current_pitcher.uglify_name(game.stage), step: {current: game.step, total: game.total_steps, status: 'pitch'})
     end
   end
 
   def push_end_step params = {}
     game = Actor[:"game_#{@game_uuid}"]
     players.each do |pl|
-      info "send end step to #{pl.uuid}"
       pl.async.send_end_step params
     end
   end
 
   def push_end_stage
-    # game = Actor[:"game_#{@game_uuid}"]
-    info "send end stage for #{players.map(&:uuid).inspect}"
     players.each do |pl|
-      info "send end stage to #{pl.uuid}"
       pl.async.send_end_stage
     end
   end
@@ -154,18 +143,6 @@ class Players
       pl.send_vote
     end
   end
-
-  # def push_player_log params = {}
-  #   stat_id = params[:statement]
-  #   statements = Actor[:"statements_#{@game_uuid}"]
-  #   statement = statements.find(stat_id)
-  #   return unless statement
-  #   @players.each do |pl|
-  #     p = Actor[:"player_#{pl}"]
-  #     #TODO voting at moment
-  #     publish :player_log_push, p.uuid, statement.uuid if p && p.alive? && p.online
-  #   end
-  # end
 
   def push_terminated
     players.each do |pl|
