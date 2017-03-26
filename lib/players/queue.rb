@@ -30,6 +30,7 @@ class Queue
   end
 
   def pitcher
+    p = pitcher_id
     return nil unless p
     Actor[:"player_#{p}"]
   end
