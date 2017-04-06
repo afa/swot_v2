@@ -101,6 +101,7 @@ class Player
   end
 
   def count_pitcher_score typ
+    # TODO: step_score.count_pitcher_rank, count_pitcher_score(statements)
     state = Actor[:"state_#{@game_uuid}"]
     cfg = state.setting
     mult = cfg[:"pitcher_rank_multiplier_#{typ}"].to_f
