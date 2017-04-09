@@ -32,7 +32,7 @@ class Store::Setting < Ohm::Model
       default_url_host: 'localhost:3000',
       default_invitation_template: '%{admin_name} invites you to take part in swot analysis session. the session will be held online',
       default_reminding_template: 'We remind you that you are invited to play "%{game_name}"',
-      random_enabled: false,
+      random_enabled: true,
       countries: %w( Russia USA Pakistan),
       industries: %w( IT Medicine Trade),
       min_games_for_benchmark: 100,
