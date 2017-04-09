@@ -1,3 +1,4 @@
+require 'randoms'
 class Queue
   include Celluloid
   include Celluloid::IO
@@ -80,7 +81,9 @@ class Queue
   def random_rebuild_tail
     players = Actor[:"players_#{@game_uuid}"]
     lst = players.players.sort_by(&:order)
-
+    lst -= lst.select { |pl| @current.include?(pl.uuid) }
+    sortable = lst.map { |item| [item.pitcher_rank.to_f, item.uuid] }
+    @tail = Randoms.ranged_shuffle(sortable).map(&:last)
   end
 
   def rebuild_tail
