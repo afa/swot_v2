@@ -483,8 +483,8 @@ class Game
     state = int_state
     players = Actor[:"players_#{@uuid}"]
     stats = %w(s w o t).map(&:to_sym).inject({}) do |r, sym|
-      r.merge!(sym => {statements: []})
-      r[sym][:statements] += statements.visible_for_buf(statements.rebuild_visible_for(sym)).map{|s| {author: s.author, votes: s.votes.map(&:as_json), importances: s.importances, result: s.result, body: s.value, contribution: s.contribution} }
+      r[sym] = {statements: []}
+      r[sym][:statements] += statements.visible_for_buf(statements.rebuild_visible_for(sym)).map { |s| { author: s.author, votes: s.votes.map(&:as_json), importances: s.importances, result: s.result, body: s.value, contribution: s.contribution } }
       # r[sym][:statements] += statements.visible_for_buf(statements.rebuild_visible_for(sym)).map{|s| {body: s.value, contribution: s.contribution_for(@uuid)} }
       r
     end
@@ -496,19 +496,17 @@ class Game
     statements.statements.each{|s| s.visible = vis[s.stage.to_sym].include?(s.uuid) }
     sts = statements.statements.map(&:to_store)
     pls = players.players
-    ps = pls.map{|p| { p.uglify_name(:s) => {name: p.name, pitcher_score: (p.pitcher_score), pitcher_score_before_ranging: p.pitcher_score_before_ranging, catcher_score_before_ranging: p.catcher_score_before_ranging, uglify_name: p.uglify_name(:s), pitcher_score_first_half: p.pitcher_score_first_half, catcher_score_first_half: p.catcher_score_first_half, uuid: p.uuid, catcher_score: (p.catcher_score)} } }
-    hsh.merge! data: stats, players: ps, statements: sts
+    ps = pls.map { |p| { p.uglify_name(:s) => { name: p.name, pitcher_score: (p.pitcher_score), pitcher_score_before_ranging: p.pitcher_score_before_ranging, catcher_score_before_ranging: p.catcher_score_before_ranging, uglify_name: p.uglify_name(:s), pitcher_score_first_half: p.pitcher_score_first_half, catcher_score_first_half: p.catcher_score_first_half, uuid: p.uuid, catcher_score: (p.catcher_score) } } }
+    hsh.merge!(data: stats, players: ps, statements: sts)
     al = Actor[:"admin_logger_#{@uuid}"]
     logs = al.as_json
-    hsh.merge! logs: logs.sort_by{|l| l.has_key?(:created_at) ? l[:created_at] : l['created_at'] }
+    hsh[:logs] = logs.sort_by { |l| l.has_key?(:created_at) ? l[:created_at] : l['created_at'] }
     uri = URI(state.setting[:game_results_callback])
     req = Net::HTTP::Post.new uri.request_uri
     req.body = "q='#{hsh.to_json}'"
     rez = Net::HTTP.start(uri.hostname, uri.port) do |http|
       http.request(req)
     end
-    info hsh.inspect
-    info "#{rez.inspect}"
   end
 
   def stage_timeout
