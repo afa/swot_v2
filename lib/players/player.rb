@@ -71,6 +71,7 @@ class Player
       subtype: 'ranks',
       value: dat
     }
+    info "players score #{@uuid}::#{dat.inspect}"
     publish_msg msg
   end
 
