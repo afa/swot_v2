@@ -11,14 +11,12 @@ module Message
       end
 
       def initialize ch, hash = {}
-        info "init vote"
         @uuid = (/\A\/player\/(?<id>[0-9a-fA-F-]+)\z/.match(ch)||{})[:id]
         @data = hash
         super
       end
 
       def process
-        info "process vote"
         super
         pl = Celluloid::Actor[:"player_#{@uuid}"]
         pl.vote(@data)
