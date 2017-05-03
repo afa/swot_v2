@@ -22,7 +22,7 @@ class Statements
   end
 
   def sync_statements
-    info 'syncing statements'
+    # info 'syncing statements'
     store = Store::Statement.find(game_uuid: @game_uuid).to_a
     sts = @statements.select{|s| !Store::Statement.find(uuid: s.uuid).first }
     sts.each{|s| Store::Statement.create(s.to_store) }
@@ -75,7 +75,6 @@ class Statements
     stats = in_stage(state.stage)
     dec_count = [state.setting[:declined_in_row_statements].to_i, stats.size].min
     return false if dec_count < state.setting[:declined_in_row_statements].to_i
-    # dec_count = state.setting[:declined_in_row_statements].to_i
     stats[-dec_count, dec_count].all?{|s| s.status == 'declined' }
   end
 
@@ -125,7 +124,7 @@ class Statements
     queue = Actor[:"queue_#{@game_uuid}"]
     replace = []
     if params[:to_replace]
-      info "to replace #{params[:to_replace].inspect}"
+      # info "to replace #{params[:to_replace].inspect}"
       params[:to_replace].each{|idx| replace << @visible[idx - 1] }
     end
 

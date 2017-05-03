@@ -115,7 +115,7 @@ class Queue
   end
 
   def index(pl_id)
-    info "queue index #{pl_id.inspect} size #{ids.size}"
+    # info "queue index #{pl_id.inspect} size #{ids.size}"
     @current.index(pl_id)
   end
 

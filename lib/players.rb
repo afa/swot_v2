@@ -16,14 +16,15 @@ class Players
     @players = []
     if params[:game_uuid]
       @game_uuid = params[:game_uuid]
-      async.mk_queue
-      async.mk_players
+      queue_wait = future.mk_queue
+      async.mk_players if queue_wait.value == :ok
     end
     subscribe :save_game_data, :save_game_data
   end
 
   def mk_queue
     Center.current.to_supervise as: :"queue_#{@game_uuid}", type: Queue, args: [{game_uuid: @game_uuid}]
+    :ok
   end
 
   def mk_players

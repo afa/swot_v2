@@ -49,9 +49,7 @@ class Player
     queue = Actor[:"queue_#{@game_uuid}"]
     queue.add @uuid
     Center.current.async.to_supervise as: "player_logger_#{@uuid}", type: PlayerLogger, args: [{player_uuid: @uuid}]
-    info "q first #{queue.first}"
     
-    info store.inspect
     subscribe :send_score, :send_players_score
   end
 
@@ -90,7 +88,7 @@ class Player
   end
 
   def pass params = {}
-    info 'start player.pass'
+    # info 'start player.pass'
     queue = Actor[:"queue_#{@game_uuid}"]
     return unless queue.pitcher_id == @uuid
     game = Actor[:"game_#{@game_uuid}"]
@@ -141,7 +139,7 @@ class Player
     async.send_state reply_to: 'connect' if state.state.to_s == 'started'
     async.send_terminated if state.state.to_s == 'terminated'
     async.send_result reply_to: 'connect' unless %w(waiting started).include?(state.state.to_s)
-    info 'online'
+    # info 'online'
     publish :player_online, @game_uuid, {uuid: @uuid}
   end
 
@@ -157,7 +155,7 @@ class Player
     if @online
       ch = Actor[:"chnl_#{@uuid}"]
       if ch && ch.alive?
-        info 'chnl ok'
+        # info 'chnl ok'
         ch.publish_msg msg.merge(time: current_stamp, rel: SWOT_REL, version: SWOT_VERSION).to_json
       else
         info 'chnl down'
@@ -306,7 +304,7 @@ class Player
   def send_end_stage
     state = Actor[:"state_#{@game_uuid}"]
     queue = Actor[:"queue_#{@game_uuid}"]
-    info "sending end stage to pl #{@uuid}"
+    # info "sending end stage to pl #{@uuid}"
 
     msg = {
           type: 'event',
@@ -411,7 +409,7 @@ class Player
   end
 
   def send_state params = {}
-    info "send_state #{@uuid}"
+    # info "send_state #{@uuid}"
     publish_msg gen_state(params)
   end
 
