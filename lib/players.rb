@@ -12,10 +12,11 @@ class Players
 
   attr :players
 
-  def initialize params = {}
+  def initialize(params = {})
     @players = []
-    if params[:game_uuid]
-      @game_uuid = params[:game_uuid]
+    guid = params[:game_uuid]
+    if guid
+      @game_uuid = guid
       queue_wait = future.mk_queue
       async.mk_players if queue_wait.value == :ok
     end
@@ -23,7 +24,7 @@ class Players
   end
 
   def mk_queue
-    Center.current.to_supervise as: :"queue_#{@game_uuid}", type: Queue, args: [{game_uuid: @game_uuid}]
+    Center.current.to_supervise as: :"queue_#{@game_uuid}", type: Queue, args: [{ game_uuid: @game_uuid }]
     :ok
   end
 
@@ -36,7 +37,7 @@ class Players
     end
   end
 
-  def save_game_data topic, game_id
+  def save_game_data(_topic, game_id)
     return unless game_id == @game_uuid
     sync_players
     publish :game_data_saved, @game_uuid, :players
@@ -46,33 +47,30 @@ class Players
     info 'syncing players'
   end
 
-  def push_event event, params = {}
-    players.each{|p| p.send_event event, params }
+  def push_event(event, params = {})
+    players.each { |pl| pl.send_event event, params }
   end
 
-  def push_state params = {}
-    players.each{|p| p.send_state params }
+  def push_state(params = {})
+    players.each { |pl| pl.send_state params }
   end
 
-  def push_messages params = {}
-    players.each{|p| p.send_messages params }
+  def push_messages(params = {})
+    players.each { |pl| pl.send_messages params }
   end
 
   def players
-    @players.map{|i| Actor[:"player_#{i}"] }.select{|p| p && p.alive? }
+    @players.map { |id| Actor[:"player_#{id}"] }.select { |pl| pl && pl.alive? }
   end
 
   def player_ids
     @players
   end
 
-  def add player
-    queue = Actor[:"queue_#{@game_uuid}"]
-    ord = players.inject(0){|r, p| r >= p.order.to_i ? r : p.order.to_i }
+  def add(player)
+    ord = players.map { |pl| pl.order.to_i }.inject(0) { |rez, pl| rez >= pl ? rez : pl }
     pl_id = player.is_a?(String) ? player : player.uuid
     Actor[:"player_#{pl_id}"].order = ord + 1
-    state = Actor[:"state_#{@game_uuid}"]
-    info "add pl_id #{pl_id.inspect}"
     @players << pl_id
     queue.add pl_id
     Control.current.add_player(@game_uuid, pl_id)
@@ -91,16 +89,10 @@ class Players
   end
 
   def push_start_stage
-    game = Actor[:"game_#{@game_uuid}"]
-    players.each do |pl|
-      info "send start stage to #{pl.uuid}"
-      pl.send_start_stage
-    end
+    players.each(&:send_start_stage)
   end
 
   def push_start_step
-    game = Actor[:"game_#{@game_uuid}"]
-    queue = Actor[:"queue_#{@game_uuid}"]
     players.each do |pl|
       pl.catcher_apply_delta(0.0)
       pl.send_start_step
@@ -108,8 +100,7 @@ class Players
     end
   end
 
-  def push_end_step params = {}
-    game = Actor[:"game_#{@game_uuid}"]
+  def push_end_step(params = {})
     players.each do |pl|
       pl.async.send_end_step params
     end
@@ -121,40 +112,30 @@ class Players
     end
   end
 
-  def push_pitch params = {}
+  def push_pitch(params = {})
     players.each do |pl|
       pl.send_pitch params
     end
   end
 
   def push_pass
-    players.each do |pl|
-      pl.send_pass
-    end
+    players.each(&:send_pass)
   end
 
   def push_quorum
-    players.each do |pl|
-      pl.send_quorum
-    end
+    players.each(&:send_quorum)
   end
 
   def push_vote
-    players.each do |pl|
-      pl.send_vote
-    end
+    players.each(&:send_vote)
   end
 
   def push_terminated
-    players.each do |pl|
-      pl.send_terminated
-    end
+    players.each(&:send_terminated)
   end
 
   def push_game_results
-    players.each do |pl|
-      pl.send_game_results
-    end
+    players.each(&:send_game_results)
   end
 
   def enough_players
@@ -173,21 +154,18 @@ class Players
 
   def check_min_players
     state = Actor[:"state_#{@game_uuid}"]
-    if state.state == :started && %w(s sw w wo o ot t).include?(state.stage.to_s)
-      if enough_players
-        Timings::Terminate.instance(@game_uuid).cancel if Timings::Terminate.instance(@game_uuid).next_time
-      else
-        Timings::Terminate.instance(@game_uuid).start unless Timings::Terminate.instance(@game_uuid).next_time
-      end
+    return unless state.state == :started && %w(s sw w wo o ot t).include?(state.stage.to_s)
+    timer = Timings::Terminate.instance(@game_uuid)
+    if enough_players && timer.next_time
+      timer.cancel
+    else
+      timer.start
     end
   end
 
-  def find pl_id
-    if @players.include? pl_id
-      Actor[:"player_#{pl_id}"]
-    else 
-      nil
-    end
+  def find(pl_id)
+    return Actor[:"player_#{pl_id}"] if @players.include? pl_id
+    nil
   end
 
   def build_queue
@@ -196,7 +174,6 @@ class Players
   end
 
   def current_pitcher
-    queue = Actor[:"queue_#{@game_uuid}"]
     Actor[:"player_#{queue.first}"]
   end
 
