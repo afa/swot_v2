@@ -17,7 +17,7 @@ class Queue
     end
   end
 
-  def add(pl)
+  def add(_pl)
     # TODO: !!!!! проверить места вызовов
     # players = Actor[:"players_#{@game_uuid}"]
     # pl_id = pl.is_a?(String) ? pl : pl.uuid
@@ -31,9 +31,9 @@ class Queue
   end
 
   def pitcher
-    p = pitcher_id
-    return nil unless p
-    Actor[:"player_#{p}"]
+    player_id = pitcher_id
+    return nil unless player_id
+    Actor[:"player_#{player_id}"]
   end
 
   def prev_pitcher
@@ -54,10 +54,11 @@ class Queue
   end
 
   def fill_current
-    c = (@current + @tail).uniq
-    @current = c.first(3)
-    @tail = if c.size > 3
-              c.last(c.size - 3)
+    all = (@current + @tail).uniq
+    @current = all.first(3)
+    size = all.size
+    @tail = if size > 3
+              all.last(size - 3)
             else
               []
             end
@@ -69,7 +70,7 @@ class Queue
 
   def list
     players = Actor[:"players_#{@game_uuid}"]
-    ids.map { |i| players.find(i) }
+    ids.map { |item| players.find(item) }
   end
 
   def first
@@ -84,24 +85,26 @@ class Queue
     @tail = Randoms.ranged_shuffle(sortable).map(&:last)
   end
 
-  def rebuild_tail
-    state = Actor[:"state_#{@game_uuid}"]
-    setting = state.setting
-    return random_rebuild_tail if setting[:random_enabled]
+  def sequental_rebuild_tail
     players = Actor[:"players_#{@game_uuid}"]
     lst = players.players.sort_by(&:order)
     @tail = []
     last_order = Actor[:"player_#{@current.last}"].try(:order)
     last_order ||= 0
     lst.delete_if { |ll| ids.include?(ll.uuid) || ll.order.to_i < 1 }
-    idx = lst.index { |ll| ll.order > last_order }
+    idx = lst.index { |li| li.order > last_order }
     if idx
       @tail += lst[idx..-1].map(&:uuid)
       lst = lst[0, idx]
-      @tail += lst.map(&:uuid)
-    else
-      @tail = lst.map(&:uuid)
     end
+    @tail += lst.map(&:uuid)
+  end
+
+  def rebuild_tail
+    state = Actor[:"state_#{@game_uuid}"]
+    setting = state.setting
+    return random_rebuild_tail if setting[:random_enabled]
+    sequental_rebuild_tail
   end
 
   def index(pl_id)
