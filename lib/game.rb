@@ -130,7 +130,8 @@ class Game
   end
 
   def onconnect
-    push_state reply: 'connect'
+    # TODO: react to connection when web connected
+    # push_state reply: 'connect'
   end
 
   def run
@@ -369,26 +370,22 @@ class Game
   def end_stage(_params = {})
     state = int_state
     players = Actor[:"players_#{@uuid}"]
-    statements = Actor[:"statements_#{@uuid}"]
     state.stage = state.next_enum(State::STAGES, state.stage)
     Timings::Terminate.instance(@uuid).cancel if state.stage == :tr
     if %w(sw wo ot tr).include? state.stage.to_s
+      statements = Actor[:"statements_#{@uuid}"]
       Timings::BetweenStages.instance(@uuid).start
-      # msg = {type: 'event', subtype: 'end_stage', value: state.stage, timer: Timings.instance(@uuid).next_stamp}
-      # async.publish_msg msg
       players.async.push_end_stage
       players.copy_half if state.stage == :sw
       players.copy_before if state.stage == :tr
       statements.copy_before if state.stage == :tr
-      publish :next_stage, @uuid, stage: state.stage unless state.stage == :tr
       if state.stage == :tr
-        statements = Actor[:"statements_#{@uuid}"]
         statements.init_importances
         publish :ranging, @uuid, stage: state.stage
+      else
+        publish :next_stage, @uuid, stage: state.stage
       end
     elsif %w(rs rw ro rt).include? state.stage.to_s
-      # msg = {type: 'event', subtype: 'end_stage', value: state.stage, timer: Time.now.to_i + 1}
-      # async.publish_msg msg
       players.async.push_end_stage
       async.start_stage
     elsif state.stage == :end
@@ -399,100 +396,106 @@ class Game
     end
   end
 
-  def end_game(params = {})
+  def end_game(_params = {})
     info 'TODO end game'
     publish :game_done, @uuid
   end
 
-  def results_timeout(params = {})
+  def results_timeout(_params = {})
     state = int_state
     statements = Actor[:"statements_#{@uuid}"]
-    players = Actor[:"players_#{@uuid}"]
     Timings::Results.instance(@uuid).cancel
     if statements.check_triple_decline
       async.end_stage
+    elsif state.step < state.total_steps
+      state.step += 1
+      lg = Actor[:"admin_logger_#{@uuid}"]
+      lg.next_pitcher :next_pitcher, @uuid
+      async.start_step
     else
-      if state.step < state.total_steps
-        state.step += 1
-        lg = Actor[:"admin_logger_#{@uuid}"]
-        lg.next_pitcher :next_pitcher, @uuid
-        async.start_step
-      else
-        players = Actor[:"players_#{@uuid}"]
-        async.end_stage
-      end
+      async.end_stage
     end
   end
 
-  def between_stages_timeout(params = {})
+  def between_stages_timeout(_params = {})
     state = int_state
-    players = Actor[:"players_#{@uuid}"]
     Timings::BetweenStages.instance(@uuid).cancel
     state.stage = state.next_enum(State::STAGES, state.stage)
     state.step = 1
     state.step_status = state.first_enum(State::STEP_STATUSES)
-
-    # check for bugs
     async.start_stage
   end
 
-  def ranging_timeout(params = {})
+  def ranging_timeout(_params = {})
     Timings::Ranging.instance(@uuid).cancel
     async.end_step
-    # end_stage
   end
 
   # def push_event event, params = {}
   #   publish_msg({type: 'event', subtype: event})
   # end
 
-  def push_state(params = {})
-    # state = int_state
-    # players = Actor[:"players_#{@uuid}"]
-    # msg = params.merge status: state.state, stage: state.stage, timeout_at: Timings::Start.instance(@uuid).at + 1500, started_at: Timings::Start.instance(@uuid).at, players: players.players.map(&:uuid), step: {total: total_steps, current: step, status: step_status}
-    # # msg = params.merge status: state.state, stage: state.stage, timeout_at: alarm.next_time, started_at: alarm.start_at, players: players.players.map(&:uuid), step: {total: total_steps, current: step, status: step_status}
-    # publish_msg msg
+  def push_state(_params = {})
+    # TODO: remove?
   end
 
   def push_saved_game_results
-    # game = Actor[:"game_#{@game_uuid}"]
     sgame = Store::Game.find(uuid: @uuid).first
-    hsh = {game_id: sgame.mongo_id}
+    hsh = { game_id: sgame.mongo_id }
     statements = Actor[:"statements_#{@uuid}"]
     statements.update_importance_score
 
     statements.rescore
     state = int_state
     players = Actor[:"players_#{@uuid}"]
-    stats = %w(s w o t).map(&:to_sym).inject({}) do |r, sym|
-      r[sym] = {statements: []}
-      r[sym][:statements] += statements.visible_for_buf(statements.rebuild_visible_for(sym)).map { |s| { author: s.author, votes: s.votes.map(&:as_json), importances: s.importances, result: s.result, body: s.value, contribution: s.contribution } }
-      # r[sym][:statements] += statements.visible_for_buf(statements.rebuild_visible_for(sym)).map{|s| {body: s.value, contribution: s.contribution_for(@uuid)} }
-      r
+    stats = %w(s w o t).map(&:to_sym).inject({}) do |rez, sym|
+      rez[sym] = { statements: [] }
+      rez[sym][:statements] += statements.visible_for_buf(statements.rebuild_visible_for(sym)).map do |s|
+        {
+          author: s.author,
+          votes: s.votes.map(&:as_json),
+          importances: s.importances,
+          result: s.result,
+          body: s.value,
+          contribution: s.contribution
+        }
+      end
+      rez
     end
-    vis = %w(s w o t).map(&:to_sym).inject({}) do |r, sym|
-      r[sym] = []
-      r[sym] += statements.visible_for_buf(statements.rebuild_visible_for(sym)).map(&:uuid)
-      r
+    vis = %w(s w o t).map(&:to_sym).inject({}) do |rez, sym|
+      rez[sym] = []
+      rez[sym] += statements.visible_for_buf(statements.rebuild_visible_for(sym)).map(&:uuid)
+      rez
     end
-    statements.statements.each{|s| s.visible = vis[s.stage.to_sym].include?(s.uuid) }
+    statements.statements.each { |stmnt| stmnt.visible = vis[stmnt.stage.to_sym].include?(stmnt.uuid) }
     sts = statements.statements.map(&:to_store)
     pls = players.players
-    ps = pls.map { |p| { p.uglify_name(:s) => { name: p.name, pitcher_score: (p.pitcher_score), pitcher_score_before_ranging: p.pitcher_score_before_ranging, catcher_score_before_ranging: p.catcher_score_before_ranging, uglify_name: p.uglify_name(:s), pitcher_score_first_half: p.pitcher_score_first_half, catcher_score_first_half: p.catcher_score_first_half, uuid: p.uuid, catcher_score: (p.catcher_score) } } }
+    ps = pls.map do |plyer|
+      sh_name = plyer.uglify_name(:s)
+      {
+        sh_name => {
+          name: plyer.name,
+          pitcher_score: plyer.pitcher_score,
+          pitcher_score_before_ranging: plyer.pitcher_score_before_ranging,
+          catcher_score_before_ranging: plyer.catcher_score_before_ranging,
+          uglify_name: sh_name,
+          pitcher_score_first_half: plyer.pitcher_score_first_half,
+          catcher_score_first_half: plyer.catcher_score_first_half,
+          uuid: plyer.uuid,
+          catcher_score: plyer.catcher_score
+        }
+      }
+    end
     hsh.merge!(data: stats, players: ps, statements: sts)
     al = Actor[:"admin_logger_#{@uuid}"]
     logs = al.as_json
-    hsh[:logs] = logs.sort_by { |l| l.has_key?(:created_at) ? l[:created_at] : l['created_at'] }
+    hsh[:logs] = logs.sort_by { |log| log.has_key?(:created_at) ? log[:created_at] : log['created_at'] }
     uri = URI(state.setting[:game_results_callback])
     req = Net::HTTP::Post.new uri.request_uri
     req.body = "q='#{hsh.to_json}'"
-    rez = Net::HTTP.start(uri.hostname, uri.port) do |http|
+    Net::HTTP.start(uri.hostname, uri.port) do |http|
       http.request(req)
     end
-  end
-
-  def stage_timeout
-    async.end_stage
   end
 
   def after_game_timeout
@@ -505,7 +508,6 @@ class Game
     players = Actor[:"players_#{@uuid}"]
     state.state = :terminated
     publish :game_terminated, @uuid
-    # publish_msg({type: 'event', subtype: 'terminated'})
     players.async.push_terminated
     async.stop_timers
     async.end_game
@@ -519,52 +521,22 @@ class Game
   def online!
     @online = true
     info "#{@uuid} online"
-    # state = Actor[:"state_#{@game_uuid}"]
-    # players = Actor[:"players_#{@game_uuid}"]
-    # players.check_min_players
-    # async.send_ready reply_to: 'connect' if state.state.to_s == 'waiting'
-    # async.send_state reply_to: 'connect' if state.state.to_s == 'started'
-    # async.send_terminated if state.state.to_s == 'terminated'
-    # async.send_result reply_to: 'connect' unless %w(waiting started).include?(state.state.to_s)
-    # info 'online'
-    # async.publish :player_online, @game_uuid, {uuid: @uuid}
   end
 
   def offline!
     @online = false
-    # players = Actor[:"players_#{@game_uuid}"]
-    # players.check_min_players
     info "#{@uuid} offline"
-    # async.publish :player_offline, @game_uuid, {uuid: @uuid}
   end
 
   def publish_msg(msg)
-    if @online
-      ch = Actor[:"gm_chnl_#{@uuid}"]
-      if ch && ch.alive?
-        # p 'game chnl ok'
-        ch.publish_msg msg.to_json
-      else
-        # p 'chnl down'
-        offline!
-      end
+    return unless @online
+    ch = Actor[:"gm_chnl_#{@uuid}"]
+    if ch && ch.alive?
+      ch.publish_msg msg.to_json
     else
-      # info "game #{@uuid} offline"
+      offline!
     end
   end
 
-  # def publish_msg hash
-  #   state = int_state
-  #   info "publish game #{hash.inspect}"
-  #   # fan = state.game[:fan]
-  #   # fan.publish hash.to_json, routing_key: "game.#{@uuid}"
-  # end
-
-  def finalizer
-    # Center.current.delete(:"alarms_#{@uuid}")
-    # Center.current.delete(:"game_#{@uuid}")
-    # @alarms.terminate
-    # Celluloid::Actor[:channel].terminate
-    # Celluloid::Actor[:timers].terminate
-  end
+  def finalizer; end
 end
