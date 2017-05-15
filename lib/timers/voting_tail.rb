@@ -7,16 +7,14 @@ class Timings::VotingTail < Timings::Base
     'voting_tail'
   end
 
-  def initialize params = {}
+  def initialize(params = {})
     super
     # for others there is key
     key = :"#{self.class.reg_name}_timeout"
-    if params.has_key?(key)
-      @interval = params[key]
-    end
+    @interval = params[key] if params.has_key?(key)
   end
 
-  def set_time time
+  def set_time(time)
     raise
   end
 

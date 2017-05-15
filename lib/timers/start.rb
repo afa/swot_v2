@@ -7,7 +7,7 @@ class Timings::Start < Timings::Base
     'start'
   end
 
-  def initialize params = {}
+  def initialize(params = {})
     super
     # for others there is key
     if params.has_key?(:start)
