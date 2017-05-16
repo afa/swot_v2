@@ -58,18 +58,14 @@ class Statements
 
   def validate_statement(params = {})
     repl_count = params.has_key?(:to_replace) && params[:to_replace] ? params[:to_replace].size : 0
-    if @visible.size - repl_count > 6
-      return { type: 'error', value: 'to_many' }
-    end
-    if @current.detect{|s| params[:value] == find(s).value }
+    return { type: 'error', value: 'to_many' } if @visible.size - repl_count > 6
+    if @current.detect { |s| params[:value] == find(s).value }
       return { type: 'error', value: 'duplicate' }
     end
     if params[:value].force_encoding('UTF-8').size > 75
       return { type: 'error', value: 'too_long' }
     end
-    if params[:value].strip.size == 0
-      return { type: 'error', value: 'empty' }
-    end
+    return { type: 'error', value: 'empty' } if params[:value].strip.size == 0
     {}
   end
 
@@ -87,7 +83,7 @@ class Statements
 
   def rebuild_visible_for(stage)
     vis = []
-    @statements.select { |st| st.stage == stage && st.status == 'accepted' }.sort_by { |st| st.step }.each do |st|
+    @statements.select { |st| st.stage == stage && st.status == 'accepted' }.sort_by(&:step).each do |st|
       st.replaces.each { |r| vis.delete r }
       vis << st.uuid
     end
@@ -108,7 +104,7 @@ class Statements
   end
 
   def range_for(params = {})
-    stage_swot = State::STAGES.fetch(params[:stage], {swot: :end})[:swot]
+    stage_swot = State::STAGES.fetch(params[:stage], swot: :end)[:swot]
     statements = Actor[:"statements_#{@game_uuid}"]
     stmnts = statements.visible_for_buf(statements.rebuild_visible_for(stage_swot))
     st = stmnts[params[:index].to_i - 1]
@@ -159,7 +155,7 @@ class Statements
 
   def rescore
     accepted = @statements.select { |stat| stat.status == 'accepted' }
-    s_sum = accepted.inject(0.0) { |r, stt| r + stt.importance_score_raw.to_f }
+    s_sum = accepted.inject(0.0) { |rez, stt| rez + stt.importance_score_raw.to_f }
     s_sum = 1.0 if s_sum.to_f == 0.0
     accepted.each do |st|
       st.importance_score = st.importance_score_raw * 100.0 / s_sum

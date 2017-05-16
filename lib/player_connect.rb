@@ -20,24 +20,23 @@ class PlayerConnect
   end
 
   def publish_msg(msg)
-    if @ok
-      begin
-        @sock.write msg
-      rescue EOFError
-        off
-        @sock.close
-      rescue IOError
-        off
-        # @sock.close
-      rescue Errno::ECONNRESET
-        off
-        @sock.close
-      rescue StandartError => e
-        p e.class, e.message
-        off
-        @sock.close
-        raise
-      end
+    return unless @ok
+    begin
+      @sock.write msg
+    rescue EOFError
+      off
+      @sock.close
+    rescue IOError
+      off
+      # @sock.close
+    rescue Errno::ECONNRESET
+      off
+      @sock.close
+    rescue StandardError => e
+      p e.class, e.message
+      off
+      @sock.close
+      raise
     end
   end
 
@@ -54,7 +53,7 @@ class PlayerConnect
       off
       @sock.close
     rescue Exception => e
-      p e.class, e.message
+      info "#{e.class.inspect}, #{e.message}"
       off
       @sock.close
       raise
@@ -67,9 +66,7 @@ class PlayerConnect
 
   def on
     a = Actor[:"player_#{@uuid}"]
-    if a && a.alive?
-      a.online!
-    end
+    a.online! if a && a.alive?
     @ok = true
   end
 
@@ -86,8 +83,8 @@ class PlayerConnect
     info "#{ch.inspect} :: #{msg.inspect}"
     sel = begin
             MultiJson.load(msg)
-          rescue Exception => e
-            { error: e.message }
+          rescue Exception => exc
+            { error: exc.message }
           end
 
     info sel.inspect

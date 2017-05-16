@@ -8,7 +8,7 @@ require 'message/disconnect'
 module Message
   extend Celluloid::Internals::Logger
   # module As; class B; end; AB = 1; constants(false).each{|s| p const_get(s) if const_get(s).is_a? Class }; end
-  def parse ch, str
+  def parse(ch, str)
     subclasses.detect do |cl|
       dat = cl.try_load(ch, str)
       dat
@@ -16,8 +16,8 @@ module Message
   end
 
   def subclasses
-    cs = constants(false).map{|c| const_get(c) }.select{|c| c.is_a? Class } - [Message::Base]
-    cs += (constants(false).map{|c| const_get(c) }.select{|c| not c.is_a? Class }).map(&:subclasses).flatten
+    cs = constants(false).map { |c| const_get(c) }.select { |c| c.is_a? Class } - [Message::Base]
+    cs += (constants(false).map { |c| const_get(c) }.select { |c| !c.is_a? Class }).map(&:subclasses).flatten
     cs
   end
 

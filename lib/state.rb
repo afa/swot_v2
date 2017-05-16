@@ -12,49 +12,49 @@ class State
   # attr_accessor :guid, :game, :players, :player_channels, :setting, :prev_pitcher
   attr :saved
   STAGES = {
-    s: {beetwen: false, order: 1, name: 'Strengths', swot: :s, next: :w, prev: nil},
-    sw: {beetwen: true, order: 2, swot: :s, next: :w, prev: :s},
-    w: {beetwen: false, order: 3, name: 'Weaknesses', swot: :w, next: :o, prev: :s},
-    wo: {beetwen: true, order: 4, swot: :w, next: :o, prev: :w},
-    o: {beetwen: false, order: 5, name: 'Opportunities', swot: :o, next: :t, prev: :w},
-    ot: {beetwen: true, order: 6, swot: :o, next: :t, prev: :o},
-    t: {beetwen: false, order: 7, name: 'Threats', swot: :t, next: :rs, prev: :o},
-    tr: {beetwen: true, order: 8, swot: :t, next: :rs, prev: :t},
-    rs: {beetwen: false, order: 9, swot: :s, name: 'Ranging'},
-    rw: {beetwen: false, order: 10, swot: :w},
-    ro: {beetwen: false, order: 11, swot: :o},
-    rt: {beetwen: false, order: 12, swot: :t},
-    end: {beetwen: false, order: 13, swot: nil}
-  }
+    s: { beetwen: false, order: 1, name: 'Strengths', swot: :s, next: :w, prev: nil },
+    sw: { beetwen: true, order: 2, swot: :s, next: :w, prev: :s },
+    w: { beetwen: false, order: 3, name: 'Weaknesses', swot: :w, next: :o, prev: :s },
+    wo: { beetwen: true, order: 4, swot: :w, next: :o, prev: :w },
+    o: { beetwen: false, order: 5, name: 'Opportunities', swot: :o, next: :t, prev: :w },
+    ot: { beetwen: true, order: 6, swot: :o, next: :t, prev: :o },
+    t: { beetwen: false, order: 7, name: 'Threats', swot: :t, next: :rs, prev: :o },
+    tr: { beetwen: true, order: 8, swot: :t, next: :rs, prev: :t },
+    rs: { beetwen: false, order: 9, swot: :s, name: 'Ranging' },
+    rw: { beetwen: false, order: 10, swot: :w },
+    ro: { beetwen: false, order: 11, swot: :o },
+    rt: { beetwen: false, order: 12, swot: :t },
+    end: { beetwen: false, order: 13, swot: nil }
+  }.freeze
 
   STEP_STATUSES = {
-    pitch: {active: true, name: 'pitch', order: 1},
-    vote: {active: true, name: 'vote', order: 2},
-    end: {active: false, name: 'end', order: 3}
-  }
+    pitch: { active: true, name: 'pitch', order: 1 },
+    vote: { active: true, name: 'vote', order: 2 },
+    end: { active: false, name: 'end', order: 3 }
+  }.freeze
 
   def to_swot(stg)
     STAGES[stg][:swot] || :end
   end
 
   def first_enum(hash)
-    frst = hash.values.map{|i| i[:order] }.min
-    hash.select{|k, v| v[:order] == frst }.keys.first
+    frst = hash.values.map { |i| i[:order] }.min
+    hash.select { |_k, v| v[:order] == frst }.keys.first
   end
 
   def next_enum(hash, e)
     return nil unless e
     ord = hash[e][:order]
-    idx = hash.values.map{|v| v[:order] }.select{|o| o > ord }.min
+    idx = hash.values.map { |v| v[:order] }.select { |o| o > ord }.min
     return nil unless idx
-    hash.select{|k, v| v[:order] == idx }.keys.first
+    hash.select { |_k, v| v[:order] == idx }.keys.first
   end
 
   def game_uuid
     @guid
   end
 
-  def initialize params = {}
+  def initialize(params = {})
     @guid = params[:game_uuid]
     info "state init for #{@guid}"
     @game = {}
@@ -68,20 +68,14 @@ class State
       player_log: false
     }
     @player_channels = {}
-    # @setting = Store::Setting.prepare_data(Store::Setting.find(game_uuid: @guid).first.data)
-    # @setting.keys.each{|k| @setting[k.to_sym] = @setting[k] }
-    # unless try_recover
-      load_default_settings
-      if params[:settings]
-        @setting.data = @setting.data.merge(params[:settings])
-      end
-      init
-    # end
+    load_default_settings
+    @setting.data = @setting.data.merge(params[:settings]) if params[:settings]
+    init
     subscribe :game_done, :game_done
     subscribe :game_data_saved, :data_saved
   end
 
-  def check_state action, user
+  def check_state(_action, _user)
     return true unless @act || @act_user
     false
   end
@@ -90,23 +84,21 @@ class State
     @act = @act_user = nil
   end
 
-  def set_state action, user
+  def set_state(action, user)
     @act = action
     @act_user = user
   end
 
-  def game_done topic, game_id
+  def game_done(_topic, game_id)
     return unless game_id == @guid
     publish :save_game_data, @guid
   end
 
-  def data_saved topic, game_id, sym
+  def data_saved(_topic, game_id, sym)
     return unless game_id == @guid
     @saved[sym] = true
     p :data_saved, @saved
-    if @saved.values.all?
-      async.cleanup
-    end
+    async.cleanup if @saved.values.all?
   end
 
   def cleanup
@@ -134,16 +126,16 @@ class State
   end
 
   def init
-    unless Actor[:"statements_#{@guid}"]
-      Center.current.to_supervise as: :"statements_#{@guid}", type: Statements, args: [{game_uuid: @guid}]
-    end
+    Center.current.to_supervise(
+      as: :"statements_#{@guid}",
+      type: Statements,
+      args: [{ game_uuid: @guid }]
+    ) unless Actor[:"statements_#{@guid}"]
     statements = Actor[:"statements_#{@guid}"]
     @step = 1
     @total_steps = @setting[:max_steps] # || 18
     @step_status = first_enum(STEP_STATUSES)
     statements.clean_current
-
-    info 'init state done'
   end
 
   def load_default_settings
@@ -155,7 +147,7 @@ class State
   end
 
   def previous_stage_name
-    STAGES[STAGES.fetch(@stage, {prev: nil})[:prev] || :end].fetch(:name, '')
+    STAGES[STAGES.fetch(@stage, prev: nil)[:prev] || :end].fetch(:name, '')
   end
 
   def stage_name
@@ -163,9 +155,7 @@ class State
   end
 
   def next_stage!
-    if @state == :started
-      @stage = next_enum(STAGES, @stage)
-    end
+    @stage = next_enum(STAGES, @stage) if @state == :started
     statements.clear_current
   end
 
@@ -176,11 +166,9 @@ class State
   #   end
   # end
 
-  def add_game id
-  end
+  def add_game(id); end
 
-  def add_statement id
-  end
+  def add_statement(id); end
 
   # def locate_player id
   #   pls = Actor[:"players_#{@guid}"]

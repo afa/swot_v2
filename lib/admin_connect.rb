@@ -27,24 +27,23 @@ class AdminConnect
   end
 
   def publish_msg(msg)
-    if @ok
-      begin
-        @sock.write msg
-      rescue EOFError
-        off
-        @sock.close
-      rescue IOError
-        off
-        # @sock.close
-      rescue Errno::ECONNRESET
-        off
-        @sock.close
-      rescue StandartError => exc
-        p exc.class, exc.message
-        off
-        @sock.close
-        raise
-      end
+    return unless @ok
+    begin
+      @sock.write msg
+    rescue EOFError
+      off
+      @sock.close
+    rescue IOError
+      off
+      # @sock.close
+    rescue Errno::ECONNRESET
+      off
+      @sock.close
+    rescue StandardError => exc
+      p exc.class, exc.message
+      off
+      @sock.close
+      raise
     end
   end
 
@@ -57,7 +56,7 @@ class AdminConnect
     rescue IOError
       off
       # @sock.close
-    rescue StandartError => exc
+    rescue StandardError => exc
       p exc.class, exc.message
       off
       @sock.close
@@ -88,7 +87,7 @@ class AdminConnect
   def parse_msg(ch, msg)
     sel = begin
             MultiJson.load(msg)
-          rescue StandartError => e
+          rescue StandardError => e
             { error: e.message }
           end
 
