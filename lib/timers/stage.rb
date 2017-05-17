@@ -11,7 +11,7 @@ class Timings::Stage < Timings::Base
     super
     # for others there is key
     key = :"#{self.class.reg_name}_timeout"
-    @interval = params[key] if params.has_key?(key)
+    @interval = params[key] if params.key?(key)
   end
 
   def set_time(time)
