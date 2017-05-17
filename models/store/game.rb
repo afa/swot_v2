@@ -14,6 +14,29 @@ class Store::Game < Ohm::Model
   index :uuid
   unique :uuid
 
+  def settings
+    Store::Setting.find(game_uuid: uuid).first.data
+  end
+
+  def players
+    Store::Player.find(game_uuid: uuid).to_a
+  end
+
+  def accepted_statements
+    Store::Statement.find(game_uuid: uuid, status: 'accepted').to_a
+  end
+
+  def as_json_params
+    {
+      name: name,
+      settings: settings,
+      players: players.map(&:as_json),
+      statements: accepted_statements.map(&:as_json),
+      start_at: start_at,
+      time: Time.now.to_f.round(6)
+    }
+  end
+
   def as_json
     {
       name: name,
@@ -25,9 +48,4 @@ class Store::Game < Ohm::Model
       players: players.as_json
     }
   end
-
-  # def initialize params = {}
-  #   # self.name = params[:name] if params[:name]
-  #   # self.uuid = params[:uuid] if params[:uuid]
-  # end
 end

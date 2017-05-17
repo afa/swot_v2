@@ -9,7 +9,7 @@ class StepScore
       @catcher = 0.0
     end
 
-    def set_statement()
+    def set_statement
     end
 
     def calc_pitcher
@@ -21,7 +21,7 @@ class StepScore
 
     def calc_rank
       # TODO: from pl/pl count_pitcher_score
-      # TODO: 
+      # TODO:
     end
   end
 
@@ -40,9 +40,7 @@ class StepScore
     @statement = false
   end
 
-
   def apply_statement(uid)
     @statement = uid
   end
 end
-
