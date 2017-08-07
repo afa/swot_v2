@@ -24,6 +24,6 @@ class Store::Player < Ohm::Model
       order: order,
       score: score,
       rank: rank
-    }.tap{|x| p x }
+    }
   end
 end

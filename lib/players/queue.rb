@@ -3,6 +3,7 @@ class Queue
   include Celluloid
   include Celluloid::IO
   include Celluloid::Internals::Logger
+  include Celluloid::Notifications
 
   def initialize(params = {})
     @game_uuid = params[:game_uuid]
@@ -16,6 +17,27 @@ class Queue
       info 'no queue rebuild, game died'
     end
   end
+
+  def log_info
+    hsh = {
+      base_queue: {
+        names: ids.map { |id| Actor[:"player_#{id}"] }.map { |pl| pl && pl.alive? ? pl : nil }.try(:map, &:name),
+        scores: ids.map { |id| Actor[:"player_#{id}"] }.map { |pl| pl && pl.alive? ? pl : nil }.try(:map. &:pitcher_score),
+        orders: ids.map { |id| Actor[:"player_#{id}"] }.map { |pl| pl && pl.alive? ? pl : nil }.try(:map, &:order)
+      },
+      tail_queue: {
+        names: ids.map { |id| Actor[:"player_#{id}"] }.map { |pl| pl && pl.alive? ? pl : nil }.try(:map, &:name),
+        scores: ids.map { |id| Actor[:"player_#{id}"] }.map { |pl| pl && pl.alive? ? pl : nil }.try(:map. &:pitcher_score),
+        orders: ids.map { |id| Actor[:"player_#{id}"] }.map { |pl| pl && pl.alive? ? pl : nil }.try(:map, &:order)
+      }
+    }
+    publish :random_queue, @game_uuid, hsh
+    info "random_queue: #{hsh.inspect}"
+  end
+
+  # def adm_log
+  #   Actor[:"admin_logger_#{@game_uuid}"]
+  # end
 
   def add(_pl)
     # TODO: !!!!! проверить места вызовов
@@ -49,7 +71,7 @@ class Queue
   end
 
   def skip!
-    @prev_pither = @current.shift
+    @prev_pitcher = @current.shift
     fill_current
   end
 

@@ -29,6 +29,7 @@ class AdminLogger
     subscribe :game_terminated, :game_terminated
     subscribe :admin_log_push, :admin_log_push
     subscribe :save_game_data, :save_game_data
+    subscribe :random_queue, :random_queue
     # subscribe :sync_admin_log, :save_game_data
   end
 
@@ -110,6 +111,16 @@ class AdminLogger
       time_left: Timings::Stage.instance(@guid).next_time,
       to: state.stage_name
       # stats: stats
+    }
+    push msg
+  end
+
+  def random_queue(_topic, game_id, params = {})
+    return unless @guid == game_id
+    msg = {
+      subtype: :random_queue,
+      base_queue: params[:base_queue],
+      tail_queue: params[:tail_queue]
     }
     push msg
   end
