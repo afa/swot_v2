@@ -27,17 +27,21 @@ class Center # < Celluloid::Supervision::Container
     Actor[:center]
   end
 
-  def initialize(params = {})
+  def initialize params = {}
     @server_config = params
     @players = Players.new
-    @times = { start_at: params[:start] }.delete_if { |_k, v| v.nil? }
+    @times = {start_at: params[:start]}.delete_if{|_k, v| v.nil? }
+    info params.inspect
+    info 'starting centre'
     build_config
     # async.run
     info 'start centre'
     async.add_web
   end
 
-  def run; end
+  def run
+    # @config.run
+  end
 
   def add_web
     to_supervise type: Web, as: :web, args: []
@@ -45,28 +49,40 @@ class Center # < Celluloid::Supervision::Container
 
   def build_config
     @config = Celluloid::Supervision::Configuration.new
-    @config.define type: Control, as: :control, args: [{ channel: '/swot/control' }]
+    @config.define type: Control, as: :control, args: [{channel: '/swot/control'}]
     # @config.define type: Web, as: :web, args: ['127.0.0.1', 3010]
     @config.deploy
+    # @config = Celluloid::Supervision::Configuration.new
+    # @config.define type: Control, as: :control, args: [{channel: '/swot/control'}]
+    # @config.deploy
   end
 
-  def to_supervise(hash)
+  def to_supervise hash
+    info 'supervise'
+    info hash.reject{|k, v| k == :args }.inspect
     @config.add(hash)
   end
 
-  def delete_supervision(name)
+  def delete_supervision name
+    info "clean supervision for #{name}"
     @config.delete name
   end
 
-  def supervision_info; end
+  def supervision_info
+  end
 
   def stop
     info 'receive stop'
     async.terminate if Actor[:center].alive?
   end
 
+
+  # Control.supervise as: :control, args: [{channel: '/swot/control'}]
+
   def finalizer
     info 'finalizing centre'
     @config.shutdown
+    # Actor[:control].async.terminate
+    info 'finalize centre'
   end
 end

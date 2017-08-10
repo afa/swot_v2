@@ -20,21 +20,17 @@ class Timings
     # disconnect_timeout:
     after_game_timeout: 600,
     terminate_timeout: 10
-  }.freeze
+  }
 
   def self.subtimers
-    constants(false).map { |s| const_get(s) }.select { |c| c.is_a?(Class) } - [Timings::Base]
+    constants(false).map{|s| const_get(s) }.select{|c| c.is_a?(Class) } - [Timings::Base]
   end
 
-  def initialize(params = {})
+  def initialize params = {}
     @guid = params.delete(:game_uuid)
     list = self.class.subtimers
     list.map do |cl|
-      Center.current.to_supervise(
-        as: :"timer_#{cl.reg_name}_#{@guid}",
-        type: cl,
-        args: [{ game_uuid: @guid }.merge(DEFAULTS).merge(params)]
-      )
+      Center.current.to_supervise as: :"timer_#{cl.reg_name}_#{@guid}", type: cl, args: [{game_uuid: @guid}.merge(DEFAULTS).merge(params)]
     end
   end
 
@@ -45,12 +41,15 @@ class Timings
     end
   end
 
-  def pause; end
+  def pause
+  end
 
-  def resume; end
+  def resume
+  end
 
-  def cancel(list = [])
-    list.map(&:to_sym).map { |it| classes[it].instance(@guid) }.each(&:cancel)
+  def cancel list = []
+    # p list
+    list.map(&:to_sym).map{|it| classes[it].instance(@guid) }.each(&:cancel)
   end
 
   def classes
@@ -68,8 +67,8 @@ class Timings
     }
   end
 
-  def stamps(list = [])
-    list.inject(Time.now.to_f + 10_000.0) do |r, l|
+  def stamps list = []
+    list.inject(Time.now.to_f + 10000.0) do |r, l|
       t = classes[l].instance(@guid)
       s = t.next_stamp
       # info "stamps #{l} => #{s}"
@@ -77,27 +76,29 @@ class Timings
     end
   end
 
-  def reset(list = [])
-    list.map { |it| classes[it].instance(@guid) }.each(&:reset)
+  def reset list = []
+    list.map{|it| classes[it].instance(@guid) }.each(&:reset)
   end
 
-  def terminate; end
+  def terminate
+  end
 
   def self.instance(id)
     Celluloid::Actor[:"timers_#{id}"]
   end
 
   def next_stamp
-    self.class.subtimers.map { |cl| cl.instance(@guid) }.map(&:next_stamp).compact.min
+    self.class.subtimers.map{|cl| cl.instance(@guid) }.map(&:next_stamp).compact.min
   end
 
   def stop_timers
-    self.class.subtimers.map { |cl| cl.instance(@guid) }.each(&:cancel)
+    self.class.subtimers.map{|cl| cl.instance(@guid) }.each(&:cancel)
   end
 
   def next_interval
-    self.class.subtimers.map { |cl| cl.instance(@guid) }.map(&:next_time).compact.min
+    self.class.subtimers.map{|cl| cl.instance(@guid) }.map(&:next_time).compact.min
   end
+
 end
 
 require 'timers/base'
