@@ -23,7 +23,7 @@ class Timings
   }.freeze
 
   def self.subtimers
-    constants(false).map { |sub| const_get(sub) }.select { |cl| cl.is_a?(Class) } - [Timings::Base]
+    constants(false).map { |s| const_get(s) }.select { |c| c.is_a?(Class) } - [Timings::Base]
   end
 
   def initialize(params = {})
@@ -55,20 +55,25 @@ class Timings
 
   def classes
     {
-      start: Timings::Start, stage: Timings::Stage,
-      first_pitch: Timings::FirstPitch, pitch: Timings::Pitch,
-      voting_quorum: Timings::VotingQuorum, voting_tail: Timings::VotingTail,
-      results: Timings::Results, between_stages: Timings::BetweenStages,
-      ranging: Timings::Ranging, terminate: Timings::Terminate
+      start: Timings::Start,
+      stage: Timings::Stage,
+      first_pitch: Timings::FirstPitch,
+      pitch: Timings::Pitch,
+      voting_quorum: Timings::VotingQuorum,
+      voting_tail: Timings::VotingTail,
+      results: Timings::Results,
+      between_stages: Timings::BetweenStages,
+      ranging: Timings::Ranging,
+      terminate: Timings::Terminate
     }
   end
 
   def stamps(list = [])
-    list.inject(Time.now.to_f + 10_000.0) do |rez, list_item|
-      inst = classes[list_item].instance(@guid)
-      stamp = inst.next_stamp
-      # info "stamps #{list_item} => #{stamp}"
-      stamp && (rez > stamp) ? stamp : rez
+    list.inject(Time.now.to_f + 10_000.0) do |r, l|
+      t = classes[l].instance(@guid)
+      s = t.next_stamp
+      # info "stamps #{l} => #{s}"
+      s && (r > s) ? s : r
     end
   end
 

@@ -152,6 +152,7 @@ class Player
       if ch && ch.alive?
         ch.publish_msg msg.merge(time: current_stamp, rel: SWOT_REL, version: SWOT_VERSION).to_json
       else
+        info 'chnl down'
         offline!
       end
     else

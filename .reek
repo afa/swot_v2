@@ -1,7 +1,5 @@
 LongParameterList:
   max_params: 4
-IrresponsibleModule:
-  enabled: false
 TooManyStatements:
   max_statements: 12
 "app/helpers":
