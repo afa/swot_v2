@@ -1,5 +1,4 @@
 require 'scores'
-# игрок. внутренний класс, привязан к реестру
 class Player
   include Celluloid
   include Celluloid::IO
@@ -15,12 +14,13 @@ class Player
   attr_accessor :pitcher_score_before_ranging, :catcher_score_before_ranging
 
   def self.build(params = {})
+    d = UUID.new.generate
     Store::Player.create(
       name: params[:name],
       email: params[:email],
       state: params[:state],
       mongo_id: params[:mongo_id],
-      uuid: UUID.new.generate,
+      uuid: d,
       game_uuid: params[:game_uuid],
       order: params[:order]
     )
@@ -56,14 +56,13 @@ class Player
   def send_players_score(_topic, guid)
     return unless @game_uuid == guid
     players = Actor[:"players_#{@game_uuid}"]
-    dat_sort = players.players.sort do |sa, sb|
-      id = sa.uuid
-      if id == sb.uuid
+    dat_sort = players.players.sort do |a, b|
+      if a.uuid == b.uuid
         0
-      elsif id == @uuid
+      elsif a.uuid == @uuid
         -1
       else
-        id <=> sb.uuid
+        a.uuid <=> b.uuid
       end
     end
     dat = dat_sort.map { |pl| { pitcher: pl.pitcher_rank, catcher: pl.catcher_score } }
@@ -72,15 +71,20 @@ class Player
       subtype: 'ranks',
       value: dat
     }
+    info "players score send to #{@uuid}::#{dat.inspect}"
     publish_msg msg
   end
 
   def pitch(params = {})
     queue = Actor[:"queue_#{@game_uuid}"]
     return unless queue.pitcher_id == @uuid
+    # timers = Actor[:"alarms_#{@game_uuid}"]
+    # timers.async.set_out :pitch, nil
     Timings::Pitch.instance(@game_uuid).cancel
     Timings::FirstPitch.instance(@game_uuid).cancel
+    # players = Actor[:"players_#{@game_uuid}"]
     game = Actor[:"game_#{@game_uuid}"]
+    # state = Actor[:"state_#{@game_uuid}"]
     game.pitch(params) # TODO: params for game on pitch done (move code to game.pitch)
   end
 
@@ -89,9 +93,13 @@ class Player
     queue = Actor[:"queue_#{@game_uuid}"]
     return unless queue.pitcher_id == @uuid
     game = Actor[:"game_#{@game_uuid}"]
+    # timers = Actor[:"alarms_#{@game_uuid}"]
     Timings::Pitch.instance(@game_uuid).cancel
     Timings::FirstPitch.instance(@game_uuid).cancel
+    # timers.async.set_out :pitch, nil
+    # players = Actor[:"players_#{@game_uuid}"]
     game.async.pass
+    # game.async.end_step({status: 'passed'})
   end
 
   def count_pitcher_score(typ)
@@ -107,34 +115,31 @@ class Player
   end
 
   def vote(params = {})
-    val = params[:value]
     game = Actor[:"game_#{@game_uuid}"]
-    send_vote(value: val)
-    game.async.vote(result: val, player: @uuid)
+    send_vote(value: params[:value])
+    game.async.vote(result: params[:value], player: @uuid)
     # TODO: params for game on pitch done (move code to game.pitch)
   end
 
   def ranging(params = {})
-    index = params[:index]
-    val = params[:val]
     game = Actor[:"game_#{@game_uuid}"]
     state = Actor[:"state_#{@game_uuid}"]
-    send_ranging(value: val, index: index)
-    game.async.ranging(value: val, player: @uuid, index: index, stage: state.stage)
+    send_ranging(value: params[:value], index: params[:index])
+    game.async.ranging(value: params[:value], player: @uuid, index: params[:index], stage: state.stage)
   end
 
   def online!
     @online = true
     @was_online = true
     info "#{@uuid} online"
-    state_obj = Actor[:"state_#{@game_uuid}"]
-    state = state_obj.state.to_s
+    state = Actor[:"state_#{@game_uuid}"]
     players = Actor[:"players_#{@game_uuid}"]
     players.check_min_players
-    async.send_ready reply_to: 'connect' if state == 'waiting'
-    async.send_state reply_to: 'connect' if state == 'started'
-    async.send_terminated if state == 'terminated'
-    async.send_result reply_to: 'connect' unless %w(waiting started).include?(state)
+    async.send_ready reply_to: 'connect' if state.state.to_s == 'waiting'
+    async.send_state reply_to: 'connect' if state.state.to_s == 'started'
+    async.send_terminated if state.state.to_s == 'terminated'
+    async.send_result reply_to: 'connect' unless %w(waiting started).include?(state.state.to_s)
+    # info 'online'
     publish :player_online, @game_uuid, uuid: @uuid
   end
 
@@ -150,6 +155,7 @@ class Player
     if @online
       ch = Actor[:"chnl_#{@uuid}"]
       if ch && ch.alive?
+        # info 'chnl ok'
         ch.publish_msg msg.merge(time: current_stamp, rel: SWOT_REL, version: SWOT_VERSION).to_json
       else
         info 'chnl down'
@@ -158,6 +164,7 @@ class Player
     else
       info "player #{@uuid} offline"
     end
+    # info msg.inspect
   end
 
   def send_result(params = {})
@@ -180,15 +187,13 @@ class Player
       end
       r
     end
-    pls = players.players.sort do |sa, sb|
-      id = sa.uuid
-      sbid = sb.uuid
-      if id == sbid
+    pls = players.players.sort do |a, b|
+      if a.uuid == b.uuid
         0
-      elsif id == @uuid
+      elsif a.uuid == @uuid
         -1
       else
-        id <=> sbid
+        a.uuid <=> b.uuid
       end
     end
     cur = pls.shift
@@ -268,16 +273,15 @@ class Player
 
   def send_messages(_params = {})
     state = Actor[:"state_#{@game_uuid}"]
-    stage = state.stage.to_s
     stage_swot = State::STAGES.fetch(state.stage, swot: :end)[:swot]
     statements = Actor[:"statements_#{@game_uuid}"]
-    stmnts = if %w(rs rw ro rt).include? stage
-               statements.visible_for_buf(statements.rebuild_visible_for(stage_swot)).map { |st| st.as_json(@uuid) }
-             elsif %w(s w o t sw wo ot tr).include?(stage)
-               statements.active_js(@uuid)
-             else
-               []
-             end
+    if %w(rs rw ro rt).include? state.stage.to_s
+      stmnts = statements.visible_for_buf(statements.rebuild_visible_for(stage_swot)).map { |s| s.as_json(@uuid) }
+    elsif %w(s w o t sw wo ot tr).include?(state.stage.to_s)
+      stmnts = statements.active_js(@uuid)
+    else
+      stmnts = []
+    end
     msg = { type: 'event', subtype: 'statements', value: stmnts }
     publish_msg msg
   end
@@ -299,11 +303,9 @@ class Player
     statements = Actor[:"statements_#{@game_uuid}"]
     stat = statements.last_stat
     if stat
-      quorum = stat.quorum?
-      status = stat.status
       per = 100 * stat.result.to_f
-      per = 100 - per unless status == 'accepted'
-      per = quorum ? per.round(1) : 'no_quorum'
+      per = 100 - per unless stat.status == 'accepted'
+      per = stat.quorum? ? per.round(1) : 'no_quorum'
       rnk = if stat.author == @uuid
               { score: @pitcher_rank }
             else
@@ -312,7 +314,7 @@ class Player
       msg = {
         type: 'event', subtype: 'end_step',
         result: {
-          status: (quorum ? status : 'no_quorum'),
+          status: (stat.quorum? ? stat.status : 'no_quorum'),
           players_voted: per
         }.merge(rnk),
         timeout_at: Timings.instance(@game_uuid).stamps(%w(stage results between_stages).map(&:to_sym)),
