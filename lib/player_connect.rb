@@ -2,37 +2,39 @@ class PlayerConnect
   include Celluloid
   include Celluloid::IO
   include Celluloid::Internals::Logger
-
-  def self.create(sock, ch)
-    uuid = (%r{\A\/player\/(?<id>[0-9a-fA-F-]+)\z}.match(ch) || {})[:id]
+  def self.create sock, ch
+    uuid = (/\A\/player\/(?<id>[0-9a-fA-F-]+)\z/.match(ch)||{})[:id]
     lv = Celluloid::Actor[:"chnl_#{uuid}"]
-    Center.current.delete_supervision :"chnl_#{uuid}" if lv # && lv.alive?
+    if lv # && lv.alive?
+      Center.current.delete_supervision :"chnl_#{uuid}"
+    end
+    Celluloid::Internals::Logger.info "WebSocket add for #{uuid}"
     Center.current.to_supervise as: :"chnl_#{uuid}", type: PlayerConnect, args: [sock, ch]
   end
 
-  def initialize(sock, ch)
+  def initialize sock, ch
     @ch = ch
     @sock = sock
-    @uuid = (%r{\A\/player\/(?<id>[0-9a-fA-F-]+)\z}.match(ch) || {})[:id]
+    @uuid = (/\A\/player\/(?<id>[0-9a-fA-F-]+)\z/.match(ch)||{})[:id]
     on
     info "websocket for #{@uuid} ready"
     async.run if @ok
   end
 
-  def publish_msg(msg)
+  def publish_msg msg
     if @ok
       begin
         @sock.write msg
-      rescue EOFError
+      rescue EOFError => e
         off
         @sock.close
-      rescue IOError
+      rescue IOError => e
         off
         # @sock.close
-      rescue Errno::ECONNRESET
+      rescue Errno::ECONNRESET => e
         off
         @sock.close
-      rescue StandartError => e
+      rescue Exception => e
         p e.class, e.message
         off
         @sock.close
@@ -44,13 +46,13 @@ class PlayerConnect
   def run
     begin
       msg = @sock.read
-    rescue EOFError
+    rescue EOFError => e
       off
       @sock.close
-    rescue IOError
+    rescue IOError => e
       off
       # @sock.close
-    rescue Errno::ECONNRESET
+    rescue Errno::ECONNRESET => e
       off
       @sock.close
     rescue Exception => e
@@ -74,20 +76,20 @@ class PlayerConnect
   end
 
   def off
-    @ok = false
-    a = Actor[:"player_#{@uuid}"]
-    if a && a.alive?
-      a.offline!
-      Center.current.delete_supervision :"chnl_#{@uuid}"
-    end
+      @ok = false
+      a = Actor[:"player_#{@uuid}"]
+      if a && a.alive?
+        a.offline!
+        Center.current.delete_supervision :"chnl_#{@uuid}"
+      end
   end
 
-  def parse_msg(ch, msg)
+  def parse_msg ch, msg
     info "#{ch.inspect} :: #{msg.inspect}"
     sel = begin
             MultiJson.load(msg)
           rescue Exception => e
-            { error: e.message }
+            {error: e.message}
           end
 
     info sel.inspect
@@ -98,3 +100,6 @@ class PlayerConnect
     end
   end
 end
+
+
+

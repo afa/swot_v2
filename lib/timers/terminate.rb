@@ -7,7 +7,7 @@ class Timings::Terminate < Timings::Base
     'terminate'
   end
 
-  def initialize(params = {})
+  def initialize params = {}
     super
     # for others there is key
     key = :"#{self.class.reg_name}_timeout"
@@ -16,7 +16,7 @@ class Timings::Terminate < Timings::Base
     end
   end
 
-  def set_time(time)
+  def set_time time
     raise
   end
 
