@@ -43,6 +43,8 @@ class Web < Reel::Server::HTTP
   def on_connection(connection)
     while request = connection.request
       if request.websocket?
+        info 'Received a WebSocket connection'
+
         # We're going to hand off this connection to another actor (TimeClient)
         # However, initially Reel::Connections are "attached" to the
         # Reel::Server::HTTP actor, meaning that the server manages the connection
@@ -66,17 +68,17 @@ class Web < Reel::Server::HTTP
         {
           method: 'GET',
           pattern: %r{^/api/v1/games/(?<id>[0-9A-Za-z-]+)},
-          controller: ->(_env, match) { game_params(match[:id]) }
+          controller: lambda { |_env, match| game_params(match[:id]) }
         },
         {
           method: 'GET',
           pattern: %r{^/api/v1/games},
-          controller: ->(_env, _match) { games_list }
+          controller: lambda { |_env, _match| games_list }
         },
         {
           method: 'POST',
           pattern: %r{^/api/v1/games},
-          controller: ->(env, _match) { create_game(ReelRouter.parse_post_params(env)) }
+          controller: lambda { |env, _match| create_game(ReelRouter.parse_post_params(env)) }
         }
       ]
     )
@@ -101,19 +103,36 @@ class Web < Reel::Server::HTTP
   def game_params(id)
     game = Store::Game.find(uuid: id).first
     if game
-      [:ok, game.as_json_params.to_json]
+      settings = Store::Setting.find(game_uuid: game.uuid).first.data
+      players = Store::Player.find(game_uuid: game.uuid).to_a
+      statements = Store::Statement.find(game_uuid: game.uuid, status: 'accepted').to_a
+      [
+        :ok,
+        {
+          name: game.name,
+          settings: settings,
+          players: players.map(&:as_json),
+          statements: statements.map(&:as_json),
+          start_at: game.start_at,
+          time: Time.now.to_f.round(6)
+        }.to_json
+      ]
     else
-      [:not_found, { errors: ["Game with id #{id} not found in core"] }.to_json]
+      [
+        :not_found,
+        {
+          errors: ["Game with id #{id} not found in core"]
+        }.to_json
+      ]
     end
   end
 
   def route_websocket(socket)
-    url = socket.url
-    if url =~ %r{/player/}
-      PlayerConnect.create(socket, url)
-    elsif url =~ %r{/game/}
-      AdminConnect.create(socket, url)
-    elsif url == '/swot/control'
+    if socket.url =~ %r{/player/}
+      PlayerConnect.create(socket, socket.url)
+    elsif socket.url =~ %r{/game/}
+      AdminConnect.create(socket, socket.url)
+    elsif socket.url == '/swot/control'
       # ClientConnect(socket)
     end
   end
