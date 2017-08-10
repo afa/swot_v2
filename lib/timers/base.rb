@@ -1,7 +1,8 @@
 class Timings::Base
+
   attr :guid, :timer, :at, :paused_at, :interval
 
-  def initialize(params = {})
+  def initialize params = {}
     @guid = params.delete(:game_uuid)
   end
 
@@ -29,28 +30,29 @@ class Timings::Base
   end
 
   def start
-    @at = Time.now.to_i + @interval
     if @timer
       @timer.cancel
+      @at = Time.now.to_i + @interval
       @timer.reset
     else
+      @at = Time.now.to_i + @interval
       @timer = after(@interval) { process }
     end
   end
 
-  def set_time(time)
-    ctime = Time.now.to_i
+  def set_time time
     if time.kind_of?(Time)
       @at = time.to_i
-      raise if @at < ctime
+      raise if @at < Time.now.to_i
     elsif time.kind_of?(Numeric)
-      if time < ctime
+      if time < Time.now.to_i
+        # p time, Time.now.to_i
         raise
       end
       @at = time
     end
     @timer.cancel if @timer
-    @timer = after(@at - ctime) { process }
+    @timer = after(@at - Time.now.to_i) { process }
   end
 
   def reset

@@ -7,13 +7,16 @@ class Timings::Pitch < Timings::Base
     'pitching'
   end
 
-  def initialize(params = {})
+  def initialize params = {}
     super
+    # for others there is key
     key = :"#{self.class.reg_name}_timeout"
-    @interval = params[key] if params.has_key?(key)
+    if params.has_key?(key)
+      @interval = params[key]
+    end
   end
 
-  def set_time(_time)
+  def set_time time
     raise
   end
 
