@@ -5,16 +5,17 @@ class Queue
   include Celluloid::Internals::Logger
   include Celluloid::Notifications
 
-  def initialize(params = {})
+  def initialize params = {}
     @game_uuid = params[:game_uuid]
     @current = []
     @tail = []
     game = Actor[:"game_#{@game_uuid}"]
+    players = Actor[:"players_#{@game_uuid}"]
     if game.try(:alive?)
       rebuild_tail
       fill_current
     else
-      info 'no queue rebuild, game died'
+      info "no queue rebuild, game died"
     end
   end
 
@@ -65,7 +66,9 @@ class Queue
 
   def next!
     skip!
-    skip! while pitcher && pitcher.alive? && !pitcher.online
+    while pitcher && pitcher.alive? && !pitcher.online
+      skip!
+    end
     rebuild_tail
     fill_current
   end
@@ -78,11 +81,11 @@ class Queue
   def fill_current
     c = (@current + @tail).uniq
     @current = c.first(3)
-    @tail = if c.size > 3
-              c.last(c.size - 3)
-            else
-              []
-            end
+    if c.size > 3
+      @tail = c.last(c.size - 3)
+    else
+      @tail = []
+    end
   end
 
   def ids
@@ -91,7 +94,7 @@ class Queue
 
   def list
     players = Actor[:"players_#{@game_uuid}"]
-    ids.map { |i| players.find(i) }
+    ids.map{|i| players.find(i) }
   end
 
   def first
@@ -115,8 +118,8 @@ class Queue
     @tail = []
     last_order = Actor[:"player_#{@current.last}"].try(:order)
     last_order ||= 0
-    lst.delete_if { |ll| ids.include?(ll.uuid) || ll.order.to_i < 1 }
-    idx = lst.index { |ll| ll.order > last_order }
+    lst.delete_if{|l| self.ids.include?(l.uuid) || l.order.to_i < 1 }
+    idx = lst.index{|l| l.order > last_order }
     if idx
       @tail += lst[idx..-1].map(&:uuid)
       lst = lst[0, idx]
@@ -124,9 +127,19 @@ class Queue
     else
       @tail = lst.map(&:uuid)
     end
+
+    # (@current + @tail).each{|i| list.delete_if{|s| s.uuid == i } }
+    # mx = Actor[:"player_#{@tail.last}"].try(:order)
+    # mx ||= Actor[:"player_#{@current.last}"].try(:order)
+    # @tail += list.select{|l| l.order.to_i > mx.to_i }.map(&:uuid)
+    # (@tail).each{|i| list.delete_if{|s| s.uuid == i } }
+    # @tail += list.map(&:uuid)
+    # info "size #{ids.size}"
   end
 
   def index(pl_id)
+    # info "queue index #{pl_id.inspect} size #{ids.size}"
     @current.index(pl_id)
   end
+
 end
