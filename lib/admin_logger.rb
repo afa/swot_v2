@@ -158,8 +158,16 @@ class AdminLogger
     return unless @guid == game_id
     msg = {
       subtype: :random_queue,
-      base_queue: params[:base_queue],
-      tail_queue: params[:tail_queue]
+      base_queue: {
+        params[:base_queue][:names],
+        params[:base_queue][:scores],
+        params[:base_queue][:orders]
+      },
+      tail_queue: {
+        params[:tail_queue][:names],
+        params[:tail_queue][:scores],
+        params[:tail_queue][:orders]
+      }
     }
     push msg
   end

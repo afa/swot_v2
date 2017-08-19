@@ -22,14 +22,14 @@ class Queue
   def log_info
     hsh = {
       base_queue: {
-        names: ids.map { |id| Actor[:"player_#{id}"] }.map { |pl| pl && pl.alive? ? pl : nil }.try(:map, &:name),
-        scores: ids.map { |id| Actor[:"player_#{id}"] }.map { |pl| pl && pl.alive? ? pl : nil }.try(:map. &:pitcher_score),
-        orders: ids.map { |id| Actor[:"player_#{id}"] }.map { |pl| pl && pl.alive? ? pl : nil }.try(:map, &:order)
+        names: @current.map { |id| Actor[:"player_#{id}"] }.map { |pl| pl && pl.alive? ? pl : nil }.map(&:name).join(', '),
+        scores: @current.map { |id| Actor[:"player_#{id}"] }.map { |pl| pl && pl.alive? ? pl : nil }.map(&:pitcher_score).join(', '),
+        orders: @current.map { |id| Actor[:"player_#{id}"] }.map { |pl| pl && pl.alive? ? pl : nil }.map(&:order).join(', ')
       },
       tail_queue: {
-        names: ids.map { |id| Actor[:"player_#{id}"] }.map { |pl| pl && pl.alive? ? pl : nil }.try(:map, &:name),
-        scores: ids.map { |id| Actor[:"player_#{id}"] }.map { |pl| pl && pl.alive? ? pl : nil }.try(:map. &:pitcher_score),
-        orders: ids.map { |id| Actor[:"player_#{id}"] }.map { |pl| pl && pl.alive? ? pl : nil }.try(:map, &:order)
+        names: @tail.map { |id| Actor[:"player_#{id}"] }.map { |pl| pl && pl.alive? ? pl : nil }.map(&:name).join(', '),
+        scores: @tail.map { |id| Actor[:"player_#{id}"] }.map { |pl| pl && pl.alive? ? pl : nil }.map(&:pitcher_score).join(', '),
+        orders: @tail.map { |id| Actor[:"player_#{id}"] }.map { |pl| pl && pl.alive? ? pl : nil }.map(&:order).join(', ')
       }
     }
     publish :random_queue, @game_uuid, hsh
