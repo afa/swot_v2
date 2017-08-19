@@ -159,14 +159,14 @@ class AdminLogger
     msg = {
       subtype: :random_queue,
       base_queue: {
-        params[:base_queue][:names],
-        params[:base_queue][:scores],
-        params[:base_queue][:orders]
+        names: params[:base_queue][:names],
+        scores: params[:base_queue][:scores],
+        orders: params[:base_queue][:orders]
       },
       tail_queue: {
-        params[:tail_queue][:names],
-        params[:tail_queue][:scores],
-        params[:tail_queue][:orders]
+        names: params[:tail_queue][:names],
+        scores: params[:tail_queue][:scores],
+        orders: params[:tail_queue][:orders]
       }
     }
     push msg
