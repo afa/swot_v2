@@ -112,7 +112,8 @@ class Queue
   def rebuild_tail
     state = Actor[:"state_#{@game_uuid}"]
     setting = state.setting
-    return random_rebuild_tail if setting[:random_enabled]
+    # return random_rebuild_tail if setting[:random_enabled]
+    return random_rebuild_tail
     players = Actor[:"players_#{@game_uuid}"]
     lst = players.players.sort_by(&:order)
     @tail = []
